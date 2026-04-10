@@ -1,29 +1,33 @@
 ---
 name: sf-nonprofit-program-case
 description: >
-  Nonprofit program and case management architecture with 120-point scoring.
-  TRIGGER when: user designs program enrollment, service delivery, case
-  management, intake processes, outcome tracking, referral management, or
-  wraparound services on Nonprofit Cloud. DO NOT TRIGGER when: fundraising
+  Nonprofit Cloud (NPC) program and case management architecture with 120-point
+  scoring. TRIGGER when: user designs program enrollment, benefit delivery,
+  case management, intake processes, outcome tracking, referral management, or
+  wraparound services on Nonprofit Cloud using native Program/Enrollment/Benefit objects.
+  DO NOT TRIGGER when: NPSP orgs without NPC program objects (use sf-nonprofit-npsp
+  for constituent model, custom-build program tracking), fundraising
   (use sf-nonprofit-fundraising), grant management (use sf-nonprofit-grants),
-  generic Apex/LWC code (use sf-apex, sf-lwc), or non-nonprofit Salesforce work.
+  generic Apex/LWC (use sf-apex, sf-lwc), or non-nonprofit Salesforce work.
 license: MIT
 metadata:
-  version: "1.0.0"
+  version: "2.0.0"
   scoring: "120 points across 6 categories"
 ---
 
-# sf-nonprofit-program-case: Program & Case Management Architect
+# sf-nonprofit-program-case: Nonprofit Cloud Program & Case Management Architect
 
-Expert Salesforce architect specializing in Nonprofit Cloud program management, case management, intake workflows, service delivery tracking, outcome measurement, and referral coordination.
+Expert Salesforce architect specializing in **Nonprofit Cloud (NPC)** program management, case management, intake workflows, benefit delivery tracking, outcome measurement, and referral coordination.
+
+> **Platform note**: Program, Program Enrollment, Benefit, Benefit Disbursement, Outcome, and Indicator objects are **NPC-native** — they do not exist in NPSP. NPSP orgs needing program management must custom-build or use the PMM (Program Management Module) package. Standard Case object is available on both platforms. For NPSP constituent model, see **sf-nonprofit-npsp**.
 
 ## Core Responsibilities
 
 1. **Program Design**: Structure programs, cohorts, eligibility, and capacity management
 2. **Enrollment Workflows**: Intake, application, waitlist, enrollment lifecycle
-3. **Service Delivery**: Session tracking, attendance, service documentation
+3. **Benefit Delivery**: Benefit sessions, attendance, disbursement documentation
 4. **Case Management**: Client cases, care plans, task management, case notes
-5. **Outcome Tracking**: Outcome definitions, activities, assessments, impact measurement
+5. **Outcome Tracking**: Outcome definitions, indicator definitions, indicator results, impact measurement
 6. **Validation & Scoring**: Score designs against 6 categories (0-120 points)
 
 ## Document Map
@@ -41,12 +45,25 @@ Expert Salesforce architect specializing in Nonprofit Cloud program management, 
 |--------|---------|------------|
 | **Program** | Service or initiative | Name, Status, Start/End Date, Category |
 | **Program Enrollment** | Individual's participation | Person Account, Program, Status, Enrollment Date |
-| **Service Delivery** | Record of service provided | Program Enrollment, Date, Type, Duration |
+| **Program Cohort** | Groups enrollments for cohort-based reporting | Program, Name, Start/End Date |
+| **Program Cohort Member** | Many-to-many link between enrollments and cohorts | Program Cohort, Program Enrollment |
+| **Benefit** | Specific activity/service within a program | Name, Type, Program, Status |
+| **Benefit Type** | Cross-program benefit categories | Name, Description |
+| **Benefit Assignment** | Benefit eligibility/allocation for a participant | Person Account, Benefit, Start/End Date |
+| **Benefit Disbursement** | Individual delivery event | Benefit, Program Enrollment, Date, Quantity |
+| **Benefit Session** | Scheduled instance of a benefit | Date, Location, Capacity |
+| **Benefit Schedule** | Recurring schedule for benefit delivery, manages attendance | Benefit, Frequency, Start/End Date |
+| **Unit of Measure** | How benefits are measured | Name (meals, dollars, hours) |
 | **Case** | Support/intervention record | Person Account, Status, Priority, Origin |
-| **Benefit Assignment** | Benefits provided to participant | Person Account, Benefit, Start/End Date |
+| **Care Plan** | Structured support plan with stages | Case, Status (Proposed → Draft → Active → Completed → Canceled) |
+| **Goal Definition** | Measurable milestones within care plans | Care Plan, Target, Status |
+| **Referral** | Inter-program or inter-org referral | Person Account, From Program, To Program, Status |
 | **Outcome** | Defined result/impact measure | Program, Target, Measurement Type |
-| **Outcome Activity** | Instance of outcome measurement | Outcome, Person Account, Value, Date |
-| **Assessment** | Data collection instrument | Type, Status, Questions, Responses |
+| **Outcome Activity** | Junction linking Outcome to Program, Benefit, or Goal Definition | Outcome, Program, Benefit |
+| **Indicator Definition** | What is measured | Name, Measurement Type, Target |
+| **Indicator Result** | Actual measurement value | Indicator Definition, Value, Date, Person Account |
+| **Indicator Assignment** | Links indicator to program/outcome | Indicator Definition, Program, Outcome |
+| **Indicator Performance Period** | Time-bound target and baseline | Indicator Definition, Start/End Date, Target, Baseline |
 
 ---
 
@@ -56,14 +73,19 @@ Expert Salesforce architect specializing in Nonprofit Cloud program management, 
 
 ```
 Program (Active)
+├── Benefit (activities/services offered)
+│   ├── Benefit Session (scheduled instances)
+│   └── Benefit Schedule (recurring schedule)
 ├── Program Enrollment
 │   ├── Applied → Waitlisted → Enrolled → Active → Completed
 │   │                                        ↓
 │   │                                    Withdrawn
-│   ├── Service Delivery (sessions, services)
+│   ├── Benefit Assignment (eligibility/allocation)
+│   ├── Benefit Disbursement (delivery events)
 │   ├── Case (support interventions)
-│   └── Outcome Activity (measurements)
-└── Outcome (program-level targets)
+│   └── Indicator Result (measurements)
+├── Program Cohort → Program Cohort Members
+└── Outcome → Outcome Activity → Indicator Definition
 ```
 
 ### Intake Process
@@ -79,19 +101,19 @@ Referral / Self-Referral
 
 ### Wraparound Services
 
-Multiple programs and cases connect to a single Person Account. Use Case Teams for multi-disciplinary coordination. Link cases to program enrollments for full participant view.
+Multiple programs and cases connect to a single Person Account. Use Case Teams for multi-disciplinary coordination. Link cases to program enrollments for full participant view. Benefit Disbursements across programs provide a complete service history.
 
 ### Outcome Measurement
 
-Programs define Outcomes (targets). Outcome Activities record individual measurements. Assessments collect structured data. Roll up activities to program-level reporting.
+Programs define Outcomes (targets). Outcome Activities link Outcomes to Programs/Benefits. Indicator Definitions describe what is measured. Indicator Results record individual measurement values. Indicator Performance Periods set time-bound targets and baselines.
 
 ---
 
 ## Decision Trees
 
-### Case vs Service Delivery
+### Case vs Benefit Disbursement
 
-- **Service Delivery**: Routine, scheduled services (tutoring session, meal distribution, counseling appointment)
+- **Benefit Disbursement**: Routine, scheduled services (tutoring session, meal distribution, counseling appointment)
 - **Case**: Complex intervention requiring tracking, follow-up, and resolution (housing placement, crisis intervention, benefits enrollment)
 
 ### Standard Case vs Custom Object
@@ -118,14 +140,14 @@ Programs define Outcomes (targets). Outcome Activities record individual measure
 
 ---
 
-## Service Delivery Patterns
+## Benefit Delivery Patterns
 
 | Pattern | Use Case | Implementation |
 |---------|----------|---------------|
-| **Session-based** | Classes, workshops, counseling | Service Delivery per session with attendance |
-| **Ongoing** | Case management, mentoring | Service Delivery records at milestones |
-| **Drop-in** | Food bank, clothing closet | Aggregate Service Delivery per visit |
-| **Group** | Support groups, cohort programs | Service Delivery per participant per session |
+| **Session-based** | Classes, workshops, counseling | Benefit Session per session with attendance via Benefit Schedule |
+| **Ongoing** | Case management, mentoring | Benefit Disbursement records at milestones |
+| **Drop-in** | Food bank, clothing closet | Benefit Disbursement per visit (supports anonymous recipients) |
+| **Group** | Support groups, cohort programs | Benefit Disbursement per participant per session |
 
 ---
 
@@ -136,18 +158,21 @@ Programs define Outcomes (targets). Outcome Activities record individual measure
 ```
 Impact Goal (org-level)
 └── Outcome (program-level)
-    └── Outcome Activity (individual measurement)
-        └── Assessment (data collection)
+    └── Outcome Activity (junction → Program/Benefit)
+        └── Indicator Definition (what is measured)
+            ├── Indicator Assignment (→ program/outcome)
+            ├── Indicator Performance Period (target + baseline)
+            └── Indicator Result (actual measurement)
 ```
 
-### Assessment Patterns
+### Indicator Measurement Patterns
 
 | Type | Example | Frequency |
 |------|---------|-----------|
-| Pre/Post | Skills assessment at start and end | 2x per enrollment |
-| Periodic | Monthly wellness check | Monthly |
-| Milestone | Certification exam pass/fail | At milestone |
-| Satisfaction | Client satisfaction survey | At completion |
+| Pre/Post | Indicator Result at enrollment start and end | 2x per enrollment |
+| Periodic | Monthly Indicator Result (wellness score, attendance rate) | Monthly |
+| Milestone | Indicator Result at milestone (certification pass/fail) | At milestone |
+| Continuous | Ongoing Indicator Results aggregated per Indicator Performance Period | Rolling |
 
 ---
 
@@ -157,23 +182,42 @@ Impact Goal (org-level)
 Score: XX/120
 ├─ Program Design: XX/25        (Structure, eligibility, capacity)
 ├─ Enrollment Lifecycle: XX/20  (Intake, waitlist, status transitions)
-├─ Service Delivery: XX/20      (Tracking, documentation, attendance)
+├─ Benefit Delivery: XX/20      (Benefits, disbursements, sessions, attendance)
 ├─ Case Management: XX/20       (Cases, care plans, referrals)
-├─ Outcome Tracking: XX/20      (Definitions, activities, assessments)
+├─ Outcome Tracking: XX/20      (Outcomes, indicators, results, performance periods)
 └─ Best Practices: XX/15        (Security, consent, data quality)
 ```
 
 ---
 
+## NPC vs NPSP Program/Case Availability
+
+| Capability | NPC (this skill) | NPSP |
+|------------|-------------------|------|
+| **Program** | Native object | Program (pmdm__Program__c) via PMM package |
+| **Program Enrollment** | Native object | Program Engagement (pmdm__ProgramEngagement__c) via PMM package |
+| **Benefit / Benefit Disbursement** | Native objects | Service Delivery (pmdm__ServiceDelivery__c) via PMM package |
+| **Indicator Definition / Indicator Result** | Native objects | Not available — custom build required |
+| **Case** | Standard object (available) | Standard object (available) |
+| **Care Plan / Goal Definition / Referral** | Native objects | Not available — custom build required |
+| **Volunteer Management** | Native (Job Position, Job Position Shift, Job Position Assignment) | Volunteers for Salesforce (separate package) |
+| **Individual record** | Person Account | Contact + Household Account |
+
+NPSP orgs requiring program management often use PMM (Program Management Module), a first-party Salesforce.org package, or AppExchange solutions (e.g., Apricot, Efforts to Outcomes), or plan migration to NPC to gain native program capabilities.
+
+---
+
 ## Anti-Patterns
 
-- Building custom enrollment objects when Program Enrollment exists
+- Building custom enrollment objects when Program Enrollment exists (NPC)
+- Building custom service tracking when Benefit / Benefit Disbursement objects exist (NPC)
 - Using Opportunity for program intake tracking
 - No status lifecycle on Program Enrollment (stuck in one state)
-- Skipping outcome definitions (no way to measure impact)
+- Skipping Indicator Definitions (no way to measure impact)
 - Case records without clear ownership or assignment rules
 - Mixing program data with fundraising data in same custom objects
 - No consent tracking for sensitive client data
+- Ignoring native Care Plan / Goal Definition objects and building custom equivalents
 
 ---
 
@@ -188,6 +232,7 @@ Score: XX/120
 | Grant-funded program tracking | sf-nonprofit-grants |
 | Fundraising tied to programs | sf-nonprofit-fundraising |
 | Custom objects for program extensions | sf-metadata |
+| NPSP constituent model (if NPSP org) | sf-nonprofit-npsp |
 | Deploy program metadata | sf-deploy |
 | SOQL for participant reporting | sf-soql |
 | Test data for program scenarios | sf-data |
@@ -198,11 +243,26 @@ Score: XX/120
 
 - **Program** — Service or initiative offered by the organization
 - **Program Enrollment** — Individual's participation in a program
-- **Service Delivery** — Record of service provided to a participant
+- **Program Cohort** — Groups enrollments for cohort-based reporting
+- **Benefit** — Specific activity or service within a program
+- **Benefit Type** — Cross-program benefit category
+- **Benefit Assignment** — Benefit eligibility/allocation for a participant (what they SHOULD receive)
+- **Benefit Disbursement** — Individual delivery event recording service provided
+- **Benefit Session** — Scheduled instance of a benefit
+- **Benefit Schedule** — Recurring schedule for benefit delivery, manages attendance
+- **Unit of Measure** — How benefits are measured (meals, dollars, hours)
 - **Case** — Support or intervention record requiring follow-up
-- **Benefit Assignment** — Benefits provided to a participant
+- **Care Plan** — Structured support plan with stages (Proposed → Draft → Active → Completed → Canceled)
+- **Goal Definition** — Measurable milestone within a care plan
+- **Referral** — Inter-program or inter-org referral for a participant
 - **Outcome** — Defined result or impact measure linked to a program
-- **Outcome Activity** — Individual measurement instance
-- **Assessment** — Structured data collection instrument
+- **Outcome Activity** — Junction linking Outcome to Program, Benefit, or Goal Definition
+- **Indicator Definition** — What is measured for outcome tracking
+- **Indicator Result** — Actual measurement value for an indicator
+- **Indicator Assignment** — Links an indicator to a program or outcome
+- **Indicator Performance Period** — Time-bound target and baseline for an indicator
+- **Job Position** — Volunteer role within a program
+- **Job Position Shift** — Scheduled volunteer shift
+- **Job Position Assignment** — Volunteer's hours/assignment to a shift
 - **Intake** — Process of receiving and evaluating new participants
 - **Wraparound** — Coordinated multi-service support for a participant

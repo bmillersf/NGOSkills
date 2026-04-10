@@ -13,141 +13,54 @@ skills-cursor/           # Cursor IDE workflow skills
 
 The skills are organized into layered domains that mirror the Salesforce platform stack. The agent reads a user's prompt, matches it against each skill's trigger conditions, and activates the appropriate skill. Skills that share boundaries have explicit routing rules so only one fires at a time.
 
+### Domain overview
+
 ```mermaid
 flowchart TB
-    subgraph CURSOR["Cursor IDE Layer"]
-        direction LR
-        CR[create-rule]
-        CS[create-skill]
-        CH[create-hook]
-        CSA[create-subagent]
-        MTS[migrate-to-skills]
-        SH[shell]
-        SL[statusline]
-        CLI[update-cli-config]
-        SET[update-cursor-settings]
-        BAB[babysit]
-    end
+    CURSOR["Cursor IDE\n10 skills"]
+    DV["Demo Validation\n1 skill"]
+    VIZ["Visualization & Docs\n3 skills"]
+    AGENT["Agentforce & AI\n5 skills"]
+    NP["Nonprofit Cloud\n7 skills"]
+    OMNI["OmniStudio\n6 skills"]
+    DC["Data Cloud\n7 skills"]
+    INTEG["Integration & Security\n2 skills"]
+    CORE["Core Platform\n10 skills"]
 
-    subgraph VALIDATE["Demo Validation"]
-        DV[sf-demo-validate]
-    end
-
-    subgraph VIZ["Visualization & Docs"]
-        direction LR
-        MERM[sf-diagram-mermaid]
-        NANO[sf-diagram-nanobananapro]
-        DOCS[sf-docs]
-    end
-
-    subgraph NONPROFIT["Nonprofit Cloud"]
-        NPC[sf-nonprofit-cloud]
-        NPF[sf-nonprofit-fundraising]
-        NPG[sf-nonprofit-grants]
-        NPPC[sf-nonprofit-program-case]
-        NPEC[sf-nonprofit-experience-cloud]
-        NPUX[sf-nonprofit-experience-cloud-ux]
-
-        NPC --> NPF & NPG & NPPC
-        NPC --> NPEC --> NPUX
-    end
-
-    subgraph OMNI["Industries / OmniStudio"]
-        OSA[sf-industry-commoncore-omnistudio-analyze]
-        OSS[sf-industry-commoncore-omniscript]
-        OSFC[sf-industry-commoncore-flexcard]
-        OSIP[sf-industry-commoncore-integration-procedure]
-        OSDM[sf-industry-commoncore-datamapper]
-        OSCA[sf-industry-commoncore-callable-apex]
-
-        OSA -.->|analyzes| OSS & OSFC & OSIP & OSDM
-        OSS -->|calls| OSIP
-        OSIP -->|uses| OSDM
-        OSFC -->|binds to| OSIP
-        OSIP -->|invokes| OSCA
-    end
-
-    subgraph DATACLOUD["Data Cloud"]
-        DC[sf-datacloud]
-        DCC[sf-datacloud-connect]
-        DCP[sf-datacloud-prepare]
-        DCH[sf-datacloud-harmonize]
-        DCR[sf-datacloud-retrieve]
-        DCS[sf-datacloud-segment]
-        DCA[sf-datacloud-act]
-
-        DC -->|orchestrates| DCC
-        DCC --> DCP --> DCH --> DCS --> DCA
-        DCH --> DCR
-        DCS --> DCR
-    end
-
-    subgraph INTEGRATION["Integration & Security"]
-        direction LR
-        INT[sf-integration]
-        CON[sf-connected-apps]
-        CON -->|auth for| INT
-    end
-
-    subgraph CORE["Core Platform"]
-        APEX[sf-apex]
-        LWC[sf-lwc]
-        FLOW[sf-flow]
-        META[sf-metadata]
-        SOQL[sf-soql]
-        TEST[sf-testing]
-        DBG[sf-debug]
-        DEP[sf-deploy]
-        DATA[sf-data]
-        PERM[sf-permissions]
-
-        META -->|defines schema for| APEX & LWC & FLOW
-        APEX -->|queried by| SOQL
-        APEX -->|tested by| TEST
-        TEST -->|debugged by| DBG
-        APEX & LWC & FLOW & META -->|deployed by| DEP
-        DATA -->|seeds| TEST
-        PERM -->|secures| APEX & LWC & FLOW
-    end
-
-    subgraph AGENT["Agentforce & AI"]
-        AG[sf-ai-agentforce]
-        AGO[sf-ai-agentforce-observability]
-        AGP[sf-ai-agentforce-persona]
-        AGT[sf-ai-agentforce-testing]
-        AGS[sf-ai-agentscript]
-
-        AG --> AGP
-        AG --> AGT
-        AGT --> AGO
-    end
-
-    %% Cross-domain relationships
-    DV ==>|validates all domains| CORE & AGENT & DATACLOUD & OMNI & NONPROFIT
-    NONPROFIT -->|built on| CORE
-    OMNI -->|extends| CORE
+    DV ==>|validates| AGENT & NP & OMNI & DC & CORE
     AGENT -->|powered by| CORE
-    DATACLOUD -.->|telemetry to| AGO
-    OSCA -->|implements| APEX
-    INT -->|callouts from| APEX
-    VIZ -.->|documents| CORE & NONPROFIT & DATACLOUD
+    NP -->|built on| CORE
+    OMNI -->|extends| CORE
+    DC -.->|telemetry| AGENT
+    INTEG -->|callouts from| CORE
+    VIZ -.->|documents| CORE & NP & DC
+
+    style CORE fill:#1a73e8,color:#fff
+    style AGENT fill:#e8710a,color:#fff
+    style DC fill:#0d652d,color:#fff
+    style NP fill:#9334e6,color:#fff
+    style OMNI fill:#c5221f,color:#fff
+    style INTEG fill:#185abc,color:#fff
+    style DV fill:#b06000,color:#fff
+    style VIZ fill:#137333,color:#fff
+    style CURSOR fill:#5f6368,color:#fff
 ```
 
-### How the layers connect
+> **Core Platform** is the foundation -- every other Salesforce domain depends on it. **Agentforce**, **Nonprofit Cloud**, and **OmniStudio** each extend Core with domain-specific capabilities. **Data Cloud** feeds telemetry into Agentforce observability. **Integration & Security** provides external connectivity via Apex callouts. **Demo Validation** sits above all domains and validates end-to-end readiness. **Visualization & Docs** and **Cursor IDE** are cross-cutting utilities.
 
-- **Core Platform** is the foundation. Apex, LWC, Flows, and metadata skills handle all code and configuration. SOQL, testing, debugging, deployment, data, and permissions skills support the development lifecycle around them.
-- **Agentforce & AI** builds on Core. Agent definitions use Apex actions; the persona skill shapes agent identity; the testing skill validates routing; and the observability skill analyzes session telemetry from Data Cloud.
-- **Data Cloud** follows a pipeline architecture. The orchestrator (`sf-datacloud`) routes to phase-specific skills in order: Connect, Prepare, Harmonize, Segment, Act. The Retrieve skill serves cross-cutting query needs.
-- **Industries / OmniStudio** extends Core with declarative components. OmniScripts call Integration Procedures, which use Data Mappers and Callable Apex. FlexCards bind to Integration Procedures for UI. The analyze skill provides cross-component dependency and namespace detection.
-- **Nonprofit Cloud** is a vertical built on Core. The umbrella skill routes to domain-specific skills for fundraising, grants, and program/case management. Experience Cloud skills handle portal architecture and UX separately.
-- **Integration & Security** handles external connectivity. Connected Apps provide OAuth; the integration skill manages Named Credentials, External Services, and callout patterns.
-- **Demo Validation** (`sf-demo-validate`) sits above everything. It validates end-to-end demo readiness across all domains -- metadata, data, permissions, automations, UI, and product-specific checks.
-- **Visualization & Docs** are cross-cutting utilities that can document any domain via Mermaid diagrams, AI-generated images, or official Salesforce doc retrieval.
-- **Cursor IDE** skills operate at the tooling layer, managing rules, hooks, subagents, CLI config, and PR maintenance independently of Salesforce domain skills.
+---
 
 ## Salesforce Skills (`skills/`)
 
 ### Agentforce & AI
+
+```mermaid
+flowchart LR
+    AG[agentforce] --> AGP[persona]
+    AG --> AGT[testing]
+    AGT --> AGO[observability]
+    AGS[agentscript]
+```
 
 | Skill | Description |
 |---|---|
@@ -158,6 +71,17 @@ flowchart TB
 | **sf-ai-agentscript** | Author deterministic Agentforce agents using the Agent Script DSL (`.agent` files) -- FSM-based state machines, slot filling, and instruction resolution. |
 
 ### Core Platform Development
+
+```mermaid
+flowchart LR
+    META[metadata] -->|schema| APEX[apex] & LWC[lwc] & FLOW[flow]
+    APEX -->|queries| SOQL[soql]
+    APEX -->|tested by| TEST[testing]
+    TEST -->|debugged by| DBG[debug]
+    APEX & LWC & FLOW -->|deployed by| DEP[deploy]
+    DATA[data] -->|seeds| TEST
+    PERM[permissions] -.->|secures| APEX & LWC & FLOW
+```
 
 | Skill | Description |
 |---|---|
@@ -174,12 +98,24 @@ flowchart TB
 
 ### Integration & Security
 
+```mermaid
+flowchart LR
+    CON[connected-apps] -->|auth for| INT[integration]
+```
+
 | Skill | Description |
 |---|---|
 | **sf-integration** | Integration architecture with 120-point scoring -- Named Credentials, External Services, REST/SOAP callouts, Platform Events, and CDC. |
 | **sf-connected-apps** | Connected Apps and OAuth configuration with 120-point scoring -- OAuth flows, JWT bearer auth, and `.connectedApp-meta.xml` files. |
 
 ### Data Cloud
+
+```mermaid
+flowchart LR
+    DC[datacloud] -->|orchestrates| C[connect]
+    C --> P[prepare] --> H[harmonize] --> S[segment] --> A[act]
+    H & S --> R[retrieve]
+```
 
 | Skill | Description |
 |---|---|
@@ -193,6 +129,15 @@ flowchart TB
 
 ### Industries / OmniStudio
 
+```mermaid
+flowchart LR
+    OS[omniscript] -->|calls| IP[integration-procedure]
+    IP -->|uses| DM[datamapper]
+    IP -->|invokes| CA[callable-apex]
+    FC[flexcard] -->|binds to| IP
+    AN[analyze] -.->|inspects| OS & FC & IP & DM
+```
+
 | Skill | Description |
 |---|---|
 | **sf-industry-commoncore-callable-apex** | `System.Callable` class generation and review with 120-point scoring -- OmniStudio extensions, `VlocityOpenInterface` migration. |
@@ -204,9 +149,17 @@ flowchart TB
 
 ### Nonprofit Cloud
 
+```mermaid
+flowchart LR
+    NPC[nonprofit-cloud] --> NPF[fundraising] & NPG[grants] & NPPC[program-case]
+    NPC --> NPEC[experience-cloud] --> NPUX[experience-cloud-ux]
+    NPSP[npsp] -.->|migrates to| NPC
+```
+
 | Skill | Description |
 |---|---|
 | **sf-nonprofit-cloud** | Nonprofit Cloud architecture, data model design, and NPSP migration guidance with 100-point scoring. |
+| **sf-nonprofit-npsp** | NPSP managed package architecture with 120-point scoring -- Opportunity-based donations, Recurring Donations, Household Accounts, Affiliations, Customizable Rollups, Engagement Plans, and `npsp__`/`npe01__`/`npo02__` namespace objects. |
 | **sf-nonprofit-experience-cloud** | Nonprofit Experience Cloud architecture with 120-point scoring -- donor/volunteer/client/grantee portals, sharing rules, and guest access. |
 | **sf-nonprofit-experience-cloud-ux** | Nonprofit portal UX/UI design with 100-point scoring -- branding, navigation flows, responsive design, accessibility, and wireframes. |
 | **sf-nonprofit-fundraising** | Fundraising architecture with 120-point scoring -- donor management, gift entry, campaigns, soft credits, recurring giving, and payment processing. |

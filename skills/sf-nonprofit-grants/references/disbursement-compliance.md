@@ -1,32 +1,32 @@
-# Disbursement & Compliance Reference
+# Funding Disbursement & Compliance Reference
 
-## Disbursement Lifecycle
+## Funding Disbursement Lifecycle
 
 ```
 Scheduled → Pending Approval → Approved → Processed → Paid
                                   ↓
-                              On Hold (compliance issue)
+                              On Hold (Funding Award Requirement issue)
 ```
 
 ---
 
-## Disbursement Schedule Patterns
+## Funding Disbursement Schedule Patterns
 
 ### Lump Sum
 
 ```
 Funding Award ($50,000)
-└── Disbursement: $50,000 (at agreement execution)
+└── Funding Disbursement: $50,000 (at agreement execution)
 ```
 
 ### Quarterly Scheduled
 
 ```
 Funding Award ($100,000, 12-month grant)
-├── Q1 Disbursement: $25,000 (Month 1)
-├── Q2 Disbursement: $25,000 (Month 4)
-├── Q3 Disbursement: $25,000 (Month 7)
-└── Q4 Disbursement: $25,000 (Month 10)
+├── Q1 Funding Disbursement: $25,000 (Month 1)
+├── Q2 Funding Disbursement: $25,000 (Month 4)
+├── Q3 Funding Disbursement: $25,000 (Month 7)
+└── Q4 Funding Disbursement: $25,000 (Month 10)
 ```
 
 ### Milestone-Based
@@ -79,8 +79,8 @@ Funding Award ($40,000)
 
 - Minor reallocations (<10% between categories): grantee notification only
 - Significant reallocations (10-25%): written approval required
-- Major changes (>25% or new categories): formal amendment
-- Track all modifications with date, reason, and approver
+- Major changes (>25% or new categories): formal **Funding Award Amendment** required
+- Track all modifications with date, reason, and approver via Funding Award Amendment records
 
 ---
 
@@ -88,8 +88,8 @@ Funding Award ($40,000)
 
 ### Compliance Checklist
 
-| Requirement | Frequency | Auto-Track |
-|-------------|-----------|------------|
+| Funding Award Requirement | Frequency | Auto-Track |
+|---------------------------|-----------|------------|
 | Progress report submission | Per schedule (quarterly/semi-annual) | Due date + reminder Flow |
 | Financial report submission | Per schedule | Due date + reminder Flow |
 | Audit submission | Annual (if >$750K federal) | Annual reminder |
@@ -103,20 +103,22 @@ Funding Award ($40,000)
 
 | Status | Meaning | Action |
 |--------|---------|--------|
-| Compliant | All requirements current | Continue disbursements |
-| Warning | Report overdue <30 days | Send reminder, flag for review |
-| Non-Compliant | Report overdue >30 days or issue identified | Hold disbursements, require response |
+| Compliant | All Funding Award Requirements current | Continue Funding Disbursements |
+| Warning | Funding Award Requirement overdue <30 days | Send reminder, flag for review |
+| Non-Compliant | Funding Award Requirement overdue >30 days or issue identified | Hold Funding Disbursements, require response |
 | Remediation | Corrective action plan in progress | Monitor monthly |
 | Resolved | Issue addressed, returned to compliance | Resume normal schedule |
 
 ---
 
-## Grant Reporting
+## Funding Award Requirements (Grantee Reporting)
 
-### Progress Report Template
+Each reporting obligation is tracked as a **Funding Award Requirement** record. Sub-items within a requirement are tracked as **Funding Award Requirement Section** records.
 
-| Section | Content |
-|---------|---------|
+### Progress Report (Funding Award Requirement)
+
+| Funding Award Requirement Section | Content |
+|-----------------------------------|---------|
 | Summary | Overall progress toward goals |
 | Activities | Key activities completed this period |
 | Outcomes | Progress on measurable outcomes |
@@ -125,10 +127,10 @@ Funding Award ($40,000)
 | Modifications | Any changes to project plan |
 | Next Steps | Plans for upcoming period |
 
-### Financial Report Template
+### Financial Report (Funding Award Requirement)
 
-| Section | Content |
-|---------|---------|
+| Funding Award Requirement Section | Content |
+|-----------------------------------|---------|
 | Budget vs Actual | Line-item comparison |
 | Expenditure Detail | Transaction-level for sampled categories |
 | Modifications | Budget reallocations made |
@@ -141,12 +143,12 @@ Funding Award ($40,000)
 
 ### Closeout Checklist
 
-1. Final progress report received and reviewed
-2. Final financial report received and reconciled
+1. Final progress Funding Award Requirement received and reviewed
+2. Final financial Funding Award Requirement received and reconciled
 3. Unexpended funds returned or reallocated (per agreement)
 4. All deliverables received (publications, data sets, etc.)
 5. Equipment disposition documented (if applicable)
-6. Final disbursement processed
+6. Final Funding Disbursement processed
 7. Grant record status → Closed
 8. Outcome data captured for portfolio reporting
 9. Grantee relationship record updated

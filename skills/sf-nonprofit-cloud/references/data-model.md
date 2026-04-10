@@ -24,55 +24,67 @@ Group of individuals sharing an address or relationship. Type = "Household."
 - **Features**: Auto-naming, formal/informal greetings, primary contact designation
 - **Flexibility**: Split, merge, multiple group membership
 
-### Party Relationship
+### Contact Contact Relationship
 
-Connects Person Accounts to Households and other entities. Defines relationship type (Household, Spouse, Organization, etc.).
+Person-to-person links (e.g., Spouse, Sibling). API: ContactContactRelationship.
+
+### Account Contact Relationship
+
+Person-to-organization links (e.g., employee, board member). API: AccountContactRelationship.
+
+### Account Account Relationship
+
+Organization-to-organization links (e.g., parent/subsidiary, partner). API: AccountAccountRelationship.
 
 ---
 
 ## Fundraising
 
-### Gift
+### Gift Transaction
 
-Donation transaction. Replaces Opportunity for donation tracking in NPC.
+Donation transaction (API: GiftTransaction). Core fundraising record. Replaces Opportunity for donation tracking in NPC.
 
-- **Key fields**: Amount, Gift Date, Payment Method, Campaign, GAU Allocation
-- **Relationships**: Person Account (donor), Campaign, Payment
+- **Key fields**: Amount, Gift Date, Payment Method, Campaign, Gift Designation
+- **Relationships**: Person Account (donor), Campaign, Payment Instrument, Gift Soft Credit
 
-### Payment
+### Payment Instrument
 
-Individual payment against a Gift. Supports split payments and recurring gifts.
+Reusable payment method (card token, bank account). API: PaymentInstrument.
 
 ### Campaign
 
 Outreach initiatives. Tracks ROI and attribution.
 
-### Soft Credit
+### Gift Soft Credit
 
-Attribution of gift to additional constituents (e.g., board member who secured donation).
+Attribution of gift to additional constituents (API: GiftSoftCredit). E.g., board member who secured donation.
 
-### GAU (General Accounting Unit)
+### Gift Designation
 
-Accounting structure for gift allocation. Drives reporting and fund attribution.
+Named fund for tracking (API: GiftDesignation). Replaces GAU concept in NPC.
+
+### Gift Transaction Designation
+
+Links Gift Transaction to Gift Designation with amount (API: GiftTransactionDesignation). Enables split allocations across funds.
 
 ---
 
 ## Grantmaking
 
-### Grant Application
+### Application
 
-Application from grantee. Tracks status through review and award.
+Application from grantee (API: Application). Tracks status through review and award.
 
 - **Key fields**: Applicant (Account), Program, Status, Requested Amount
-- **Relationships**: Funding Award, Disbursement, Budget
+- **Relationships**: Funding Award, Funding Disbursement, Budget
 
 ### Funding Award
 
-Approved grant. Links to Grant Application.
+Approved grant. Links to Application.
 
-### Disbursement
+### Funding Disbursement
 
-Payment against a Funding Award. Tracks spending against budget.
+Payment against a Funding Award (API: FundingDisbursement). Tracks spending against budget.
 
 ### Budget
 
@@ -94,11 +106,15 @@ Service or initiative offered by the organization.
 Individual's participation in a program.
 
 - **Key fields**: Person Account, Program, Enrollment Date, Status
-- **Relationships**: Service Delivery, Case
+- **Relationships**: Benefit, Benefit Disbursement, Case
 
-### Service Delivery
+### Benefit
 
-Record of service provided to a participant. Links to Program Enrollment.
+Defined service or resource available through a program (API: Benefit). Describes what can be provided.
+
+### Benefit Disbursement
+
+Record of benefit provided to a participant (API: BenefitDisbursement). Links to Program Enrollment and Benefit.
 
 ### Case
 
@@ -117,30 +133,42 @@ Defined result or impact measure. Links to Program.
 
 ### Outcome Activity
 
-Instance of outcome measurement. Tracks progress toward targets.
+Junction between an Outcome and an activity or program. Tracks progress toward targets.
 
-### Assessment
+### Indicator Definition
 
-Data collection instrument. Streamlines outcome data from participants.
+Measurable indicator that defines what is tracked (API: IndicatorDefinition). E.g., "reading level" or "housing stability score."
+
+### Indicator Result
+
+Recorded measurement for an individual against an Indicator Definition (API: IndicatorResult). Captures actual outcome data from participants.
+
+### Indicator Assignment
+
+Links an Indicator Definition to a Program or Benefit, defining which indicators apply where.
+
+### Indicator Performance Period
+
+Time-bound target for an indicator. Defines expected values over a measurement window.
 
 ---
 
 ## Volunteer Management
 
-### Volunteer Job
+### Job Position
 
-Position or opportunity. Defines skills, location, capacity.
+Volunteer position or opportunity (API: JobPosition). Defines skills, location, capacity.
 
-### Volunteer Shift
+### Job Position Shift
 
-Scheduled slot within a Volunteer Job.
+Scheduled slot within a Job Position (API: JobPositionShift).
 
 - **Key fields**: Start/End DateTime, Capacity, Status
-- **Relationships**: Volunteer Hours
+- **Relationships**: Job Position Assignment
 
-### Volunteer Hours
+### Job Position Assignment
 
-Record of volunteer participation. Links Person Account to Shift.
+Record of volunteer participation (API: JobPositionAssignment). Links Person Account to Job Position Shift.
 
 ---
 
@@ -148,20 +176,27 @@ Record of volunteer participation. Links Person Account to Shift.
 
 ```
 Person Account
-├── Party Relationship → Household (Business Account)
-├── Gift (donor)
+├── Contact Contact Relationship → other Person Accounts
+├── Account Contact Relationship → Business Accounts / Households
+├── Gift Transaction (donor)
 ├── Program Enrollment
-├── Volunteer Hours
-├── Grant Application (applicant contact)
-└── Soft Credit
+├── Job Position Assignment (volunteer)
+├── Application (applicant contact)
+└── Gift Soft Credit
 
 Program
 ├── Program Enrollment
+├── Benefit
 ├── Outcome
-└── Grant (funding source)
+└── Indicator Assignment
 
-Grant Application
+Gift Transaction
+├── Gift Soft Credit
+├── Gift Transaction Designation → Gift Designation
+└── Payment Instrument
+
+Application
 ├── Funding Award
-├── Disbursement
+├── Funding Disbursement
 └── Budget
 ```

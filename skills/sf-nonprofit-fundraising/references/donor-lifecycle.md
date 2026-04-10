@@ -16,8 +16,8 @@ Prospect → First-Time Donor → Repeat Donor → Committed Donor → Major Don
 
 | Dimension | Scoring Criteria | Points |
 |-----------|-----------------|--------|
-| **Recency** | Last gift within 6 months: 5 / 12 months: 3 / 24 months: 1 | 1-5 |
-| **Frequency** | 5+ gifts/year: 5 / 3-4: 4 / 2: 3 / 1: 2 | 1-5 |
+| **Recency** | Last Gift Transaction within 6 months: 5 / 12 months: 3 / 24 months: 1 | 1-5 |
+| **Frequency** | 5+ Gift Transactions/year: 5 / 3-4: 4 / 2: 3 / 1: 2 | 1-5 |
 | **Monetary** | Based on org-specific thresholds | 1-5 |
 
 ### Composite Score
@@ -47,20 +47,22 @@ Total RFM Score (3-15) maps to engagement tier:
 
 ## LYBUNT / SYBUNT Queries
 
+> **Note**: Field API names below should be verified against your org's Object Manager — NPC objects use standard (non-namespaced) API names. The `DonorId` and `ReceivedDate` fields shown are representative; confirm exact field names in your org.
+
 ### LYBUNT (Last Year But Unfortunately Not This year)
 
 Donors who gave last fiscal year but have not yet given this fiscal year.
 
 ```sql
-SELECT Id, Name, PersonEmail,
-  (SELECT Amount, GiftDate FROM Gifts__r
-   WHERE GiftDate >= LAST_YEAR ORDER BY GiftDate DESC LIMIT 1)
+SELECT Id, Name, PersonEmail
 FROM Account
 WHERE Id IN (
-  SELECT DonorId FROM Gift WHERE CALENDAR_YEAR(GiftDate) = :lastYear
+  SELECT DonorId FROM GiftTransaction
+  WHERE CALENDAR_YEAR(ReceivedDate) = :lastYear
 )
 AND Id NOT IN (
-  SELECT DonorId FROM Gift WHERE CALENDAR_YEAR(GiftDate) = :thisYear
+  SELECT DonorId FROM GiftTransaction
+  WHERE CALENDAR_YEAR(ReceivedDate) = :thisYear
 )
 AND IsPersonAccount = true
 ```
@@ -71,10 +73,12 @@ AND IsPersonAccount = true
 SELECT Id, Name, PersonEmail
 FROM Account
 WHERE Id IN (
-  SELECT DonorId FROM Gift WHERE CALENDAR_YEAR(GiftDate) < :thisYear
+  SELECT DonorId FROM GiftTransaction
+  WHERE CALENDAR_YEAR(ReceivedDate) < :thisYear
 )
 AND Id NOT IN (
-  SELECT DonorId FROM Gift WHERE CALENDAR_YEAR(GiftDate) = :thisYear
+  SELECT DonorId FROM GiftTransaction
+  WHERE CALENDAR_YEAR(ReceivedDate) = :thisYear
 )
 AND IsPersonAccount = true
 ```
@@ -103,11 +107,12 @@ AND IsPersonAccount = true
 
 ## Reporting Dimensions
 
-| Report | Key Metrics |
-|--------|------------|
-| **Revenue Summary** | Total gifts, average gift, median gift, gift count |
-| **Donor Retention** | Year-over-year retention rate, new vs returning |
-| **Campaign Performance** | ROI, cost per dollar raised, donor acquisition cost |
-| **Recurring Giving** | Active commitments, monthly revenue, churn rate |
-| **Channel Analysis** | Online vs offline, event vs appeal, major vs annual |
-| **Pipeline** | Pledges, expected revenue, solicitation stage |
+| Report | Key Metrics | Key Objects |
+|--------|------------|-------------|
+| **Revenue Summary** | Total giving, average Gift Transaction amount, median, count | Gift Transaction, Donor Gift Summary |
+| **Donor Retention** | Year-over-year retention rate, new vs returning | Donor Gift Summary, Gift Transaction |
+| **Campaign Performance** | ROI, cost per dollar raised, donor acquisition cost | Campaign, Outreach Source Code |
+| **Recurring Giving** | Active commitments, monthly revenue, churn rate | Gift Commitment, Gift Commitment Schedule |
+| **Fund Analysis** | Revenue by fund, allocation splits | Gift Designation, Gift Transaction Designation |
+| **Channel Analysis** | Online vs offline, event vs appeal, major vs annual | Outreach Source Code, Campaign |
+| **Pipeline** | Pledges, expected revenue, solicitation stage | Gift Commitment |

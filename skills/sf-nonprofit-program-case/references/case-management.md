@@ -37,22 +37,23 @@ New → In Progress → Pending (External) → Resolved → Closed
 
 ## Care Plan Pattern
 
-A care plan is a structured set of goals and tasks for a case:
+NPC provides a native **Care Plan** object with lifecycle stages: **Proposed → Draft → Active → Completed → Canceled**. Care Plans contain **Goal Definitions** for measurable milestones.
 
 ### Structure
 
 ```
 Case
-└── Care Plan (custom or standard)
-    ├── Goal 1: Stable Housing
+└── Care Plan (native NPC object)
+    │   Status: Proposed → Draft → Active → Completed → Canceled
+    ├── Goal Definition 1: Stable Housing
     │   ├── Task: Complete housing application
     │   ├── Task: Attend housing interview
     │   └── Task: Sign lease
-    ├── Goal 2: Employment
+    ├── Goal Definition 2: Employment
     │   ├── Task: Resume workshop
     │   ├── Task: Job interviews (3)
     │   └── Task: Employment verification
-    └── Goal 3: Health
+    └── Goal Definition 3: Health
         ├── Task: Enroll in insurance
         └── Task: Schedule primary care visit
 ```
@@ -61,9 +62,9 @@ Case
 
 | Approach | Pros | Cons |
 |----------|------|------|
-| **Tasks on Case** | Simple, native | Flat structure, no goal grouping |
-| **Custom Goal + Task objects** | Full hierarchy, reporting | More metadata to maintain |
-| **Action Plans** | Standard feature, templates | Requires Action Plans license |
+| **Native Care Plan + Goal Definition** | NPC-native, full hierarchy, lifecycle stages | Requires NPC license |
+| **Tasks on Case** | Simple, available on all platforms | Flat structure, no goal grouping |
+| **Action Plans** | Standard feature, templates | Requires Action Plans license, no care plan stages |
 
 ---
 
@@ -89,7 +90,9 @@ Case
 
 ## Referral Coordination
 
-### Referral Object Design
+NPC provides a native **Referral** object for inter-program and inter-organization referrals.
+
+### Referral Object (Native NPC)
 
 | Field | Type | Purpose |
 |-------|------|---------|
@@ -103,12 +106,12 @@ Case
 
 ### Referral Workflow
 
-1. Staff creates referral from Case or Program Enrollment
+1. Staff creates Referral from Case or Program Enrollment
 2. Auto-notify receiving program coordinator
 3. Receiving coordinator reviews and accepts/declines
 4. If accepted: create enrollment or case in receiving program
-5. Update referral status and notify referring staff
-6. Track referral outcome for network effectiveness reporting
+5. Update Referral status and notify referring staff
+6. Track Referral outcome for network effectiveness reporting
 
 ---
 

@@ -70,14 +70,18 @@ Expert Salesforce architect specializing in Experience Cloud for nonprofits: con
 | **Social sign-on** | Google, Facebook (convenience for donors/volunteers) |
 | **SSO / SAML** | Partner orgs, enterprise integrations |
 
-### Person Account Portal User
+### Portal User: NPC vs NPSP
 
-In NPC, portal users are Person Accounts. The portal user is created from the Person Account's Contact record. Key considerations:
+| Aspect | NPC (Person Account) | NPSP (Contact) |
+|--------|---------------------|----------------|
+| **Portal user source** | Person Account's embedded Contact | Standard Contact record |
+| **Account relationship** | Person Account = the user | Contact → Household Account |
+| **Sharing set key** | Contact ID from Person Account | Contact ID |
+| **License** | Customer Community / Plus | Customer Community / Plus |
+| **Email requirement** | Person Account PersonEmail | Contact Email |
+| **External profile** | Assigned to Person Account user | Assigned to Contact user |
 
-- Enable Customer Community or Customer Community Plus license
-- Person Account must have a valid email
-- External profile assignment drives object access
-- Sharing sets use Contact ID from Person Account
+Both platforms use Experience Cloud the same way — the difference is the underlying constituent model. Sharing sets, sharing rules, and guest access patterns work identically.
 
 ---
 
@@ -203,6 +207,7 @@ Score: XX/120
 | Donor portal features | sf-nonprofit-fundraising |
 | Grantee portal features | sf-nonprofit-grants |
 | Permission sets for portal users | sf-permissions |
+| NPSP constituent model for portals | sf-nonprofit-npsp |
 | Deploy portal metadata | sf-deploy |
 | Sharing and access configuration | sf-metadata |
 

@@ -1,28 +1,32 @@
 ---
 name: sf-nonprofit-grants
 description: >
-  Nonprofit grant management architecture with 110-point scoring. TRIGGER when:
-  user designs grant applications, review workflows, funding awards,
-  disbursements, budgets, compliance tracking, funder reporting, or grantmaking
-  pipelines on Nonprofit Cloud. DO NOT TRIGGER when: fundraising/donations
-  (use sf-nonprofit-fundraising), program management (use sf-nonprofit-program-case),
-  generic Apex/LWC code (use sf-apex, sf-lwc), or non-nonprofit Salesforce work.
+  Nonprofit Cloud (NPC) grant management architecture with 110-point scoring.
+  TRIGGER when: user designs grant applications, review workflows, funding
+  awards, disbursements, budgets, compliance tracking, or grantmaking pipelines
+  on Nonprofit Cloud using native Application/Funding Award objects. DO NOT TRIGGER
+  when: NPSP + Outbound Funds Module (use sf-nonprofit-npsp OFM section),
+  fundraising/donations (use sf-nonprofit-fundraising), program management
+  (use sf-nonprofit-program-case), generic Apex/LWC (use sf-apex, sf-lwc),
+  or non-nonprofit Salesforce work.
 license: MIT
 metadata:
-  version: "1.0.0"
+  version: "2.0.0"
   scoring: "110 points across 6 categories"
 ---
 
-# sf-nonprofit-grants: Grant Management Architect
+# sf-nonprofit-grants: Nonprofit Cloud Grant Management Architect
 
-Expert Salesforce architect specializing in Nonprofit Cloud grantmaking: grant application pipelines, review workflows, funding awards, disbursement schedules, budget tracking, compliance, and funder reporting.
+Expert Salesforce architect specializing in **Nonprofit Cloud (NPC)** grantmaking: grant application pipelines, review workflows, funding awards, disbursement schedules, budget tracking, compliance, and funder reporting.
+
+> **Platform note**: This skill covers NPC native grantmaking objects (Application, Funding Award, Funding Disbursement). For NPSP orgs using **Outbound Funds Module (OFM)**, see the OFM section in **sf-nonprofit-npsp**.
 
 ## Core Responsibilities
 
 1. **Application Pipeline**: Design grant application intake, review, and decision workflows
 2. **Review Process**: Scoring rubrics, reviewer assignment, conflict-of-interest checks
 3. **Award Management**: Funding awards, terms, conditions, amendments
-4. **Disbursement**: Payment schedules, milestone-based releases, financial tracking
+4. **Funding Disbursement**: Payment schedules, milestone-based releases, financial tracking
 5. **Compliance & Reporting**: Funder requirements, progress reports, audit readiness
 6. **Validation & Scoring**: Score designs against 6 categories (0-110 points)
 
@@ -37,14 +41,20 @@ Expert Salesforce architect specializing in Nonprofit Cloud grantmaking: grant a
 
 ## Key Data Model
 
-| Object | Purpose | Key Fields |
-|--------|---------|------------|
-| **Grant Application** | Application from grantee | Applicant (Account), Program, Status, Requested Amount |
-| **Funding Award** | Approved grant | Grant Application, Amount, Start/End Date, Status |
-| **Disbursement** | Payment against award | Funding Award, Amount, Date, Status, Milestone |
-| **Budget** | Grantee budget | Funding Award, Category, Budgeted Amount, Spent |
-| **Grant Report** | Progress/financial report from grantee | Funding Award, Period, Status, Due Date |
-| **Review** | Reviewer evaluation | Grant Application, Reviewer, Score, Recommendation |
+| Object | API Name | Purpose | Key Fields |
+|--------|----------|---------|------------|
+| **Funding Opportunity** | FundingOpportunity | Published grant opportunity that applicants respond to | Program, Deadline, Eligibility Criteria, Amount Range |
+| **Application** | Application | Application from grantee | Applicant (Account), Funding Opportunity, Status, Requested Amount |
+| **Application Review** | ApplicationReview | Reviewer evaluation | Application, Reviewer, Score, Recommendation |
+| **Application Decision** | ApplicationDecision | Tracks who approved/denied and rationale | Application, Decision, Decider, Rationale |
+| **Funding Award** | FundingAward | Approved grant | Application, Amount, Start/End Date, Status |
+| **Funding Disbursement** | FundingDisbursement | Payment against award | Funding Award, Amount, Date, Status, Milestone |
+| **Budget** | Budget | Grantee budget | Funding Award, Category, Budgeted Amount, Spent |
+| **Funding Award Requirement** | FundingAwardRequirement | Compliance deliverables from grantee | Funding Award, Type, Status, Due Date |
+| **Funding Award Requirement Section** | FundingAwardRequirementSection | Sub-items within a requirement | Funding Award Requirement, Section, Status |
+| **Funding Award Amendment** | FundingAwardAmendment | Post-award changes (timeline, scope, budget) | Funding Award, Amendment Type, Effective Date |
+| **Individual Application** | IndividualApplication | Supports individual (not just organizational) applicants | Contact, Funding Opportunity, Status |
+| **Application Stage Definition** | ApplicationStageDefinition | Configures application workflow stages | Stage Name, Order, Criteria, Auto-Advance |
 
 ---
 
@@ -54,14 +64,14 @@ Expert Salesforce architect specializing in Nonprofit Cloud grantmaking: grant a
 
 ```
 Funding Opportunity Published
-  → Grant Application Received
+  → Application Received
   → Eligibility Screening
-  → Review & Scoring
-  → Decision (Award / Decline)
+  → Application Review & Scoring
+  → Application Decision (Award / Decline)
   → Funding Award Created
   → Agreement Executed
-  → Disbursement(s) Released
-  → Grantee Reporting
+  → Funding Disbursement(s) Released
+  → Funding Award Requirement (Grantee Reporting)
   → Grant Closeout
 ```
 
@@ -82,8 +92,8 @@ Discover Opportunity
 
 Some nonprofits are both grantmakers (funding others) and grantees (receiving grants). Design data model to support both directions:
 
-- **As grantmaker**: Grant Applications received, Awards issued, Disbursements sent
-- **As grantee**: Applications submitted, Awards received, Disbursements received
+- **As grantmaker**: Applications received, Funding Awards issued, Funding Disbursements sent
+- **As grantee**: Applications submitted, Funding Awards received, Funding Disbursements received
 - Use a direction indicator or separate record types
 
 ---
@@ -92,7 +102,7 @@ Some nonprofits are both grantmakers (funding others) and grantees (receiving gr
 
 ### Application vs Opportunity
 
-- **Grant Application**: NPC standard object for grant intake — use as default
+- **Application**: NPC standard object for grant intake — use as default
 - **Opportunity**: Only when grant tracking overlaps with Sales Cloud pipeline (rare)
 
 ### Review Model
@@ -153,21 +163,42 @@ Score: XX/110
 ├─ Application Pipeline: XX/20    (Intake, eligibility, deadline management)
 ├─ Review Process: XX/20          (Rubric, assignment, conflict checks)
 ├─ Award Management: XX/20       (Terms, amendments, status tracking)
-├─ Disbursement: XX/20           (Schedules, milestones, reconciliation)
+├─ Funding Disbursement: XX/20   (Schedules, milestones, reconciliation)
 ├─ Compliance & Reporting: XX/15 (Funder reports, audit trail, deadlines)
 └─ Best Practices: XX/15         (Security, portal access, documentation)
 ```
 
 ---
 
+## NPC vs NPSP+OFM Grantmaking Quick Reference
+
+| Concept | NPC (this skill) | NPSP + OFM (sf-nonprofit-npsp) |
+|---------|-------------------|-------------------------------|
+| **Application** | Application | Funding Request (outfunds__) — serves as both application and award |
+| **Award** | Funding Award | Funding Request (status changes to Awarded; outfunds__Awarded_Amount__c populated) |
+| **Disbursement** | Funding Disbursement | Disbursement (outfunds__Disbursement__c) |
+| **Budget** | Budget object (native) | No native budget — custom build |
+| **Compliance** | Funding Award Requirement | Requirement (outfunds__Requirement__c) |
+| **Reviewers** | Application Review | Review (outfunds__Review__c) |
+| **Installation** | Built-in | Separate managed package |
+| **Namespace** | None | outfunds__ |
+
+> **Note**: OFM has no separate Funding Award object — the Funding Request serves dual purpose as both application and award record.
+
+If the org has `outfunds__` namespace objects, route to **sf-nonprofit-npsp** OFM section instead.
+
+---
+
 ## Anti-Patterns
 
 - Using Opportunity for grant tracking in NPC orgs
+- Using OFM objects in an NPC org (use native Application instead)
+- Using OFM Funding Request patterns in an NPC org (use native Application instead)
 - No review scoring rubric (subjective decisions without documentation)
-- Disbursements without budget reconciliation
+- Funding Disbursements without budget reconciliation
 - Missing compliance deadlines (no automated reminders)
 - Hardcoding grant terms instead of configurable award templates
-- No audit trail on application status changes
+- No audit trail on Application status changes
 - Mixing grantmaker and grantee records without clear separation
 
 ---
@@ -183,6 +214,7 @@ Score: XX/110
 | Grant-funded program tracking | sf-nonprofit-program-case |
 | Grant revenue as fundraising | sf-nonprofit-fundraising |
 | Custom objects for grant extensions | sf-metadata |
+| NPSP + OFM grant management (if NPSP org) | sf-nonprofit-npsp |
 | Deploy grant metadata | sf-deploy |
 | SOQL for grant reporting | sf-soql |
 | Test data for grant scenarios | sf-data |
@@ -191,9 +223,17 @@ Score: XX/110
 
 ## Terminology
 
-- **Grant Application** — Formal request for funding from a grantee
+- **Funding Opportunity** — Published grant opportunity that applicants respond to
+- **Application** — Formal request for funding from a grantee
+- **Application Review** — Reviewer evaluation with scoring and recommendation
+- **Application Decision** — Record of who approved/denied and rationale
 - **Funding Award** — Approved grant with terms and amount
-- **Disbursement** — Payment release against a funding award
+- **Funding Disbursement** — Payment release against a funding award
+- **Funding Award Requirement** — Compliance deliverable owed by the grantee
+- **Funding Award Requirement Section** — Sub-item within a Funding Award Requirement
+- **Funding Award Amendment** — Post-award change to timeline, scope, or budget
+- **Individual Application** — Application submitted by an individual (not an organization)
+- **Application Stage Definition** — Configures workflow stages for applications
 - **Budget** — Grantee's financial plan for awarded funds
 - **LOI** — Letter of Intent (preliminary application)
 - **Grantmaker** — Organization that awards grants

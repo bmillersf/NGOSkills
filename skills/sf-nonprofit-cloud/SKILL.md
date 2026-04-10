@@ -1,113 +1,176 @@
 ---
 name: sf-nonprofit-cloud
 description: >
-  Nonprofit Cloud architecture, data model design, and migration guidance with
-  100-point scoring. TRIGGER when: user designs Nonprofit Cloud solutions,
-  migrates from NPSP, configures fundraising/grantmaking/program management, or
-  touches nonprofit-specific objects (Person Account, Household, Program
-  Enrollment, Gift, Grant Application). DO NOT TRIGGER when: generic Apex/LWC
-  code (use sf-apex, sf-lwc), Flow XML (use sf-flow), or non-nonprofit
-  Salesforce work.
+  Nonprofit platform orchestrator — routes to Nonprofit Cloud (NPC) or
+  Nonprofit Success Pack (NPSP) skill tracks based on org context.
+  TRIGGER when: user designs nonprofit Salesforce solutions, asks about
+  NPC vs NPSP, migrates between platforms, or touches nonprofit-specific
+  objects. DO NOT TRIGGER when: generic Apex/LWC code (use sf-apex, sf-lwc),
+  Flow XML (use sf-flow), or non-nonprofit Salesforce work.
 license: MIT
 metadata:
-  version: "1.0.0"
+  version: "2.0.0"
   scoring: "100 points across 6 categories"
 ---
 
-# sf-nonprofit-cloud: Nonprofit Cloud Architect
+# sf-nonprofit-cloud: Nonprofit Platform Orchestrator
 
-Expert Salesforce architect specializing in Nonprofit Cloud (NPC) solution design, data model architecture, and NPSP-to-NPC migration. Guides decisions across fundraising, grantmaking, program management, outcome management, and volunteer management.
+Routes nonprofit Salesforce work to the correct product track — **Nonprofit Cloud (NPC)** or **Nonprofit Success Pack (NPSP)** — and provides cross-cutting architecture, migration planning, and platform comparison.
 
-## Core Responsibilities
+## First Question
 
-1. **Architecture Design**: Design NPC solutions aligned with person-centric data model and module boundaries
-2. **Data Model Guidance**: Recommend correct object usage (Person Account, Household, Gift, Program Enrollment, etc.)
-3. **Migration Planning**: Guide NPSP-to-NPC migration with data mapping and validation
-4. **Validation & Scoring**: Score designs against 6 categories (0-100 points)
-5. **Cross-Skill Integration**: Hand off to sf-metadata, sf-apex, sf-flow, sf-data for implementation
+Before designing anything, determine the platform:
 
-## Document Map
+> **"Is this org running Nonprofit Cloud (NPC) or Nonprofit Success Pack (NPSP)?"**
 
-| Need | Document | Description |
-|------|----------|-------------|
-| **Data model** | [references/data-model.md](references/data-model.md) | Object relationships, key fields, API names |
-| **Migration** | [references/migration-checklist.md](references/migration-checklist.md) | NPSP-to-NPC migration steps and checks |
+| Signal | Likely Platform |
+|--------|----------------|
+| Person Account for individuals | **NPC** |
+| Contact + Household Account for individuals | **NPSP** |
+| Gift Transaction object for donations | **NPC** |
+| Opportunity for donations, `npsp__` namespace fields | **NPSP** |
+| Application object (native) | **NPC** |
+| Outbound Funds Module installed (`outfunds__` namespace) | **NPSP + OFM** |
+| Volunteers for Salesforce (`GW_Volunteers__` namespace) | **NPSP + V4S** |
+| Program Management Module (`pmdm__` namespace) | **NPSP + PMM** |
+| Engagement Plan Template object | **NPSP** |
+| New org, no legacy data | **NPC** (default) |
 
 ---
 
-## Nonprofit Cloud vs NPSP
+## Skill Routing
+
+Once the platform is known, dispatch to the correct sub-skills:
+
+### Nonprofit Cloud (NPC) Track
+
+| Domain | Skill | Key Objects |
+|--------|-------|-------------|
+| Fundraising | sf-nonprofit-fundraising | Gift Transaction, Payment Instrument, Gift Commitment, Gift Soft Credit, Gift Designation |
+| Grantmaking | sf-nonprofit-grants | Application, Funding Award, Funding Disbursement |
+| Program & Case Mgmt | sf-nonprofit-program-case | Program, Program Enrollment, Benefit, Benefit Disbursement, Case |
+| Portals | sf-nonprofit-experience-cloud | Experience Cloud sites for NPC constituents |
+| Portal UX | sf-nonprofit-experience-cloud-ux | Design patterns for nonprofit portals |
+
+### NPSP Track
+
+| Domain | Skill | Key Objects |
+|--------|-------|-------------|
+| NPSP Platform | sf-nonprofit-npsp | Contact, Household Account, Opportunity, Recurring Donation, Affiliation |
+| Stewardship | sf-nonprofit-npsp (Engagement Plans, Levels) | Engagement Plan Template, Level |
+| Grant Mgmt (OFM) | sf-nonprofit-npsp (OFM section) | Funding Request, Disbursement, Requirement (outfunds__) |
+| Volunteer Mgmt (V4S) | sf-nonprofit-npsp (V4S section) | Volunteer Job, Shift, Hours (GW_Volunteers__) |
+| Program Mgmt (PMM) | sf-nonprofit-npsp (PMM section) | Program, Program Engagement, Service Delivery (pmdm__) |
+| Portals | sf-nonprofit-experience-cloud | Experience Cloud sites for NPSP constituents |
+| Portal UX | sf-nonprofit-experience-cloud-ux | Design patterns for nonprofit portals |
+
+---
+
+## Nonprofit Cloud vs NPSP — Full Comparison
 
 | Aspect | Nonprofit Cloud (NPC) | NPSP (Legacy) |
 |--------|------------------------|---------------|
-| **Foundation** | Core Salesforce, native objects | Managed package |
-| **Individual model** | Person Account (unified) | Contact + Account (Household) |
-| **Flexibility** | High, no package constraints | Limited by package |
-| **Roadmap** | Active development | Maintenance mode |
-
-**New orgs**: Use Nonprofit Cloud. **Existing NPSP orgs**: Plan migration; treat as operational change, not just product swap.
+| **Foundation** | Core Salesforce platform, native objects | Managed package (`npsp__` namespace) |
+| **Individual model** | Person Account (unified Account+Contact) | Contact + Household Account |
+| **Donation object** | Gift Transaction | Opportunity |
+| **Recurring giving** | Gift Commitment + Schedule | Recurring Donation (`npe03__`) |
+| **Soft credits** | Gift Soft Credit object | Partial Soft Credit + Opportunity Contact Role |
+| **Fund accounting** | Gift Designation + Gift Transaction Designation | GAU Allocation (`npsp__`) |
+| **Relationships** | Contact Contact Relationship, Account Contact Relationship, Account Account Relationship, Party Relationship Group | Relationship (`npe4__`) + Affiliation (`npe5__`) |
+| **Household** | Party Relationship Group (type=Household) | Household Account (auto-created) |
+| **Grant management** | Native: Application, Funding Award, Funding Disbursement | Outbound Funds Module (separate managed package) |
+| **Program management** | Native: Program, Program Enrollment, Benefit, Benefit Disbursement | No native equivalent — custom build or AppExchange |
+| **Outcome tracking** | Native: Outcome, Outcome Activity, Indicator Definition, Indicator Result | No native equivalent |
+| **Volunteer mgmt** | Native: Job Position, Job Position Shift, Job Position Assignment | Volunteers for Salesforce (GW_Volunteers__, separate package) |
+| **Program mgmt (basic)** | Native: Program, Program Enrollment, Benefit, Benefit Disbursement | Program Management Module (pmdm__, separate package) |
+| **Settings UI** | Standard Salesforce Setup | NPSP Settings tab (custom settings) |
+| **Triggers/rollups** | Platform native | NPSP managed triggers + TDTM framework |
+| **Customization** | Full platform flexibility | Constrained by managed package |
+| **Roadmap** | Active development | Maintenance mode (critical fixes only) |
+| **Best for** | New implementations, orgs ready to migrate | Existing orgs with deep NPSP investment |
 
 ---
 
-## Key Modules
+## New Org Decision
 
-- **Fundraising**: Donor management, gift entry, campaigns, soft credit
-- **Grantmaking**: Applications, reviews, awards, disbursements, compliance
-- **Program Management**: Programs, enrollments, service delivery, case management
-- **Outcome Management**: Outcomes, activities, assessments, impact tracking
-- **Volunteer Management**: Shifts, jobs, hours, smart matching
+```
+Is this a new Salesforce org for a nonprofit?
+├── YES → Use Nonprofit Cloud (NPC)
+│         Route to: sf-nonprofit-fundraising, sf-nonprofit-grants,
+│                   sf-nonprofit-program-case
+└── NO → Is NPSP currently installed?
+         ├── YES → Are they migrating to NPC?
+         │         ├── YES → Use migration checklist (below)
+         │         └── NO → Route to: sf-nonprofit-npsp
+         └── NO → Use Nonprofit Cloud (NPC)
+```
+
+---
+
+## Key Modules (NPC)
+
+- **Fundraising**: Donor management, gift entry, campaigns, gift soft credits
+- **Grantmaking**: Applications, reviews, funding awards, funding disbursements, compliance
+- **Program Management**: Programs, enrollments, benefits, benefit disbursements, case management
+- **Outcome Management**: Outcomes, activities, indicator definitions, indicator results, impact tracking
+- **Volunteer Management**: Job positions, shifts, assignments, smart matching
+
+## Key Modules (NPSP)
+
+- **Donation Management**: Opportunities, recurring donations, matching gifts
+- **Household & Relationships**: Household Accounts, relationships, affiliations
+- **Campaign Attribution**: Campaign Members, primary campaign source
+- **GAU & Allocations**: Fund accounting, split allocations
+- **Customizable Rollups**: CRLP engine for donation summaries
+- **Outbound Funds Module**: Grant management (separate install)
+- **Volunteers for Salesforce**: Volunteer management (separate install)
 
 ---
 
 ## Data Model Quick Reference
 
+### NPC Objects
+
 | Domain | Key Objects |
 |--------|-------------|
-| **Constituents** | Person Account (individual), Business Account (org), Household (Party Relationship Group) |
-| **Fundraising** | Gift, Payment, Campaign, Soft Credit |
-| **Grantmaking** | Grant Application, Funding Award, Disbursement, Budget |
-| **Program** | Program, Program Enrollment, Service Delivery, Case |
-| **Outcome** | Outcome, Outcome Activity, Assessment |
-| **Volunteer** | Volunteer Shift, Volunteer Job, Volunteer Hours |
+| **Constituents** | Person Account, Business Account, Party Relationship Group (Household) |
+| **Fundraising** | Gift Transaction, Gift Soft Credit, Campaign, Gift Designation |
+| **Grantmaking** | Application, Funding Award, Funding Disbursement, Budget |
+| **Program** | Program, Program Enrollment, Benefit, Benefit Disbursement, Case |
+| **Outcome** | Outcome, Outcome Activity, Indicator Definition, Indicator Result |
+| **Volunteer** | Job Position, Job Position Shift, Job Position Assignment |
 
-For full object relationships and fields, see [references/data-model.md](references/data-model.md).
+### NPSP Objects
+
+| Domain | Key Objects |
+|--------|-------------|
+| **Constituents** | Contact, Household Account, Affiliation, Relationship |
+| **Fundraising** | Opportunity, Recurring Donation, Partial Soft Credit, GAU Allocation |
+| **Settings** | NPSP Settings (custom settings), Trigger Handler, Error Log |
+| **OFM (optional)** | Funding Request (dual-purpose: application + award), Disbursement, Requirement, Review |
+
+For full NPC data model, see [references/data-model.md](references/data-model.md).
 
 ---
 
 ## Architecture Patterns
 
-### Person-Centric Design
+### Person-Centric Design (NPC)
 
-NPC uses **Person Account** as the single record for an individual across programs, donations, grants, and volunteer activity. Avoid Contact-centric patterns when designing for NPC.
+NPC uses **Person Account** as the single record for an individual across programs, donations, grants, and volunteer activity. Avoid Contact-centric patterns in NPC orgs.
+
+### Contact-Centric Design (NPSP)
+
+NPSP uses **Contact** as the primary individual record. Each Contact auto-creates or joins a **Household Account**. The Account record type and model choice (Household vs One-to-One) is set in NPSP Settings.
 
 ### Household Management
 
-Households are **Party Relationship Groups** of type "Household." Members connect via account-contact relationships. Supports split, merge, and multiple group membership.
-
-### GAU and Gift Attribution
-
-General Accounting Units (GAU) drive gift attribution and reporting. Design allocation rules early when extending fundraising.
-
-### Program Enrollment Flow
-
-Program → Program Enrollment → Service Delivery / Case. Enrollments track participation; outcomes link to programs for impact reporting.
-
----
-
-## Decision Trees
-
-### Person Account vs Contact
-
-- **Person Account**: New NPC orgs, individual constituents, unified donor/volunteer/client view
-- **Contact**: B2B-style orgs, organizations as primary, or when Person Accounts cannot be enabled
-
-### NPC vs NPSP for New Orgs
-
-- **Nonprofit Cloud**: Default for new implementations
-- **NPSP**: Only when AppExchange dependencies or constraints require it
-
-### Custom vs Standard
-
-Prefer standard NPC objects (Gift, Program Enrollment, Grant Application) over custom builds. Extend with custom fields and objects only when standard cannot meet requirements.
+| Aspect | NPC | NPSP |
+|--------|-----|------|
+| **Container** | Party Relationship Group | Household Account |
+| **Membership** | Account-Contact Relationship | Contact.AccountId |
+| **Naming** | Configurable | NPSP Household Naming Settings |
+| **Formal greeting** | Party Relationship Group field | Household Account field |
 
 ---
 
@@ -123,15 +186,13 @@ See [references/migration-checklist.md](references/migration-checklist.md) for f
 
 ## Validation & Scoring
 
-Score designs against:
-
 ```
 Score: XX/100
-├─ Data Model Alignment: XX/25   (Person-centric, Household, correct objects)
-├─ Module Fit: XX/20             (Fundraising, Grantmaking, Program, etc.)
-├─ Migration Safety: XX/20       (NPSP→NPC mapping, no legacy anti-patterns)
-├─ Integration: XX/15           (Data Cloud, Experience Cloud, Outcome Mgmt)
-├─ Scalability & Reporting: XX/10 (GAU, rollups, governor limits)
+├─ Data Model Alignment: XX/25   (Correct platform objects, no cross-contamination)
+├─ Module Fit: XX/20             (Right modules for requirements)
+├─ Platform Selection: XX/15     (NPC vs NPSP decision justified)
+├─ Migration Safety: XX/15       (NPSP→NPC mapping, no legacy anti-patterns)
+├─ Integration: XX/15            (Data Cloud, Experience Cloud, AppExchange)
 └─ Best Practices: XX/10         (Power of Us, security, naming)
 ```
 
@@ -139,11 +200,13 @@ Score: XX/100
 
 ## Anti-Patterns
 
-- Using Contact-centric design when Person Accounts are appropriate
+- Mixing NPC and NPSP patterns in the same org
+- Using Contact-centric design in an NPC org
+- Using Person Accounts in an NPSP org without migration plan
 - Assuming 1:1 NPSP-to-NPC field mapping
-- Skipping Person Account enablement before migration
-- Mixing NPSP and NPC patterns in the same org
-- Building custom objects when standard NPC objects suffice
+- Skipping Person Account enablement before NPC migration
+- Building custom objects when standard NPC or NPSP objects suffice
+- Installing NPSP in a new org when NPC is available
 
 ---
 
@@ -151,21 +214,31 @@ Score: XX/100
 
 | Task | Skill |
 |------|-------|
-| Custom objects/fields for nonprofit extensions | sf-metadata |
-| Triggers, services, batch jobs for nonprofit logic | sf-apex |
-| Gift processing, enrollment, grant automations | sf-flow |
-| Test data (Person Accounts, Gifts, Enrollments) | sf-data |
-| Deploy nonprofit metadata | sf-deploy |
-| SOQL for nonprofit objects | sf-soql |
+| NPC fundraising architecture | sf-nonprofit-fundraising |
+| NPSP data model, config, patterns | sf-nonprofit-npsp |
+| NPC grantmaking | sf-nonprofit-grants |
+| NPC program/case management | sf-nonprofit-program-case |
+| Portal architecture | sf-nonprofit-experience-cloud |
+| Portal UX/UI | sf-nonprofit-experience-cloud-ux |
+| Custom objects/fields | sf-metadata |
+| Apex triggers, services, batch jobs | sf-apex |
+| Automations (Flows) | sf-flow |
+| Test data | sf-data |
+| Deployment | sf-deploy |
+| SOQL queries | sf-soql |
 
 ---
 
 ## Terminology
 
-- **Nonprofit Cloud** / **NPC** — Current platform
-- **NPSP** — Nonprofit Success Pack (legacy)
-- **Person Account** — Individual constituent record
-- **Household** — Party Relationship Group of type Household
+- **Nonprofit Cloud** / **NPC** — Current native Salesforce nonprofit platform
+- **NPSP** — Nonprofit Success Pack (legacy managed package)
+- **OFM** — Outbound Funds Module (NPSP-era grant management package)
+- **Person Account** — NPC individual constituent record (unified Account+Contact)
+- **Household Account** — NPSP household container (Account record type)
+- **Household** — Party Relationship Group of type Household (NPC)
 - **Constituent** — Donor, volunteer, client, stakeholder
-- **Gift** — Donation transaction in NPC
-- **Program Enrollment** — Participation in a program
+- **Gift Transaction** — NPC donation transaction
+- **Opportunity** — NPSP donation transaction
+- **TDTM** — Table-Driven Trigger Management (NPSP trigger framework)
+- **CRLP** — Customizable Rollup Summaries (NPSP rollup engine)

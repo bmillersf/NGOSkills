@@ -43,7 +43,7 @@
 
 - Collect demographics, needs, and preferences
 - Use Screen Flow with conditional visibility
-- Store responses on Person Account or Assessment record
+- Store responses on Person Account or intake Assessment record
 - Capture consent for services and data sharing
 
 ### Step 3: Eligibility Determination
@@ -59,13 +59,14 @@
 - Set status based on capacity:
   - Capacity available → Enrolled
   - At capacity → Waitlisted (with position number)
+- Create Benefit Assignments (define what the participant is eligible to receive)
 - Assign case worker / program coordinator
 - Trigger welcome notification
 
 ### Step 5: Onboarding
 
 - Create onboarding tasks (document collection, orientation, etc.)
-- Schedule initial service delivery sessions
+- Schedule initial Benefit Sessions
 - Link to related cases if wraparound services needed
 
 ---
@@ -105,8 +106,8 @@
 For programs with defined start/end dates and cohorts:
 
 - Program represents the overall service
-- Use a related Cohort object or Program with date-specific records
-- Enrollment links to specific cohort
+- Use native Program Cohort object to group enrollments
+- Program Cohort Member links Program Enrollment to Program Cohort
 - Capacity tracked per cohort
 
 ---
@@ -118,7 +119,7 @@ A single Person Account can enroll in multiple programs simultaneously. Design c
 - **Primary program**: Enrollment marked as primary for reporting
 - **Service coordination**: Case team sees all enrollments
 - **Scheduling conflicts**: Validate against existing enrollments
-- **Shared outcomes**: Outcome Activities linked to specific enrollment
+- **Shared outcomes**: Indicator Results linked to specific enrollment
 - **Holistic view**: Person Account record page shows all active enrollments
 
 ---

@@ -1,26 +1,32 @@
-# Grant Application Pipeline Reference
+# Application Pipeline Reference
 
 ## Application Lifecycle
 
+Stages are configured via **Application Stage Definition** records, which control the workflow progression.
+
 ```
+        ┌─────────────────────────┐
+        │  Funding Opportunity    │  (Published by grantmaker)
+        └───────────┬─────────────┘
+                    ↓
                 ┌───────────────┐
                 │  Draft        │  (Applicant working on submission)
                 └───────┬───────┘
                         ↓
                 ┌───────────────┐
-                │  Submitted    │  (Received by grantmaker)
+                │  Submitted    │  (Application received by grantmaker)
                 └───────┬───────┘
                         ↓
                 ┌───────────────┐
                 │  Screening    │  (Eligibility check)
                 └──┬─────────┬──┘
                    ↓         ↓
-          ┌──────────┐  ┌───────────────┐
-          │ Ineligible│  │  In Review    │
-          └──────────┘  └───────┬───────┘
+          ┌──────────┐  ┌────────────────────┐
+          │ Ineligible│  │  In Review         │  (Application Review)
+          └──────────┘  └───────┬────────────┘
                                 ↓
                         ┌───────────────┐
-                        │  Scored       │  (All reviews complete)
+                        │  Scored       │  (All Application Reviews complete)
                         └───────┬───────┘
                                 ↓
                         ┌───────────────┐
@@ -29,16 +35,25 @@
                            ↓         ↓
                   ┌──────────┐  ┌───────────┐
                   │ Declined │  │  Approved  │
-                  └──────────┘  └─────┬─────┘
-                                      ↓
-                              ┌───────────────┐
-                              │ Award Created │
-                              └───────────────┘
+                  └────┬─────┘  └─────┬─────┘
+                       ↓              ↓
+              ┌────────────────┐  ┌───────────────────┐
+              │ Application    │  │ Application       │
+              │ Decision       │  │ Decision          │
+              │ (Decline)      │  │ (Award)           │
+              └────────────────┘  └─────┬─────────────┘
+                                        ↓
+                                ┌───────────────────┐
+                                │ Funding Award     │
+                                │ Created           │
+                                └───────────────────┘
 ```
 
 ---
 
 ## Staged Application (LOI Model)
+
+Applicants respond to a published **Funding Opportunity**. Application Stage Definitions configure the workflow stages below.
 
 ### Stage 1: Letter of Intent
 
@@ -91,17 +106,17 @@ Invited applicants submit detailed proposal.
 
 ---
 
-## Review Assignment
+## Application Review Assignment
 
 ### Assignment Algorithm
 
 1. Pull reviewer pool for funding program
-2. Filter by expertise match (tags on reviewer profile vs application topics)
+2. Filter by expertise match (tags on reviewer profile vs Application topics)
 3. Exclude conflicts of interest:
    - Reviewer is board member of applicant org
    - Reviewer has personal relationship (self-declared)
    - Reviewer has financial interest
-4. Assign minimum 2 reviewers per application
+4. Assign minimum 2 Application Reviews per Application
 5. Balance workload across reviewer pool
 6. Notify reviewers with deadline
 
@@ -117,11 +132,11 @@ Invited applicants submit detailed proposal.
 
 ## Scoring Implementation
 
-### Review Record Fields
+### Application Review Record Fields
 
 | Field | Type | Purpose |
 |-------|------|---------|
-| Grant Application | Lookup | Application being reviewed |
+| Application | Lookup | Application being reviewed |
 | Reviewer | Lookup(User) | Assigned reviewer |
 | Mission Score | Number(1-5) | Mission alignment rating |
 | Capacity Score | Number(1-5) | Organizational capacity rating |
@@ -135,7 +150,7 @@ Invited applicants submit detailed proposal.
 
 ### Score Aggregation
 
-After all reviews complete:
+After all Application Reviews complete:
 
 1. Calculate average score per criterion across reviewers
 2. Calculate overall weighted score
@@ -149,11 +164,11 @@ After all reviews complete:
 
 ### Committee Decision
 
-1. Present ranked applications with scores and reviewer comments
+1. Present ranked applications with scores and Application Review comments
 2. Committee discusses borderline cases
-3. Record decision: Approved, Declined, Deferred, Approved with Conditions
+3. Create **Application Decision** record: Approved, Declined, Deferred, Approved with Conditions
 4. For approvals: set award amount (may differ from requested)
-5. Document rationale for each decision
+5. Document rationale in Application Decision record (decider, rationale)
 6. Generate notification letters (award/decline)
 
 ### Notification Templates
@@ -176,9 +191,9 @@ After all reviews complete:
 - Option: hard close (no submissions after deadline)
 - Reminder notifications: 2 weeks, 1 week, 2 days before deadline
 
-### Review Deadline
+### Application Review Deadline
 
-- Notify reviewers at assignment
+- Notify reviewers at Application Review assignment
 - Reminder at 50% and 75% of review period
-- Escalate incomplete reviews to grants manager at deadline
+- Escalate incomplete Application Reviews to grants manager at deadline
 - Option: reassign if reviewer unresponsive
