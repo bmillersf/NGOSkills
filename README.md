@@ -82,7 +82,7 @@ flowchart TB
     style CURSOR fill:#5f6368,color:#fff
 ```
 
-> **Core Platform** is the foundation -- every other Salesforce domain depends on it. **Agentforce**, **Nonprofit Cloud**, and **OmniStudio** each extend Core with domain-specific capabilities. **Data Cloud** feeds telemetry into Agentforce observability. **Integration & Security** provides external connectivity via Apex callouts. **Demo Validation** sits above all domains as the capstone -- it reads a demo script, walks every step, and validates the entire stack end-to-end. **Visualization & Docs** is a cross-cutting utility. **Cursor IDE** includes 4 custom skills that extend Cursor's built-in capabilities (Cursor ships with 6 built-in IDE skills by default).
+> **Core Platform** is the foundation -- every other Salesforce domain depends on it. **Agentforce**, **Nonprofit Cloud**, and **OmniStudio** each extend Core with domain-specific capabilities. **Data Cloud** feeds telemetry into Agentforce observability. **Integration & Security** provides external connectivity via Apex callouts. **Demo Validation** sits above all domains as the capstone -- it reads a demo script, walks every step, and validates the entire stack end-to-end. **Visualization & Docs** is a cross-cutting utility. **Cursor IDE** includes 4 custom skills that extend the agent's workflow capabilities.
 
 ### Demo Validation in the architecture
 
@@ -386,7 +386,7 @@ After each fix, it re-validates that specific step. If it still fails, it tries 
 
 ## Cursor IDE Skills (`skills-cursor/`)
 
-The following are **custom skills** included in this repo. Cursor also ships with built-in skills (`create-rule`, `create-skill`, `create-subagent`, `migrate-to-skills`, `shell`, `update-cursor-settings`) that are already available in every Cursor installation -- those are not listed here since you already have them.
+Custom skills that extend Cursor beyond its built-in capabilities.
 
 | Skill | Description |
 |---|---|
@@ -403,7 +403,7 @@ These 4 custom skills extend Cursor beyond its built-in capabilities:
 - **babysit** is a PR maintenance loop: it triages review comments, resolves merge conflicts where the resolution is clear, and fixes CI failures -- keeping a PR merge-ready without manual intervention. It runs autonomously in a loop until the PR is clean or it needs human input.
 - **create-hook** sets up `hooks.json` and hook scripts that fire on agent events (pre-commit, post-edit, etc.) for automated quality gates. This goes beyond the built-in skill set by adding event-driven automation.
 - **statusline** configures the CLI status bar with session context (current org, branch, etc.) displayed above the prompt. Useful for keeping track of which Salesforce org you're connected to during multi-org work.
-- **update-cli-config** reads and writes `cli-config.json` for permissions, approval mode, sandbox settings, and display options. Complements the built-in `update-cursor-settings` (which handles `settings.json`) by covering the CLI-specific config file.
+- **update-cli-config** reads and writes `cli-config.json` for permissions, approval mode, sandbox settings, and display options.
 
 </details>
 
