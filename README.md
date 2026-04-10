@@ -9,6 +9,142 @@ skills/                  # Salesforce-domain skills
 skills-cursor/           # Cursor IDE workflow skills
 ```
 
+## Architecture
+
+The skills are organized into layered domains that mirror the Salesforce platform stack. The agent reads a user's prompt, matches it against each skill's trigger conditions, and activates the appropriate skill. Skills that share boundaries have explicit routing rules so only one fires at a time.
+
+```mermaid
+flowchart TB
+    subgraph CURSOR["Cursor IDE Layer"]
+        direction LR
+        CR[create-rule]
+        CS[create-skill]
+        CH[create-hook]
+        CSA[create-subagent]
+        MTS[migrate-to-skills]
+        SH[shell]
+        SL[statusline]
+        CLI[update-cli-config]
+        SET[update-cursor-settings]
+        BAB[babysit]
+    end
+
+    subgraph VALIDATE["Demo Validation"]
+        DV[sf-demo-validate]
+    end
+
+    subgraph VIZ["Visualization & Docs"]
+        direction LR
+        MERM[sf-diagram-mermaid]
+        NANO[sf-diagram-nanobananapro]
+        DOCS[sf-docs]
+    end
+
+    subgraph NONPROFIT["Nonprofit Cloud"]
+        NPC[sf-nonprofit-cloud]
+        NPF[sf-nonprofit-fundraising]
+        NPG[sf-nonprofit-grants]
+        NPPC[sf-nonprofit-program-case]
+        NPEC[sf-nonprofit-experience-cloud]
+        NPUX[sf-nonprofit-experience-cloud-ux]
+
+        NPC --> NPF & NPG & NPPC
+        NPC --> NPEC --> NPUX
+    end
+
+    subgraph OMNI["Industries / OmniStudio"]
+        OSA[sf-industry-commoncore-omnistudio-analyze]
+        OSS[sf-industry-commoncore-omniscript]
+        OSFC[sf-industry-commoncore-flexcard]
+        OSIP[sf-industry-commoncore-integration-procedure]
+        OSDM[sf-industry-commoncore-datamapper]
+        OSCA[sf-industry-commoncore-callable-apex]
+
+        OSA -.->|analyzes| OSS & OSFC & OSIP & OSDM
+        OSS -->|calls| OSIP
+        OSIP -->|uses| OSDM
+        OSFC -->|binds to| OSIP
+        OSIP -->|invokes| OSCA
+    end
+
+    subgraph DATACLOUD["Data Cloud"]
+        DC[sf-datacloud]
+        DCC[sf-datacloud-connect]
+        DCP[sf-datacloud-prepare]
+        DCH[sf-datacloud-harmonize]
+        DCR[sf-datacloud-retrieve]
+        DCS[sf-datacloud-segment]
+        DCA[sf-datacloud-act]
+
+        DC -->|orchestrates| DCC
+        DCC --> DCP --> DCH --> DCS --> DCA
+        DCH --> DCR
+        DCS --> DCR
+    end
+
+    subgraph INTEGRATION["Integration & Security"]
+        direction LR
+        INT[sf-integration]
+        CON[sf-connected-apps]
+        CON -->|auth for| INT
+    end
+
+    subgraph CORE["Core Platform"]
+        APEX[sf-apex]
+        LWC[sf-lwc]
+        FLOW[sf-flow]
+        META[sf-metadata]
+        SOQL[sf-soql]
+        TEST[sf-testing]
+        DBG[sf-debug]
+        DEP[sf-deploy]
+        DATA[sf-data]
+        PERM[sf-permissions]
+
+        META -->|defines schema for| APEX & LWC & FLOW
+        APEX -->|queried by| SOQL
+        APEX -->|tested by| TEST
+        TEST -->|debugged by| DBG
+        APEX & LWC & FLOW & META -->|deployed by| DEP
+        DATA -->|seeds| TEST
+        PERM -->|secures| APEX & LWC & FLOW
+    end
+
+    subgraph AGENT["Agentforce & AI"]
+        AG[sf-ai-agentforce]
+        AGO[sf-ai-agentforce-observability]
+        AGP[sf-ai-agentforce-persona]
+        AGT[sf-ai-agentforce-testing]
+        AGS[sf-ai-agentscript]
+
+        AG --> AGP
+        AG --> AGT
+        AGT --> AGO
+    end
+
+    %% Cross-domain relationships
+    DV ==>|validates all domains| CORE & AGENT & DATACLOUD & OMNI & NONPROFIT
+    NONPROFIT -->|built on| CORE
+    OMNI -->|extends| CORE
+    AGENT -->|powered by| CORE
+    DATACLOUD -.->|telemetry to| AGO
+    OSCA -->|implements| APEX
+    INT -->|callouts from| APEX
+    VIZ -.->|documents| CORE & NONPROFIT & DATACLOUD
+```
+
+### How the layers connect
+
+- **Core Platform** is the foundation. Apex, LWC, Flows, and metadata skills handle all code and configuration. SOQL, testing, debugging, deployment, data, and permissions skills support the development lifecycle around them.
+- **Agentforce & AI** builds on Core. Agent definitions use Apex actions; the persona skill shapes agent identity; the testing skill validates routing; and the observability skill analyzes session telemetry from Data Cloud.
+- **Data Cloud** follows a pipeline architecture. The orchestrator (`sf-datacloud`) routes to phase-specific skills in order: Connect, Prepare, Harmonize, Segment, Act. The Retrieve skill serves cross-cutting query needs.
+- **Industries / OmniStudio** extends Core with declarative components. OmniScripts call Integration Procedures, which use Data Mappers and Callable Apex. FlexCards bind to Integration Procedures for UI. The analyze skill provides cross-component dependency and namespace detection.
+- **Nonprofit Cloud** is a vertical built on Core. The umbrella skill routes to domain-specific skills for fundraising, grants, and program/case management. Experience Cloud skills handle portal architecture and UX separately.
+- **Integration & Security** handles external connectivity. Connected Apps provide OAuth; the integration skill manages Named Credentials, External Services, and callout patterns.
+- **Demo Validation** (`sf-demo-validate`) sits above everything. It validates end-to-end demo readiness across all domains -- metadata, data, permissions, automations, UI, and product-specific checks.
+- **Visualization & Docs** are cross-cutting utilities that can document any domain via Mermaid diagrams, AI-generated images, or official Salesforce doc retrieval.
+- **Cursor IDE** skills operate at the tooling layer, managing rules, hooks, subagents, CLI config, and PR maintenance independently of Salesforce domain skills.
+
 ## Salesforce Skills (`skills/`)
 
 ### Agentforce & AI
