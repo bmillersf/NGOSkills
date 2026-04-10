@@ -42,7 +42,6 @@ Pull the latest changes from the NGOsfskills repo and update my Cursor skills.
 
 ```
 skills/                  # Salesforce-domain skills (41 skills)
-skills-cursor/           # Custom Cursor IDE workflow skills (4 skills)
 ```
 
 ## Architecture
@@ -53,7 +52,6 @@ The skills are organized into layered domains that mirror the Salesforce platfor
 
 ```mermaid
 flowchart TB
-    CURSOR["Cursor IDE\n4 custom skills"]
     DV["Demo Validation\n1 skill"]
     VIZ["Visualization & Docs\n3 skills"]
     AGENT["Agentforce & AI\n5 skills"]
@@ -79,10 +77,9 @@ flowchart TB
     style INTEG fill:#185abc,color:#fff
     style DV fill:#b06000,color:#fff
     style VIZ fill:#137333,color:#fff
-    style CURSOR fill:#5f6368,color:#fff
 ```
 
-> **Core Platform** is the foundation -- every other Salesforce domain depends on it. **Agentforce**, **Nonprofit Cloud**, and **OmniStudio** each extend Core with domain-specific capabilities. **Data Cloud** feeds telemetry into Agentforce observability. **Integration & Security** provides external connectivity via Apex callouts. **Demo Validation** sits above all domains as the capstone -- it reads a demo script, walks every step, and validates the entire stack end-to-end. **Visualization & Docs** is a cross-cutting utility. **Cursor IDE** includes 4 custom skills that extend the agent's workflow capabilities.
+> **Core Platform** is the foundation -- every other Salesforce domain depends on it. **Agentforce**, **Nonprofit Cloud**, and **OmniStudio** each extend Core with domain-specific capabilities. **Data Cloud** feeds telemetry into Agentforce observability. **Integration & Security** provides external connectivity via Apex callouts. **Demo Validation** sits above all domains as the capstone -- it reads a demo script, walks every step, and validates the entire stack end-to-end. **Visualization & Docs** is a cross-cutting utility.
 
 ### Demo Validation in the architecture
 
@@ -379,31 +376,6 @@ Demo Validation is the most complex skill in the collection. It orchestrates the
 After each fix, it re-validates that specific step. If it still fails, it tries again with a different strategy (up to 3 attempts). If all 3 fail, it escalates to the user with a detailed diagnosis.
 
 **Visual and E2E validation**: The skill includes a [Playwright screenshot script](skills/sf-demo-validate/scripts/screenshot.js) for headless browser validation. It captures screenshots of Salesforce pages and Experience Cloud sites to visually verify the UI matches expected state. For transactional paths, it executes Anonymous Apex as specific demo personas to simulate the full user journey (e.g., submitting an intake form, signing up for a volunteer shift).
-
-</details>
-
----
-
-## Cursor IDE Skills (`skills-cursor/`)
-
-Custom skills that extend Cursor beyond its built-in capabilities.
-
-| Skill | Description |
-|---|---|
-| **babysit** | Keep a PR merge-ready by triaging comments, resolving clear conflicts, and fixing CI in a loop. |
-| **create-hook** | Create Cursor hooks -- `hooks.json` authoring and hook script automation around agent events. |
-| **statusline** | Configure a custom status line in the Cursor CLI -- session context above the prompt. |
-| **update-cli-config** | View and modify Cursor CLI configuration in `cli-config.json` -- permissions, approval mode, sandbox, and display options. |
-
-<details>
-<summary><strong>Under the hood</strong></summary>
-
-These 4 custom skills extend Cursor beyond its built-in capabilities:
-
-- **babysit** is a PR maintenance loop: it triages review comments, resolves merge conflicts where the resolution is clear, and fixes CI failures -- keeping a PR merge-ready without manual intervention. It runs autonomously in a loop until the PR is clean or it needs human input.
-- **create-hook** sets up `hooks.json` and hook scripts that fire on agent events (pre-commit, post-edit, etc.) for automated quality gates. This goes beyond the built-in skill set by adding event-driven automation.
-- **statusline** configures the CLI status bar with session context (current org, branch, etc.) displayed above the prompt. Useful for keeping track of which Salesforce org you're connected to during multi-org work.
-- **update-cli-config** reads and writes `cli-config.json` for permissions, approval mode, sandbox settings, and display options.
 
 </details>
 
