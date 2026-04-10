@@ -16,7 +16,7 @@ Cursor skills directory and set up all the skills so they're available
 in my environment.
 ```
 
-The agent will clone the repo, copy the skills into the right locations (`~/.cursor/skills/` and `~/.cursor/skills-cursor/`), and confirm they're active.
+The agent will clone the repo, copy the skills into the right locations, and confirm they're active.
 
 ### Verify it works
 
@@ -42,7 +42,7 @@ Pull the latest changes from the NGOsfskills repo and update my Cursor skills.
 
 ```
 skills/                  # Salesforce-domain skills (41 skills)
-skills-cursor/           # Cursor IDE workflow skills (10 skills)
+skills-cursor/           # Custom Cursor IDE workflow skills (4 skills)
 ```
 
 ## Architecture
@@ -53,7 +53,7 @@ The skills are organized into layered domains that mirror the Salesforce platfor
 
 ```mermaid
 flowchart TB
-    CURSOR["Cursor IDE\n10 skills"]
+    CURSOR["Cursor IDE\n4 custom skills"]
     DV["Demo Validation\n1 skill"]
     VIZ["Visualization & Docs\n3 skills"]
     AGENT["Agentforce & AI\n5 skills"]
@@ -82,7 +82,7 @@ flowchart TB
     style CURSOR fill:#5f6368,color:#fff
 ```
 
-> **Core Platform** is the foundation -- every other Salesforce domain depends on it. **Agentforce**, **Nonprofit Cloud**, and **OmniStudio** each extend Core with domain-specific capabilities. **Data Cloud** feeds telemetry into Agentforce observability. **Integration & Security** provides external connectivity via Apex callouts. **Demo Validation** sits above all domains as the capstone -- it reads a demo script, walks every step, and validates the entire stack end-to-end. **Visualization & Docs** and **Cursor IDE** are cross-cutting utilities.
+> **Core Platform** is the foundation -- every other Salesforce domain depends on it. **Agentforce**, **Nonprofit Cloud**, and **OmniStudio** each extend Core with domain-specific capabilities. **Data Cloud** feeds telemetry into Agentforce observability. **Integration & Security** provides external connectivity via Apex callouts. **Demo Validation** sits above all domains as the capstone -- it reads a demo script, walks every step, and validates the entire stack end-to-end. **Visualization & Docs** is a cross-cutting utility. **Cursor IDE** includes 4 custom skills that extend Cursor's built-in capabilities (Cursor ships with 6 built-in IDE skills by default).
 
 ### Demo Validation in the architecture
 
@@ -386,34 +386,24 @@ After each fix, it re-validates that specific step. If it still fails, it tries 
 
 ## Cursor IDE Skills (`skills-cursor/`)
 
+The following are **custom skills** included in this repo. Cursor also ships with built-in skills (`create-rule`, `create-skill`, `create-subagent`, `migrate-to-skills`, `shell`, `update-cursor-settings`) that are already available in every Cursor installation -- those are not listed here since you already have them.
+
 | Skill | Description |
 |---|---|
 | **babysit** | Keep a PR merge-ready by triaging comments, resolving clear conflicts, and fixing CI in a loop. |
 | **create-hook** | Create Cursor hooks -- `hooks.json` authoring and hook script automation around agent events. |
-| **create-rule** | Create Cursor rules for persistent AI guidance -- coding standards, project conventions, and `RULE.md` files in `.cursor/rules/`. |
-| **create-skill** | Author new Cursor Agent Skills -- skill structure, `SKILL.md` format, and best practices. |
-| **create-subagent** | Create Cursor subagents for specialized task delegation. |
-| **migrate-to-skills** | Migrate legacy Cursor configurations to the Skills format. |
-| **shell** | Shell command execution specialist for terminal operations. |
 | **statusline** | Configure a custom status line in the Cursor CLI -- session context above the prompt. |
 | **update-cli-config** | View and modify Cursor CLI configuration in `cli-config.json` -- permissions, approval mode, sandbox, and display options. |
-| **update-cursor-settings** | Modify Cursor/VSCode `settings.json` -- themes, fonts, formatting, keybindings, and editor preferences. |
 
 <details>
 <summary><strong>Under the hood</strong></summary>
 
-Cursor IDE skills manage the agent's own environment and workflow:
+These 4 custom skills extend Cursor beyond its built-in capabilities:
 
-- **create-skill** is the meta-skill -- it guides you through authoring new skills with proper `SKILL.md` structure, frontmatter, trigger/anti-trigger conditions, and scoring rubrics. Use it to extend this collection.
-- **create-rule** generates persistent `.cursor/rules/RULE.md` files that apply coding standards and conventions automatically to every agent session in a project.
-- **create-hook** sets up `hooks.json` and hook scripts that fire on agent events (pre-commit, post-edit, etc.) for automated quality gates.
-- **create-subagent** creates specialized subagent configurations for task delegation.
-- **migrate-to-skills** converts legacy Cursor configurations (old-style rules, prompts) into the modern Skills format.
-- **babysit** is a PR maintenance loop: it triages review comments, resolves merge conflicts where the resolution is clear, and fixes CI failures -- keeping a PR merge-ready without manual intervention.
-- **shell** provides a command execution specialist with best practices for terminal operations.
-- **statusline** configures the CLI status bar with session context (current org, branch, etc.) displayed above the prompt.
-- **update-cli-config** reads and writes `cli-config.json` for permissions, approval mode, sandbox settings, and display options.
-- **update-cursor-settings** modifies `settings.json` for editor preferences -- themes, fonts, formatting, keybindings, and extensions.
+- **babysit** is a PR maintenance loop: it triages review comments, resolves merge conflicts where the resolution is clear, and fixes CI failures -- keeping a PR merge-ready without manual intervention. It runs autonomously in a loop until the PR is clean or it needs human input.
+- **create-hook** sets up `hooks.json` and hook scripts that fire on agent events (pre-commit, post-edit, etc.) for automated quality gates. This goes beyond the built-in skill set by adding event-driven automation.
+- **statusline** configures the CLI status bar with session context (current org, branch, etc.) displayed above the prompt. Useful for keeping track of which Salesforce org you're connected to during multi-org work.
+- **update-cli-config** reads and writes `cli-config.json` for permissions, approval mode, sandbox settings, and display options. Complements the built-in `update-cursor-settings` (which handles `settings.json`) by covering the CLI-specific config file.
 
 </details>
 
