@@ -1,6 +1,8 @@
 # NGO Salesforce Skills
 
-A curated collection of Cursor Agent Skills purpose-built for Salesforce development on the Nonprofit Cloud platform. These skills give Cursor's AI agent deep, domain-specific knowledge so it can generate, review, and validate Salesforce metadata, code, and configuration with minimal hand-holding.
+**Author:** Brian Miller
+
+A curated collection of Cursor Agent Skills I've built and maintain for Salesforce development on the Nonprofit Cloud platform. These skills encode my approach to Salesforce architecture, coding standards, and demo delivery into reusable instructions that give Cursor's AI agent deep, domain-specific knowledge -- so it can generate, review, and validate Salesforce metadata, code, and configuration the way I would, with minimal hand-holding.
 
 ## Repository Structure
 
@@ -46,7 +48,41 @@ flowchart TB
     style CURSOR fill:#5f6368,color:#fff
 ```
 
-> **Core Platform** is the foundation -- every other Salesforce domain depends on it. **Agentforce**, **Nonprofit Cloud**, and **OmniStudio** each extend Core with domain-specific capabilities. **Data Cloud** feeds telemetry into Agentforce observability. **Integration & Security** provides external connectivity via Apex callouts. **Demo Validation** sits above all domains and validates end-to-end readiness. **Visualization & Docs** and **Cursor IDE** are cross-cutting utilities.
+> **Core Platform** is the foundation -- every other Salesforce domain depends on it. **Agentforce**, **Nonprofit Cloud**, and **OmniStudio** each extend Core with domain-specific capabilities. **Data Cloud** feeds telemetry into Agentforce observability. **Integration & Security** provides external connectivity via Apex callouts. **Demo Validation** sits above all domains as the capstone -- it reads a demo script, walks every step, and validates the entire stack end-to-end. **Visualization & Docs** and **Cursor IDE** are cross-cutting utilities.
+
+### Demo Validation in the architecture
+
+Demo Validation (`sf-demo-validate`) is the skill that ties everything together. It operates as an autonomous validation and repair loop that exercises every other domain:
+
+```mermaid
+flowchart TB
+    DS["Demo Script\n(demoscript.md)"] --> DV["sf-demo-validate\n200-point scoring"]
+
+    DV -->|"1. org auth & prereqs"| CORE["Core Platform\nmetadata, permissions, data"]
+    DV -->|"2. metadata & config"| META["sf-metadata\nsf-permissions\nsf-deploy"]
+    DV -->|"3. data quality"| DATA["sf-data\nsf-soql"]
+    DV -->|"4. automations"| AUTO["sf-flow\nsf-apex"]
+    DV -->|"5. UI & Experience Cloud"| UI["sf-lwc\nsf-nonprofit-\nexperience-cloud"]
+    DV -->|"6. E2E user simulation"| E2E["sf-testing\nsf-debug"]
+    DV -->|"7. product-specific"| PROD["Agentforce\nData Cloud\nOmniStudio"]
+
+    DV -->|"fix & re-validate\n(up to 3x)"| DV
+
+    style DV fill:#b06000,color:#fff
+    style DS fill:#fff3e0,color:#333
+```
+
+The demo script (`demoscript.md`) is the source of truth. It defines the demo story -- the narrative, the personas, and the step-by-step walkthrough. `sf-demo-validate` reads this script and systematically validates that the org can deliver every step:
+
+1. **Org connection & prerequisites** -- confirms `sf` CLI auth, org type, installed packages, and platform features (Person Accounts, Record Types, queues, etc.)
+2. **Metadata & configuration** -- verifies custom objects, fields, page layouts, apps, and permission sets exist and are correctly configured
+3. **Data quality & freshness** -- checks that demo data is complete, future-dated, free of stale artifacts, and correctly related
+4. **Automations** -- validates Flows, triggers, and scheduled jobs fire as expected
+5. **UI & Experience Cloud** -- HTTP-pings public sites, verifies guest and member portal pages render with live data
+6. **End-to-end user simulation** -- executes transactional demo paths (form submissions, record creation) as specific demo personas via Anonymous Apex
+7. **Product-specific checks** -- validates Agentforce agents, Data Cloud pipelines, OmniStudio components, and any other products referenced in the script
+
+When a step fails, `sf-demo-validate` delegates the fix to the appropriate domain skill (e.g., `sf-apex` for code fixes, `sf-permissions` for access issues, `sf-data` for missing records), then re-validates -- looping up to 3 times before escalating. The result is a scored pass/fail report covering all 10 validation categories.
 
 ---
 
@@ -178,7 +214,7 @@ flowchart LR
 
 | Skill | Description |
 |---|---|
-| **sf-demo-validate** | Autonomous demo script validation and repair with 200-point scoring -- platform prereqs, metadata, data quality, permissions, automations, UI, Experience Cloud sites, and end-to-end user simulation. Supports Agentforce, Data Cloud, Slack, Marketing Cloud, Tableau/CRM Analytics, and OmniStudio. |
+| **sf-demo-validate** | Autonomous demo script validation and repair with 200-point scoring across 10 categories. Reads a `demoscript.md` that defines the demo story, personas, and step-by-step walkthrough, then validates the entire org can deliver it -- platform prereqs, metadata, data quality, permissions, automations, UI, Experience Cloud sites, and end-to-end user simulation. Delegates fixes to domain skills and re-validates in a loop (up to 3x). Supports Agentforce, Data Cloud, Slack, Marketing Cloud, Tableau/CRM Analytics, and OmniStudio. |
 
 ---
 
