@@ -6,53 +6,35 @@ A curated collection of Cursor Agent Skills I've built and maintain for Salesfor
 
 ## Getting Started
 
-Step-by-step guide to get these skills running in your Cursor environment.
-
-### Prerequisites
-
-- [Cursor IDE](https://cursor.com) installed (v0.48+ recommended for Skills support)
-- Git CLI available in your terminal
-- A GitHub account with access to this repo (EMU SSO may be required)
-
 ### Installation
 
-1. **Clone the repo** into your Cursor skills directory:
+Open Cursor and prompt the agent:
 
-```bash
-cd ~/.cursor
-git clone https://github.com/brianmiller_sfemu/NGOsfskills.git skills-ngo
+```
+Clone https://github.com/brianmiller_sfemu/NGOsfskills.git into my
+Cursor skills directory and set up all the skills so they're available
+in my environment.
 ```
 
-2. **Symlink the skill folders** so Cursor discovers them (or copy them directly):
+The agent will clone the repo, copy the skills into the right locations (`~/.cursor/skills/` and `~/.cursor/skills-cursor/`), and confirm they're active.
 
-```bash
-# Option A: Symlink (recommended -- stays in sync with git pull)
-ln -sf ~/.cursor/skills-ngo/skills/* ~/.cursor/skills/
-ln -sf ~/.cursor/skills-ngo/skills-cursor/* ~/.cursor/skills-cursor/
+### Verify it works
 
-# Option B: Copy (standalone, won't auto-update)
-cp -R ~/.cursor/skills-ngo/skills/* ~/.cursor/skills/
-cp -R ~/.cursor/skills-ngo/skills-cursor/* ~/.cursor/skills-cursor/
-```
-
-3. **Restart Cursor** (or reload the window) so the agent picks up the new skills.
-
-4. **Verify** by prompting the agent with a trigger phrase. For example:
+Prompt with any trigger phrase to confirm a skill activates:
 
 ```
 Write an Apex class that handles volunteer intake
 ```
 
-If the `sf-apex` skill activates, you'll see the agent follow its 5-phase workflow and 150-point scoring rubric automatically.
+If the `sf-apex` skill kicks in, you'll see the agent follow its 5-phase workflow and 150-point scoring rubric automatically.
 
 ### Updating
 
-```bash
-cd ~/.cursor/skills-ngo
-git pull origin staging
-```
+When you want the latest skills, prompt:
 
-If you used symlinks (Option A), the skills update in place. If you copied (Option B), re-run the `cp` command after pulling.
+```
+Pull the latest changes from the NGOsfskills repo and update my Cursor skills.
+```
 
 ---
 
