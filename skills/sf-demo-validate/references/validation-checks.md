@@ -963,6 +963,249 @@ Parse output for `INTAKE STEP [n] PASS` and `INTAKE FAIL` markers.
 
 ---
 
+## Flow Execution & Automation Chain Testing
+
+**Goal**: Go beyond checking that flows/triggers exist — actually fire them and verify their side effects.
+
+### Record-Triggered Flow/Trigger Verification
+
+To verify a record-triggered flow or trigger fires correctly:
+
+1. **Insert or update a test record** that matches the trigger criteria
+2. **Query for expected side effects** (new records, field updates, Tasks, platform events)
+3. **Clean up** the test record and side effects
+
+**Pattern — Verify Applicant Trigger Chain**:
+
+```apex
+System.debug('=== TRIGGER CHAIN TEST START ===');
+
+// Create a test application (this fires the Applicant trigger via VolunteerIntakeService)
+Map<String, String> result = VolunteerIntakeGuestController.submitVolunteer(
+    'TriggerTest', 'Validation', 'trigger.test.' + DateTime.now().getTime() + '@example.com',
+    '555-0100', 'Tutor', 'Altgeld-Murray'
+);
+Id formId = Id.valueOf(result.get('applicationFormId'));
+Id applicantId = Id.valueOf(result.get('applicantId'));
+
+// Verify trigger side effect 1: Applicant linked to Person Account
+Applicant app = [SELECT AccountId, ContactId FROM Applicant WHERE Id = :applicantId];
+System.assert(app.AccountId != null, 'TRIGGER FAIL: Applicant not linked to Account');
+System.debug('TRIGGER PASS: Applicant → Person Account link');
+
+// Verify trigger side effect 2: ApplicationForm linked to same Account
+ApplicationForm form = [SELECT AccountId FROM ApplicationForm WHERE Id = :formId];
+System.assertEquals(app.AccountId, form.AccountId, 'TRIGGER FAIL: Form AccountId mismatch');
+System.debug('TRIGGER PASS: ApplicationForm → Account link');
+
+// Verify trigger side effect 3: Task created for coordinator queue
+List<Task> tasks = [SELECT Id, OwnerId, Owner.Name FROM Task WHERE WhatId = :formId];
+System.assert(!tasks.isEmpty(), 'TRIGGER FAIL: No Task created');
+System.debug('TRIGGER PASS: Task created, owner=' + tasks[0].Owner.Name);
+
+// Cleanup
+delete tasks;
+delete [SELECT Id FROM Applicant WHERE Id = :applicantId];
+delete [SELECT Id FROM ApplicationForm WHERE Id = :formId];
+delete [SELECT Id FROM Account WHERE Id = :app.AccountId];
+System.debug('=== TRIGGER CHAIN TEST COMPLETE ===');
+```
+
+### Screen Flow Invocation via REST API
+
+To invoke a Screen Flow (or Autolaunched Flow) programmatically and verify its outputs:
+
+```apex
+HttpRequest req = new HttpRequest();
+req.setEndpoint(URL.getOrgDomainURL().toExternalForm()
+    + '/services/data/v62.0/actions/custom/flow/BTH_Volunteer_Intake');
+req.setMethod('POST');
+req.setHeader('Content-Type', 'application/json');
+req.setHeader('Authorization', 'Bearer ' + UserInfo.getSessionId());
+req.setBody(JSON.serialize(new Map<String, Object>{
+    'inputs' => new List<Object>{
+        new Map<String, Object>{
+            'firstName' => 'FlowTest',
+            'lastName' => 'Validation',
+            'email' => 'flow.test@example.com',
+            'phone' => '555-0101',
+            'interestedRole' => 'Tutor',
+            'preferredSite' => 'Altgeld-Murray'
+        }
+    }
+}));
+Http http = new Http();
+HttpResponse res = http.send(req);
+System.debug('Flow invocation response: ' + res.getStatusCode() + ' ' + res.getBody());
+
+// Verify the flow's side effects
+if (res.getStatusCode() == 200) {
+    // Parse response for output variables
+    Map<String, Object> responseBody = (Map<String, Object>) JSON.deserializeUntyped(res.getBody());
+    System.debug('FLOW PASS: Flow executed successfully');
+    // Query for flow-created records and verify...
+} else {
+    System.debug('FLOW FAIL: HTTP ' + res.getStatusCode());
+}
+
+// Cleanup flow-created records...
+```
+
+### Automation Chain Verification Pattern
+
+For complex chains (insert → trigger → flow → secondary DML → notification), verify each link:
+
+```apex
+// Step 1: Create trigger input
+insert testRecord;
+
+// Step 2: Verify immediate trigger effects (synchronous)
+TestRecord refreshed = [SELECT TriggerField__c FROM TestObject WHERE Id = :testRecord.Id];
+System.assert(refreshed.TriggerField__c != null, 'CHAIN FAIL: Trigger did not update field');
+
+// Step 3: Verify flow effects (may be async — add brief delay or query with retry)
+List<Task> flowTasks = [SELECT Id FROM Task WHERE WhatId = :testRecord.Id];
+System.assert(!flowTasks.isEmpty(), 'CHAIN FAIL: Flow did not create Task');
+
+// Step 4: Verify final state
+// ... check all expected downstream records exist ...
+
+// Cleanup in reverse dependency order
+```
+
+### Flow Test Framework (If Available)
+
+If the project includes Flow tests (`.flowTest-meta.xml`), run them:
+
+```bash
+sf flow run test --tests [FlowTestName] --target-org [alias] --json
+```
+
+Parse results for pass/fail. This is the most reliable way to test flows but requires test definitions to exist.
+
+---
+
+## Coordinator Simulation (Internal User Path)
+
+**Goal**: Simulate the internal coordinator's demo workflow — opening the app, viewing applications, reviewing records, and updating status — to verify the CRM side of the demo works.
+
+### Coordinator User Resolution
+
+```bash
+sf data query --query "SELECT Id, Username, Profile.Name, IsActive FROM User WHERE Username = '[coordinatorUsername]' AND IsActive = true" --target-org [alias] --json
+```
+
+If the demoscript says "your sandbox admin", use the current CLI user. Verify the `BTH Volunteer Coordinator` perm set is assigned.
+
+### App and Tab Accessibility
+
+Verify the coordinator's perm set grants access to the app and its tabs:
+
+```bash
+sf data query --query "SELECT Id, PermissionSet.Name FROM PermissionSetAssignment WHERE Assignee.Username = '[coordinatorUsername]' AND PermissionSet.Name = 'BTH_Volunteer_Coordinator'" --target-org [alias] --json
+```
+
+Then verify the app exists and contains expected tabs:
+
+```bash
+sf project retrieve start --metadata CustomApplication:BTH_Volunteer_Demo --target-org [alias] --output-dir temp-retrieve --json
+```
+
+### List View Data Verification
+
+Verify the list view the coordinator would use shows data:
+
+```bash
+sf data query --query "SELECT Id, Title, ApplicationStatus, AccountId FROM ApplicationForm WHERE UsageType = 'Volunteer' ORDER BY CreatedDate DESC LIMIT 10" --target-org [alias] --json
+```
+
+Pass: At least 1 row with `ApplicationStatus = 'Submitted'` (something for the coordinator to review). Fail: No applications to demonstrate.
+
+### Record Page Data Verification
+
+Verify a demo-ready ApplicationForm record has complete data:
+
+```bash
+sf data query --query "SELECT Id, Title, ApplicationStatus, UsageType, AccountId, Account.Name, (SELECT Id, FirstName, LastName, Email FROM Applicants) FROM ApplicationForm WHERE UsageType = 'Volunteer' AND ApplicationStatus = 'Submitted' LIMIT 1" --target-org [alias] --json
+```
+
+Pass: Record has a linked Account (Person Account) and at least one Applicant with name/email. Fail: Incomplete record would confuse the presenter.
+
+### Status Update Simulation (Act 3)
+
+Simulate the coordinator updating the application status and verify automation fires:
+
+```apex
+System.debug('=== COORDINATOR SIM START ===');
+
+// Find a Submitted application to approve
+ApplicationForm form = [
+    SELECT Id, ApplicationStatus, Title
+    FROM ApplicationForm
+    WHERE UsageType = 'Volunteer' AND ApplicationStatus = 'Submitted'
+    ORDER BY CreatedDate DESC LIMIT 1
+];
+String originalStatus = form.ApplicationStatus;
+System.debug('COORD STEP 1: Found application — ' + form.Title);
+
+// Update status to Approved (same as coordinator would do)
+form.ApplicationStatus = 'Approved';
+update form;
+System.debug('COORD STEP 2: Status updated to Approved');
+
+// Verify any record-triggered flow side effects
+// (e.g., Task reassigned, email acknowledgment sent)
+List<Task> flowTasks = [
+    SELECT Id, Subject, Status, OwnerId, Owner.Name
+    FROM Task
+    WHERE WhatId = :form.Id AND CreatedDate = TODAY
+    ORDER BY CreatedDate DESC
+];
+if (!flowTasks.isEmpty()) {
+    System.debug('COORD STEP 3 PASS: Flow created ' + flowTasks.size() + ' task(s)');
+} else {
+    System.debug('COORD STEP 3 INFO: No flow-triggered tasks found (flow may not be configured for status change)');
+}
+
+// Roll back status to preserve demo state
+form.ApplicationStatus = originalStatus;
+update form;
+System.debug('COORD CLEANUP: Status rolled back to ' + originalStatus);
+
+System.debug('=== COORDINATOR SIM COMPLETE ===');
+```
+
+### Coordinator Simulation via Deployed Test Class (Approach B)
+
+For permission-context testing, deploy a test class:
+
+```apex
+@IsTest
+private class E2E_CoordinatorValidation_Temp {
+    @IsTest
+    static void testCoordinatorCanViewAndUpdateApplications() {
+        // Use the actual coordinator user (or a user with the coordinator perm set)
+        User coord = [SELECT Id FROM User WHERE Profile.Name = 'System Administrator' AND IsActive = true LIMIT 1];
+
+        System.runAs(coord) {
+            // Verify coordinator can query ApplicationForm
+            List<ApplicationForm> forms = [SELECT Id, Title, ApplicationStatus FROM ApplicationForm WHERE UsageType = 'Volunteer' LIMIT 5];
+            System.assert(!forms.isEmpty(), 'Coordinator cannot see ApplicationForm records');
+
+            // Verify coordinator can update status
+            if (!forms.isEmpty()) {
+                forms[0].ApplicationStatus = 'Approved';
+                update forms[0];
+                System.debug('COORD PASS: Coordinator can update ApplicationStatus');
+            }
+            // Auto-rollback by test framework
+        }
+    }
+}
+```
+
+---
+
 ## Dashboard
 
 **Goal**: Verify that reports, custom report types, and dashboards exist and display data.

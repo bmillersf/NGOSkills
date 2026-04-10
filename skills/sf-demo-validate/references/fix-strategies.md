@@ -79,11 +79,19 @@ Step failed
   |     ├── Member login fails ------------> Check Community license + site profile assignment
   |     └── Data not showing on page -------> Fix controller queries + data (sf-apex, sf-data)
   |
-  ├── E2E simulation (shift sign-up) failed?
-  |     ├── Permission denied in runAs -----> Add perms to demo user perm set (sf-permissions)
+  ├── E2E simulation failed?
+  |     ├── Permission denied (Approach B) --> Add perms to demo user perm set (sf-permissions)
+  |     ├── UserInfo resolution failed -----> Fix User.ContactId, re-provision Person Account
   |     ├── No data for action ------------> Create required data (sf-data)
   |     ├── Controller exception -----------> Fix controller code (sf-apex)
+  |     ├── Multi-user sequence broken -----> Fix failing step, re-run entire sequence
   |     └── Cleanup failed ----------------> Report (non-blocking)
+  |
+  ├── Flow execution / automation chain failed?
+  |     ├── Flow not firing ----------------> Activate flow, verify trigger criteria (sf-flow)
+  |     ├── Flow REST API error ------------> Fix input vars, check permissions
+  |     ├── Chain incomplete ---------------> Debug each link, check governor limits
+  |     └── Coordinator can't update -------> Fix perm set FLS, check validation rules
   |
   ├── Intake simulation (guest apply) failed?
   |     ├── submitVolunteer exception ------> Check VolunteerIntakeService + RT (sf-apex)
@@ -761,13 +769,31 @@ sf data query --query "SELECT Id, SetupEntityId, SetupEntityType FROM SetupEntit
 
 ## E2E Simulation Fixes
 
-### Permission Failure
+### Permission Failure (Approach B — Test Class)
 
 **Delegate to**: sf-permissions --> sf-deploy
 
-1. Parse the `System.runAs` exception to identify the missing permission
-2. Add the permission to the demo user's permission set
-3. Re-run the simulation
+1. Parse the test class failure output to identify the missing permission
+2. Add the permission to the demo user's permission set (Apex class access, object/field permissions)
+3. Redeploy the permission set
+4. Re-run the test class
+
+### Permission Failure (Approach A — Admin Context)
+
+If Approach A reveals a data-path issue that suggests a permission problem:
+
+1. Escalate to Approach B (deploy a test class with `System.runAs()`) to confirm
+2. If confirmed, fix the permission set
+3. Re-run both Approach B (permissions) and Approach A (data path)
+
+### UserInfo Resolution Failure
+
+When the controller uses `UserInfo.getUserId()` and it resolves incorrectly:
+
+1. Verify `User.ContactId` is populated on the demo user
+2. Verify the Contact's Account is a Person Account
+3. If `ContactId` is null, run `VolunteerDemoMemberProvisioner.ensureDemoVolunteerUser()` to provision
+4. If the Account is not a Person Account, re-provision (the provisioner creates a Person Account)
 
 ### Data Failure
 
@@ -795,6 +821,65 @@ WARNING: E2E simulation cleanup failed
   Records created during simulation: [list of IDs]
   Recommendation: Delete manually via Developer Console or Data Loader
 ```
+
+### Multi-User Sequence Failure
+
+When a multi-user simulation fails mid-sequence (e.g., guest intake → coordinator review → member sign-up):
+
+1. Identify which step in the sequence failed
+2. Fix the root cause for that step (data, permissions, or controller logic)
+3. Re-run the ENTIRE sequence from step 1 (later steps may depend on earlier ones)
+4. If cleanup of intermediate records is needed, track all created IDs and delete in reverse order
+
+---
+
+## Flow Execution Fixes
+
+### Record-Triggered Flow Not Firing
+
+1. Verify the flow is Active: `FlowDefinitionView WHERE ApiName = '[FlowName]' AND IsActive = true`
+2. Verify the trigger criteria match the test record's field values
+3. Check the flow's entry conditions and decision elements
+4. If the flow exists but is inactive, activate and redeploy (sf-deploy)
+5. If the flow logic is wrong, fix via sf-flow
+
+### Flow REST API Invocation Fails
+
+1. HTTP 404: Flow API name is wrong. Query `FlowDefinitionView` for the correct `ApiName`
+2. HTTP 400: Input variables are wrong. Retrieve the flow metadata and check required input variable names/types
+3. HTTP 403: User lacks "Run Flows" permission. Add to the permission set
+4. HTTP 500: Flow has a runtime error. Check the flow's fault path and debug logs
+
+### Automation Chain Incomplete
+
+When some links in the chain fire but others don't:
+
+1. Check each automation in the chain independently (trigger → flow → secondary DML)
+2. Verify order of execution (before-save vs after-save, synchronous vs async)
+3. Check for governor limit issues (SOQL/DML limits in the chain)
+4. For async automations (scheduled paths, platform events), add a brief delay before checking side effects
+
+---
+
+## Coordinator Simulation Fixes
+
+### Coordinator Can't See Records
+
+1. Verify `BTH_Volunteer_Coordinator` perm set is assigned to the coordinator user
+2. Verify the perm set grants Read access to `ApplicationForm` and related objects
+3. Check sharing rules — the coordinator may need "View All" or specific sharing
+
+### Coordinator Can't Update Status
+
+1. Verify the perm set grants Edit access to `ApplicationForm.ApplicationStatus`
+2. Check for validation rules that might block the status transition
+3. Check for record-type-specific picklist restrictions
+
+### Status Change Flow Not Firing
+
+1. Verify a record-triggered flow exists for the `ApplicationStatus` field change
+2. If no flow exists, this may be by design (the demo script says "describe if not visible")
+3. Report as informational, not a failure
 
 ---
 
@@ -1275,9 +1360,15 @@ To minimize deployments, batch related fixes:
 | Experience data not showing | sf-apex | sf-data | Fix controller + ensure data exists |
 | Experience site unpublished | -- | -- | Escalate (cannot publish via CLI) |
 | E2E permission failure | sf-permissions | sf-deploy | Add perms to demo user perm set |
+| E2E UserInfo resolution | sf-data | sf-apex | Re-provision User.ContactId / Person Account |
 | E2E data missing | sf-data | -- | Create required records for the flow |
 | E2E controller exception | sf-apex | sf-deploy | Fix Apex controller code |
+| E2E multi-user sequence | sf-data | sf-apex | Fix failing step, re-run full sequence |
 | E2E cleanup failure | -- | -- | Report (non-blocking warning) |
+| Flow not firing | sf-flow | sf-deploy | Activate flow, fix trigger criteria |
+| Flow REST API error | sf-flow | sf-permissions | Fix input vars, check Run Flows permission |
+| Automation chain broken | sf-apex | sf-flow | Debug each link, fix governor limits |
+| Coordinator can't update | sf-permissions | sf-deploy | Fix FLS, check validation rules |
 | Intake submitVolunteer fail | sf-apex | sf-deploy | Fix controller/service code |
 | Intake trigger chain fail | sf-apex | sf-deploy | Fix NpcVolunteerApplicantService |
 | Intake task not created | sf-data | -- | Create Volunteer_Review queue |
