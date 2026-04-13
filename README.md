@@ -2,7 +2,7 @@
 
 **Author:** Brian Miller (Senion Solution Engineer @ Salesforce) 
 
-**Co-Author** Opus 4.6
+**Co-Author:** Opus 4.6
 
 A curated collection of Cursor Agent Skills I've built and maintain for Salesforce development on the Nonprofit Cloud platform. These aren't just coding helpers -- they represent a fundamentally different way of working with Salesforce.
 
