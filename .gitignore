@@ -2,3 +2,8 @@
 *.swp
 *.swo
 .cursor-managed-skills-manifest.json
+
+# Knowledge engine
+content/raw/
+content/manifest.json
+.venv-nke/
