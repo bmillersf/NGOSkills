@@ -11,13 +11,15 @@ What this collection makes possible:
 - **Deep Salesforce domain expertise on demand** — 44 skills covering every layer of the Salesforce platform: Apex, LWC, Flow, Metadata, SOQL, Deployment, Data Operations, Permissions, Integration, Connected Apps, Data Cloud (all 5 phases), Agentforce (build, test, observe, persona, script), OmniStudio (OmniScript, Integration Procedure, Data Mapper, FlexCard), and the full Nonprofit Cloud stack (fundraising, grants, program management, Experience Cloud). Each skill encodes the standards, patterns, and scoring rubrics I use -- so the agent produces production-quality output, not generic boilerplate.
 - **End-to-end nonprofit-specific intelligence** — from NPSP migration guidance and NPC data modeling to donor lifecycle management, grant pipelines, volunteer intake, program enrollment, and the portal experiences that serve constituents -- the agent knows the nonprofit platform the way a specialized architect does.
 
-These skills encode my approach to Salesforce architecture, coding standards, and demo delivery into reusable instructions that give Cursor's AI agent the domain knowledge to work the way I would -- with the depth, precision, and nonprofit context that generic AI assistance can't provide.
+These skills encode my approach to Salesforce architecture, coding standards, and demo delivery into reusable instructions that give any AI agent the domain knowledge to work the way I would -- with the depth, precision, and nonprofit context that generic AI assistance can't provide. The skills are written in standard markdown and work identically in **Cursor** (native skill system, auto-triggered) and **Claude** (via Claude Projects or direct conversation). See [CLAUDE.md](CLAUDE.md) for Claude-specific setup.
 
 ## Getting Started
 
-### Installation
+Skills work in both **Cursor** and **Claude**. The SKILL.md files are standard markdown -- no conversion needed.
 
-Open Cursor and prompt the agent:
+### Cursor
+
+**Install** — open Cursor and prompt:
 
 ```
 Clone https://github.com/brianmiller_sfemu/NGOsfskills.git into my
@@ -25,24 +27,45 @@ Cursor skills directory and set up all the skills so they're available
 in my environment.
 ```
 
-The agent will clone the repo, copy the skills into the right locations, and confirm they're active.
-
-### Verify it works
-
-Prompt with any trigger phrase to confirm a skill activates:
+**Verify** — prompt with any trigger phrase:
 
 ```
 Write an Apex class that handles volunteer intake
 ```
 
-If the `sf-apex` skill kicks in, you'll see the agent follow its 5-phase workflow and 150-point scoring rubric automatically.
+The `sf-apex` skill activates automatically and follows its 5-phase workflow and 150-point scoring rubric.
 
-### Updating
-
-When you want the latest skills, prompt:
+**Update** — prompt:
 
 ```
 Pull the latest changes from the NGOsfskills repo and update my Cursor skills.
+```
+
+---
+
+### Claude
+
+**Claude Projects (recommended)** — full automatic routing, persistent across all conversations in the project:
+
+1. In [Claude.ai](https://claude.ai), create a new Project (e.g., `NGO Salesforce Skills`)
+2. Upload all `SKILL.md` files from the `skills/` folder as project knowledge
+3. Paste the project instructions from [CLAUDE.md](CLAUDE.md) into the project's **Edit project instructions** field
+
+Once set up, Claude routes to the right skill automatically, just like Cursor. You can also be explicit:
+
+```
+Using sf-demo-author, take these notes and generate a demoscript.md: [notes]
+```
+
+**Claude without Projects** — paste a single skill's content at the start of your conversation. See [CLAUDE.md](CLAUDE.md) for the full prompt template.
+
+**Claude API / custom integrations** — generate a bundled system prompt:
+
+```bash
+./scripts/generate-claude-bundle.sh > claude-system-prompt.txt
+# Or filter to a domain:
+./scripts/generate-claude-bundle.sh --domain nonprofit > claude-nonprofit-bundle.txt
+./scripts/generate-claude-bundle.sh --skill sf-demo-author > claude-demo-author.txt
 ```
 
 ---
@@ -51,6 +74,9 @@ Pull the latest changes from the NGOsfskills repo and update my Cursor skills.
 
 ```
 skills/                  # Salesforce-domain skills (44 skills)
+CLAUDE.md                # Claude setup guide (Projects, per-conversation, API)
+scripts/
+  generate-claude-bundle.sh  # Generates a bundled Claude system prompt from all skills
 ```
 
 ## Architecture
