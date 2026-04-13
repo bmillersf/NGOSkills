@@ -90,17 +90,17 @@ The skills are organized into layered domains that mirror the Salesforce platfor
 
 ```mermaid
 flowchart TB
-    NOTES["Raw Notes / Discovery"] --> DA["Demo Authoring\n3 skills\n(author · data · playwright)"]
-    DA -->|"demoscript.md"| DV["Demo Validation\n1 skill"]
+    NOTES["Raw Notes / Discovery"] --> DA["Demo Authoring<br/>3 skills<br/>(author · data · playwright)"]
+    DA -->|"demoscript.md"| DV["Demo Validation<br/>1 skill"]
     DV ==>|validates| AGENT & NP & OMNI & DC & CORE
 
-    VIZ["Visualization & Docs\n3 skills"]
-    AGENT["Agentforce & AI\n5 skills"]
-    NP["Nonprofit Cloud\n7 skills"]
-    OMNI["OmniStudio\n6 skills"]
-    DC["Data Cloud\n7 skills"]
-    INTEG["Integration & Security\n2 skills"]
-    CORE["Core Platform\n10 skills"]
+    VIZ["Visualization & Docs<br/>3 skills"]
+    AGENT["Agentforce & AI<br/>5 skills"]
+    NP["Nonprofit Cloud<br/>7 skills"]
+    OMNI["OmniStudio<br/>6 skills"]
+    DC["Data Cloud<br/>7 skills"]
+    INTEG["Integration & Security<br/>2 skills"]
+    CORE["Core Platform<br/>10 skills"]
 
     AGENT -->|powered by| CORE
     NP -->|built on| CORE
@@ -129,17 +129,17 @@ Demo Validation (`sf-demo-validate`) is the skill that ties everything together.
 
 ```mermaid
 flowchart TB
-    DS["Demo Script\n(demoscript.md)"] --> DV["sf-demo-validate\n200-point scoring"]
+    DS["Demo Script<br/>(demoscript.md)"] --> DV["sf-demo-validate<br/>200-point scoring"]
 
-    DV -->|"1. org auth & prereqs"| CORE["Core Platform\nmetadata, permissions, data"]
-    DV -->|"2. metadata & config"| META["sf-metadata\nsf-permissions\nsf-deploy"]
-    DV -->|"3. data quality"| DATA["sf-data\nsf-soql"]
-    DV -->|"4. automations"| AUTO["sf-flow\nsf-apex"]
-    DV -->|"5. UI & Experience Cloud"| UI["sf-lwc\nsf-nonprofit-\nexperience-cloud"]
-    DV -->|"6. E2E user simulation"| E2E["sf-testing\nsf-debug"]
-    DV -->|"7. product-specific"| PROD["Agentforce\nData Cloud\nOmniStudio"]
+    DV -->|"1. org auth & prereqs"| CORE["Core Platform<br/>metadata, permissions, data"]
+    DV -->|"2. metadata & config"| META["sf-metadata<br/>sf-permissions<br/>sf-deploy"]
+    DV -->|"3. data quality"| DATA["sf-data<br/>sf-soql"]
+    DV -->|"4. automations"| AUTO["sf-flow<br/>sf-apex"]
+    DV -->|"5. UI & Experience Cloud"| UI["sf-lwc<br/>sf-nonprofit-<br/>experience-cloud"]
+    DV -->|"6. E2E user simulation"| E2E["sf-testing<br/>sf-debug"]
+    DV -->|"7. product-specific"| PROD["Agentforce<br/>Data Cloud<br/>OmniStudio"]
 
-    DV -->|"fix & re-validate\n(up to 3x)"| DV
+    DV -->|"fix & re-validate<br/>(up to 3x)"| DV
 
     style DV fill:#b06000,color:#fff
     style DS fill:#fff3e0,color:#333
@@ -389,11 +389,11 @@ These three skills form the front half of the demo pipeline -- taking you from r
 
 ```mermaid
 flowchart LR
-    NOTES["Raw Notes\n(transcript / bullets)"]
-    NOTES --> DA["sf-demo-author\n(story + personas\n+ click path)"]
-    DA -->|"Data Seed Requirements"| DD["sf-nonprofit-demo-data\n(seed NPC/NPSP records)"]
-    DA -->|"demoscript.md"| PW["sf-demo-playwright\n(test suite\n+ presenter guide)"]
-    DD & PW -->|"org ready\ntests pass"| DV["sf-demo-validate\n(validate + repair)"]
+    NOTES["Raw Notes<br/>(transcript / bullets)"]
+    NOTES --> DA["sf-demo-author<br/>(story + personas<br/>+ click path)"]
+    DA -->|"Data Seed Requirements"| DD["sf-nonprofit-demo-data<br/>(seed NPC/NPSP records)"]
+    DA -->|"demoscript.md"| PW["sf-demo-playwright<br/>(test suite<br/>+ presenter guide)"]
+    DD & PW -->|"org ready<br/>tests pass"| DV["sf-demo-validate<br/>(validate + repair)"]
 
     style DA fill:#b06000,color:#fff
     style DD fill:#b06000,color:#fff
