@@ -2,7 +2,16 @@
 
 **Author:** Brian Miller
 
-A curated collection of Cursor Agent Skills I've built and maintain for Salesforce development on the Nonprofit Cloud platform. These skills encode my approach to Salesforce architecture, coding standards, and demo delivery into reusable instructions that give Cursor's AI agent deep, domain-specific knowledge -- so it can generate, review, and validate Salesforce metadata, code, and configuration the way I would, with minimal hand-holding.
+A curated collection of Cursor Agent Skills I've built and maintain for Salesforce development on the Nonprofit Cloud platform. These aren't just coding helpers -- they represent a fundamentally different way of working with Salesforce.
+
+What this collection makes possible:
+
+- **Fully automated demo generation** — hand Cursor a set of raw discovery notes from a client meeting and it produces a complete, presentation-ready demo: a structured narrative with named personas, a verbatim step-by-step click path, seeded Salesforce data matched to the story, and a Playwright test suite that runs as an automated pre-flight check before you walk into the room. What used to take days of prep now takes minutes.
+- **Autonomous demo validation and repair** — `sf-demo-validate` reads your demo script, walks every step against your live org, and fixes what's broken. Missing metadata? It generates and deploys it. Stale data? It re-seeds it. Broken flow? It repairs it. Permission gap? It patches it. Then it re-validates and gives you a scored pass/fail report -- without a human running through the click path manually.
+- **Deep Salesforce domain expertise on demand** — 44 skills covering every layer of the Salesforce platform: Apex, LWC, Flow, Metadata, SOQL, Deployment, Data Operations, Permissions, Integration, Connected Apps, Data Cloud (all 5 phases), Agentforce (build, test, observe, persona, script), OmniStudio (OmniScript, Integration Procedure, Data Mapper, FlexCard), and the full Nonprofit Cloud stack (fundraising, grants, program management, Experience Cloud). Each skill encodes the standards, patterns, and scoring rubrics I use -- so the agent produces production-quality output, not generic boilerplate.
+- **End-to-end nonprofit-specific intelligence** — from NPSP migration guidance and NPC data modeling to donor lifecycle management, grant pipelines, volunteer intake, program enrollment, and the portal experiences that serve constituents -- the agent knows the nonprofit platform the way a specialized architect does.
+
+These skills encode my approach to Salesforce architecture, coding standards, and demo delivery into reusable instructions that give Cursor's AI agent the domain knowledge to work the way I would -- with the depth, precision, and nonprofit context that generic AI assistance can't provide.
 
 ## Getting Started
 
