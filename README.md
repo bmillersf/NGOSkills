@@ -2,13 +2,24 @@
 
 **Author:** Brian Miller
 
-A curated collection of Cursor Agent Skills I've built and maintain for Salesforce development on the Nonprofit Cloud platform. These skills encode my approach to Salesforce architecture, coding standards, and demo delivery into reusable instructions that give Cursor's AI agent deep, domain-specific knowledge -- so it can generate, review, and validate Salesforce metadata, code, and configuration the way I would, with minimal hand-holding.
+A curated collection of Cursor Agent Skills I've built and maintain for Salesforce development on the Nonprofit Cloud platform. These aren't just coding helpers -- they represent a fundamentally different way of working with Salesforce.
+
+What this collection makes possible:
+
+- **Fully automated demo generation** — hand Cursor a set of raw discovery notes from a client meeting and it produces a complete, presentation-ready demo: a structured narrative with named personas, a verbatim step-by-step click path, seeded Salesforce data matched to the story, and a Playwright test suite that runs as an automated pre-flight check before you walk into the room. What used to take days of prep now takes minutes.
+- **Autonomous demo validation and repair** — `sf-demo-validate` reads your demo script and simulates delivering the demo end-to-end: it walks every click path step, takes Playwright screenshots to visually verify the UI matches what you expect, executes the full demo flow as the specific named demo user (shift sign-ups, intake form submissions), and loads the Experience Cloud portal as both a guest and a logged-in member. Anything that fails, it fixes: missing metadata gets generated and deployed, stale data gets re-seeded, broken flows get repaired, permission gaps get patched. Then it re-validates and gives you a scored pass/fail report -- all without a human touching the org.
+- **Deep Salesforce domain expertise on demand** — 44 skills covering every layer of the Salesforce platform: Apex, LWC, Flow, Metadata, SOQL, Deployment, Data Operations, Permissions, Integration, Connected Apps, Data Cloud (all 5 phases), Agentforce (build, test, observe, persona, script), OmniStudio (OmniScript, Integration Procedure, Data Mapper, FlexCard), and the full Nonprofit Cloud stack (fundraising, grants, program management, Experience Cloud). Each skill encodes the standards, patterns, and scoring rubrics I use -- so the agent produces production-quality output, not generic boilerplate.
+- **End-to-end nonprofit-specific intelligence** — from NPSP migration guidance and NPC data modeling to donor lifecycle management, grant pipelines, volunteer intake, program enrollment, and the portal experiences that serve constituents -- the agent knows the nonprofit platform the way a specialized architect does.
+
+These skills encode my approach to Salesforce architecture, coding standards, and demo delivery into reusable instructions that give any AI agent the domain knowledge to work the way I would -- with the depth, precision, and nonprofit context that generic AI assistance can't provide. The skills are written in standard markdown and work identically in **Cursor** (native skill system, auto-triggered) and **Claude** (via Claude Projects or direct conversation). See [CLAUDE.md](CLAUDE.md) for Claude-specific setup.
 
 ## Getting Started
 
-### Installation
+Skills work in both **Cursor** and **Claude**. The SKILL.md files are standard markdown -- no conversion needed.
 
-Open Cursor and prompt the agent:
+### Cursor
+
+**Install** — open Cursor and prompt:
 
 ```
 Clone https://github.com/brianmiller_sfemu/NGOsfskills.git into my
@@ -16,21 +27,15 @@ Cursor skills directory and set up all the skills so they're available
 in my environment.
 ```
 
-The agent will clone the repo, copy the skills into the right locations, and confirm they're active.
-
-### Verify it works
-
-Prompt with any trigger phrase to confirm a skill activates:
+**Verify** — prompt with any trigger phrase:
 
 ```
 Write an Apex class that handles volunteer intake
 ```
 
-If the `sf-apex` skill kicks in, you'll see the agent follow its 5-phase workflow and 150-point scoring rubric automatically.
+The `sf-apex` skill activates automatically and follows its 5-phase workflow and 150-point scoring rubric.
 
-### Updating
-
-When you want the latest skills, prompt:
+**Update** — prompt:
 
 ```
 Pull the latest changes from the NGOsfskills repo and update my Cursor skills.
@@ -38,10 +43,41 @@ Pull the latest changes from the NGOsfskills repo and update my Cursor skills.
 
 ---
 
+### Claude
+
+> **Note:** Unlike Cursor, Claude cannot clone repositories or install files automatically. The setup below is a one-time manual process (~2 minutes) after which Claude routes and applies skills identically to Cursor.
+
+**Claude Projects (recommended)** — full automatic skill routing, persistent across all conversations:
+
+1. In [Claude.ai](https://claude.ai), create a new Project (e.g., `NGO Salesforce Skills`)
+2. Upload all `SKILL.md` files from the `skills/` folder as project knowledge
+3. Paste the project instructions from [CLAUDE.md](CLAUDE.md) into **Edit project instructions**
+
+Once set up, Claude routes to the right skill automatically based on your prompt — no explicit invocation needed. You can also be direct:
+
+```
+Using sf-demo-author, take these notes and generate a demoscript.md: [notes]
+```
+
+**Claude without Projects** — paste a single skill's content at the start of a conversation for focused sessions. See [CLAUDE.md](CLAUDE.md).
+
+**Claude API / custom integrations** — generate a bundled system prompt from all skills:
+
+```bash
+./scripts/generate-claude-bundle.sh > claude-system-prompt.txt
+./scripts/generate-claude-bundle.sh --domain nonprofit > claude-nonprofit-bundle.txt
+./scripts/generate-claude-bundle.sh --skill sf-demo-author > claude-demo-author.txt
+```
+
+---
+
 ## Repository Structure
 
 ```
-skills/                  # Salesforce-domain skills (41 skills)
+skills/                  # Salesforce-domain skills (44 skills)
+CLAUDE.md                # Claude setup guide (Projects, per-conversation, API)
+scripts/
+  generate-claude-bundle.sh  # Generates a bundled Claude system prompt from all skills
 ```
 
 ## Architecture
@@ -52,7 +88,10 @@ The skills are organized into layered domains that mirror the Salesforce platfor
 
 ```mermaid
 flowchart TB
-    DV["Demo Validation\n1 skill"]
+    NOTES["Raw Notes / Discovery"] --> DA["Demo Authoring\n3 skills\n(author · data · playwright)"]
+    DA -->|"demoscript.md"| DV["Demo Validation\n1 skill"]
+    DV ==>|validates| AGENT & NP & OMNI & DC & CORE
+
     VIZ["Visualization & Docs\n3 skills"]
     AGENT["Agentforce & AI\n5 skills"]
     NP["Nonprofit Cloud\n7 skills"]
@@ -61,7 +100,6 @@ flowchart TB
     INTEG["Integration & Security\n2 skills"]
     CORE["Core Platform\n10 skills"]
 
-    DV ==>|validates| AGENT & NP & OMNI & DC & CORE
     AGENT -->|powered by| CORE
     NP -->|built on| CORE
     OMNI -->|extends| CORE
@@ -76,10 +114,12 @@ flowchart TB
     style OMNI fill:#c5221f,color:#fff
     style INTEG fill:#185abc,color:#fff
     style DV fill:#b06000,color:#fff
+    style DA fill:#b06000,color:#fff
     style VIZ fill:#137333,color:#fff
+    style NOTES fill:#f1f3f4,color:#333
 ```
 
-> **Core Platform** is the foundation -- every other Salesforce domain depends on it. **Agentforce**, **Nonprofit Cloud**, and **OmniStudio** each extend Core with domain-specific capabilities. **Data Cloud** feeds telemetry into Agentforce observability. **Integration & Security** provides external connectivity via Apex callouts. **Demo Validation** sits above all domains as the capstone -- it reads a demo script, walks every step, and validates the entire stack end-to-end. **Visualization & Docs** is a cross-cutting utility.
+> **Core Platform** is the foundation -- every other Salesforce domain depends on it. **Agentforce**, **Nonprofit Cloud**, and **OmniStudio** each extend Core with domain-specific capabilities. **Data Cloud** feeds telemetry into Agentforce observability. **Integration & Security** provides external connectivity via Apex callouts. The **Demo Workflow** is a 4-skill pipeline: raw notes flow through `sf-demo-author` (demoscript authoring), `sf-nonprofit-demo-data` (data seeding), and `sf-demo-playwright` (test suite + presenter guide), before **Demo Validation** (`sf-demo-validate`) validates the entire stack end-to-end. **Visualization & Docs** is a cross-cutting utility.
 
 ### Demo Validation in the architecture
 
@@ -338,6 +378,59 @@ These are cross-cutting utility skills that any domain can leverage:
 - **sf-diagram-mermaid** generates architecture diagrams as Mermaid code that renders inline on GitHub. It includes a library of pre-built Salesforce diagram templates: OAuth flow sequence diagrams (Authorization Code, JWT Bearer, Client Credentials, Device Authorization, PKCE, Refresh Token), API integration sequences, ERDs, class diagrams, and flowcharts. When Mermaid isn't supported, it falls back to ASCII art.
 - **sf-diagram-nanobananapro** uses AI image generation (Nano Banana Pro) to produce PNG/SVG output for UI mockups, wireframes, visual ERDs, and architecture diagrams that need richer visual fidelity than Mermaid can provide.
 - **sf-docs** solves the problem of Salesforce documentation pages being JS-heavy and hard to extract. It provides guidance for reliably retrieving authoritative content from developer.salesforce.com and help.salesforce.com.
+
+</details>
+
+### Demo Workflow
+
+These three skills form the front half of the demo pipeline -- taking you from raw notes all the way to a validated, presenter-ready demo with automated pre-flight checks.
+
+```mermaid
+flowchart LR
+    NOTES["Raw Notes\n(transcript / bullets)"]
+    NOTES --> DA["sf-demo-author\n(story + personas\n+ click path)"]
+    DA -->|"Data Seed Requirements"| DD["sf-nonprofit-demo-data\n(seed NPC/NPSP records)"]
+    DA -->|"demoscript.md"| PW["sf-demo-playwright\n(test suite\n+ presenter guide)"]
+    DD & PW -->|"org ready\ntests pass"| DV["sf-demo-validate\n(validate + repair)"]
+
+    style DA fill:#b06000,color:#fff
+    style DD fill:#b06000,color:#fff
+    style PW fill:#b06000,color:#fff
+    style DV fill:#b06000,color:#fff
+    style NOTES fill:#f1f3f4,color:#333
+```
+
+| Skill | Description |
+|---|---|
+| **sf-demo-author** | Transforms raw notes, meeting transcripts, or bullet-point requirements into a fully structured `demoscript.md` with narrative story arc, named personas, verbatim click-by-click steps, and presenter talking points. Output feeds directly into the rest of the demo pipeline. |
+| **sf-nonprofit-demo-data** | Nonprofit demo data factory. Reads persona definitions and data requirements from the demoscript, detects NPC vs NPSP, and generates story-coherent data packages -- JSON trees, `sf data` CLI commands, and Anonymous Apex with realistic names, amounts, and future-dated records. Includes teardown scripts that target `@demo.` email domains to never touch real data. |
+| **sf-demo-playwright** | Persistent Playwright test suite and presenter guide generator. Converts the demoscript click path into a reusable `demo-preflight.spec.js`, a `PRESENTER-GUIDE.md` with embedded screenshots and talking points, and a `preflight.sh` script to run as an automated pre-flight check before every demo session. |
+
+<details>
+<summary><strong>Under the hood</strong></summary>
+
+These three skills form a linear pipeline that runs in order before `sf-demo-validate`:
+
+**sf-demo-author** (Phase 1 — Authoring) runs a 4-phase workflow:
+1. **Notes Intake** — classifies raw input to extract audience signals (who's in the room), platform signals (NPC, NPSP, Agentforce, etc.), and use case signals (volunteer management, fundraising, program enrollment)
+2. **Story Architecture** — builds a 4-beat narrative arc (Situation → Challenge → Journey → Resolution) using nonprofit-specific story patterns with pre-built emotional hooks that connect technology to mission impact
+3. **Persona Definition** — creates named, realistic personas (never "User 1") with roles, motivations, and pain points. Every persona gets a Salesforce user alias that feeds into the demoscript's `users` frontmatter and the data seed requirements
+4. **Click Path Generation** — translates the story into verbatim demoscript steps with specific actions, expected outcomes, step type tags, visual flags on wow moments, and business-value talking points
+
+Output: `demoscript.md` + persona cards + data seed requirements + a presenter cheat sheet.
+
+**sf-nonprofit-demo-data** (Phase 2 — Data Seeding) takes the persona cards and builds the data package:
+1. **Platform Detection** — NPC (Person Accounts, `npc__Gift_Transaction__c`) vs NPSP (Contact + Household Account, `Opportunity` with `npsp__` fields)
+2. **Persona Data Mapping** — maps each persona to the records it needs (volunteer → `IndividualApplication__c`; major donor → 3-year gift history; client → `npc__Program_Enrollment__c` + service deliveries)
+3. **Generation** — JSON tree files for hierarchical records via `sf data import tree`, Anonymous Apex for complex records, `sf data` CLI for simple records
+4. **Freshness + Cleanup** — applies freshness rules (shifts 7–21 days out, current-year gift dates, applications 2–7 days old) and generates teardown Apex targeting `@demo.` emails so cleanup never touches real data
+
+**sf-demo-playwright** (Phase 3 — Automation) converts the click path into a persistent test suite:
+1. **Test Suite Generation** — `demo-preflight.spec.js` with one test per step, authenticated via sf CLI session cookie injection. Patterns by step type: `navigation` (URL + title assertion), `data` (field value assertions), `automation` (SOQL flow status check), `e2e_simulation` (form fill + SOQL confirmation), `experience` (Experience Cloud load + component visibility)
+2. **Presenter Guide** — `PRESENTER-GUIDE.md` with a quick-reference table, story opening/closing lines to read aloud, and per-step blocks showing the screenshot, verbatim action, expected outcome, and talking points
+3. **Pre-flight Script** — `scripts/preflight.sh` that verifies auth, runs the suite, and prints "ready to demo" or "N tests failed — open the report"
+
+When a Playwright test fails, the skill diagnoses the failure type and delegates to `sf-demo-validate` with a specific repair instruction (e.g., field value mismatch → stale demo data → re-seed via `sf-nonprofit-demo-data`).
 
 </details>
 
