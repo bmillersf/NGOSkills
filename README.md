@@ -45,25 +45,26 @@ Pull the latest changes from the NGOsfskills repo and update my Cursor skills.
 
 ### Claude
 
-**Claude Projects (recommended)** — full automatic routing, persistent across all conversations in the project:
+> **Note:** Unlike Cursor, Claude cannot clone repositories or install files automatically. The setup below is a one-time manual process (~2 minutes) after which Claude routes and applies skills identically to Cursor.
+
+**Claude Projects (recommended)** — full automatic skill routing, persistent across all conversations:
 
 1. In [Claude.ai](https://claude.ai), create a new Project (e.g., `NGO Salesforce Skills`)
 2. Upload all `SKILL.md` files from the `skills/` folder as project knowledge
-3. Paste the project instructions from [CLAUDE.md](CLAUDE.md) into the project's **Edit project instructions** field
+3. Paste the project instructions from [CLAUDE.md](CLAUDE.md) into **Edit project instructions**
 
-Once set up, Claude routes to the right skill automatically, just like Cursor. You can also be explicit:
+Once set up, Claude routes to the right skill automatically based on your prompt — no explicit invocation needed. You can also be direct:
 
 ```
 Using sf-demo-author, take these notes and generate a demoscript.md: [notes]
 ```
 
-**Claude without Projects** — paste a single skill's content at the start of your conversation. See [CLAUDE.md](CLAUDE.md) for the full prompt template.
+**Claude without Projects** — paste a single skill's content at the start of a conversation for focused sessions. See [CLAUDE.md](CLAUDE.md).
 
-**Claude API / custom integrations** — generate a bundled system prompt:
+**Claude API / custom integrations** — generate a bundled system prompt from all skills:
 
 ```bash
 ./scripts/generate-claude-bundle.sh > claude-system-prompt.txt
-# Or filter to a domain:
 ./scripts/generate-claude-bundle.sh --domain nonprofit > claude-nonprofit-bundle.txt
 ./scripts/generate-claude-bundle.sh --skill sf-demo-author > claude-demo-author.txt
 ```

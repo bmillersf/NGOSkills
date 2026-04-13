@@ -4,6 +4,25 @@ This guide covers how to load these skills into Claude so they work the same way
 
 ---
 
+## Important: What Claude Can and Cannot Do Automatically
+
+| Action | Cursor | Claude |
+|---|---|---|
+| `"Install skills from [repo]"` | ✅ Clones repo + installs automatically | ❌ Cannot clone repos or write files |
+| `"Update my skills from the repo"` | ✅ Pulls latest and updates automatically | ❌ Cannot access GitHub |
+| `"Apply the sf-apex skill"` | ✅ Loads skill file and executes | ✅ Works if skill is in project knowledge |
+| Following skill methodology once loaded | ✅ | ✅ Identical output quality |
+
+**Cursor** has native git and file system access — a single prompt installs everything.
+
+**Claude.ai** does not have access to GitHub or your file system. It cannot clone repositories, run shell commands, or write files on your behalf. The setup requires you to upload the skill files manually (one time, takes about 2 minutes).
+
+> **If you want zero-setup automatic installation, use Cursor.** If you prefer to work with Claude, the one-time manual setup below gives you equivalent routing and output quality for all 44 skills.
+
+---
+
+---
+
 ## Option 1: Claude Projects (Recommended)
 
 Claude Projects let you upload files as permanent knowledge and set persistent instructions that apply to every conversation in the project. This is the closest equivalent to Cursor's native skill system.
