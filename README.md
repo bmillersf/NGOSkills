@@ -76,10 +76,23 @@ Using sf-demo-author, take these notes and generate a demoscript.md: [notes]
 ## Repository Structure
 
 ```
-skills/                  # Salesforce-domain skills (44 skills)
-CLAUDE.md                # Claude setup guide (Projects, per-conversation, API)
+skills/                          # Salesforce-domain skills (44 skills)
+CLAUDE.md                        # Claude setup guide (Projects, per-conversation, API)
 scripts/
-  generate-claude-bundle.sh  # Generates a bundled Claude system prompt from all skills
+  generate-claude-bundle.sh      # Generates a bundled Claude system prompt from all skills
+  nonprofit-knowledge-engine.py  # Scrapes SF docs, compartmentalizes NPSP vs NPC, builds keyword index
+  refresh-nonprofit-content.sh   # One-command refresh for release-day updates
+  requirements-knowledge-engine.txt  # Python dependencies for the knowledge engine
+content/                         # Auto-generated knowledge base (populated by the engine)
+  keyword-index.json             # Keyword→skill routing index (135+ keywords across 7 skills)
+  npsp/                          # NPSP-classified content sections
+  npc/                           # NPC-classified content sections
+  shared/                        # Cross-platform content sections
+  npsp-vs-npc-comparison.md      # Implementation rules for platform separation
+.cursor/
+  hooks.json                     # Cursor hook config for auto-skill-routing
+  hooks/nonprofit-skill-router.* # Hook that auto-detects nonprofit keywords in prompts
+  rules/nonprofit-auto-router.md # Always-applied rule with keyword index for auto-routing
 ```
 
 ## Architecture
@@ -473,6 +486,84 @@ After each fix, it re-validates that specific step. If it still fails, it tries 
 **Visual and E2E validation**: The skill includes a [Playwright screenshot script](skills/sf-demo-validate/scripts/screenshot.js) for headless browser validation. It captures screenshots of Salesforce pages and Experience Cloud sites to visually verify the UI matches expected state. For transactional paths, it executes Anonymous Apex as specific demo personas to simulate the full user journey (e.g., submitting an intake form, signing up for a volunteer shift).
 
 </details>
+
+---
+
+## Nonprofit Knowledge Engine
+
+The knowledge engine is a Python-based pipeline that scrapes official Salesforce nonprofit documentation, compartmentalizes it into NPSP vs NPC (Nonprofit Cloud) tracks, enriches the existing skills with discovered knowledge, and builds a keyword index that enables automatic skill routing -- so users don't need to explicitly invoke skills by name.
+
+### How It Works
+
+```mermaid
+flowchart LR
+    SEED["30+ Seed URLs<br/>(help articles, PDFs,<br/>GitHub, Trailhead)"]
+    SEED -->|"scrape<br/>(recursive)"| RAW["content/raw/<br/>cached pages"]
+    RAW -->|"process"| COMP["Compartmentalized<br/>NPSP · NPC · Shared"]
+    COMP -->|"enhance"| SKILLS["Skill references/<br/>enriched docs"]
+    COMP -->|"index"| KW["keyword-index.json<br/>135+ keywords"]
+    KW --> HOOK["Cursor Hook<br/>(beforeSubmitPrompt)"]
+    KW --> RULE["Cursor Rule<br/>(alwaysApply)"]
+
+    style SEED fill:#f1f3f4,color:#333
+    style HOOK fill:#9334e6,color:#fff
+    style RULE fill:#9334e6,color:#fff
+    style KW fill:#1a73e8,color:#fff
+```
+
+**4-phase pipeline:**
+
+1. **Scrape** — Downloads content from 30+ seed URLs (Salesforce marketing pages, help articles, PDFs, GitHub repos, Trailhead modules). Recursively follows embedded links up to a configurable depth, respects rate limits, and caches results for 7 days.
+
+2. **Process** — Classifies every section of downloaded content as **NPSP**, **NPC**, or **shared** using 70+ regex-based signal patterns. NPSP signals include `npsp__`, `npe01__`, `TDTM`, `CRLP`, `Household Account`, `GAU Allocation`, etc. NPC signals include `Person Account`, `Gift Transaction`, `Gift Commitment`, `Funding Award`, `Program Enrollment`, etc. Generates a `npsp-vs-npc-comparison.md` with explicit "NEVER mix" implementation rules.
+
+3. **Enhance** — Maps processed content to each of the 7 nonprofit skills and writes filtered, topic-relevant knowledge into each skill's `references/` directory for deeper context.
+
+4. **Index** — Builds `content/keyword-index.json` with 135+ keywords mapped across 7 nonprofit skills. Also regenerates the `.cursor/rules/nonprofit-auto-router.md` rule file.
+
+### Automatic Skill Routing
+
+The engine solves the problem of users forgetting to invoke skills by name. Two layers of auto-routing ensure the correct skill fires:
+
+**Layer 1: Cursor Hook** — A `beforeSubmitPrompt` hook intercepts every prompt and scans for nonprofit keywords. When matches are found, it injects an `agent_message` telling the AI which skill(s) to apply. If both NPSP and NPC keywords are detected, it warns about platform ambiguity and routes to `sf-nonprofit-cloud` first.
+
+**Layer 2: Cursor Rule** — An `alwaysApply: true` rule file embeds the full keyword index. Even if the hook doesn't fire, the rule is always loaded and instructs the AI to match keywords automatically.
+
+### Refreshing Content
+
+Run after each Salesforce release to pull the latest documentation:
+
+```bash
+./scripts/refresh-nonprofit-content.sh              # Standard (depth=2, 200 pages)
+./scripts/refresh-nonprofit-content.sh --deep        # Deep crawl (depth=3, 500 pages)
+./scripts/refresh-nonprofit-content.sh --quick       # Quick update (depth=1, 50 pages)
+```
+
+The refresh script creates a virtualenv, installs dependencies, and runs all 4 pipeline phases. Individual phases can also be run standalone:
+
+```bash
+source .venv-nke/bin/activate
+python3 scripts/nonprofit-knowledge-engine.py scrape --max-depth 3
+python3 scripts/nonprofit-knowledge-engine.py process
+python3 scripts/nonprofit-knowledge-engine.py enhance
+python3 scripts/nonprofit-knowledge-engine.py index
+```
+
+### NPSP vs NPC Compartmentalization
+
+The engine strictly separates implementation guidance between the two nonprofit platforms:
+
+| Concept | NPSP | NPC |
+|---------|------|-----|
+| Individual | Contact + Household Account | Person Account |
+| Donation | Opportunity | Gift Transaction |
+| Recurring giving | Recurring Donation (`npe03__`) | Gift Commitment |
+| Fund accounting | GAU Allocation (`npsp__`) | Gift Designation |
+| Grant management | Outbound Funds Module (`outfunds__`) | Application + Funding Award |
+| Programs | PMM (`pmdm__`) or custom | Program + Program Enrollment |
+| Volunteer management | V4S (`GW_Volunteers__`) | Job Position + Job Position Assignment |
+
+Content classified as NPSP never appears in NPC skill references and vice versa. The `npsp-vs-npc-comparison.md` includes explicit rules like "Do NOT use Person Accounts in an NPSP org" and "Do NOT reference `npsp__` namespace objects in NPC implementations."
 
 ---
 
