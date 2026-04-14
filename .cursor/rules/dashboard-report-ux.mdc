@@ -1,0 +1,43 @@
+---
+description: Enforces dashboard and report UX standards — compact components, no scrolling, readable at a glance
+alwaysApply: true
+---
+
+# Dashboard & Report UX Standards
+
+When any skill generates Salesforce dashboards or reports, apply these constraints.
+
+## Dashboard Component Sizing
+
+- Each component must occupy **at most 9 tiles** (e.g. 3×3, 3×2, 2×3). Never exceed 9 tiles per component.
+- Use tile size to communicate importance: KPI metrics → 1–2 tiles, trend charts → 4–6 tiles, summary tables → up to 9 tiles.
+- Set `<columnSize>` in dashboard XML to use Salesforce's standard sizing — do not inflate tile dimensions beyond the platform default. Never use values that force horizontal scrolling.
+- Target **12 components or fewer** per dashboard so everything is visible without vertical scrolling on a standard 1080p display.
+- Group related metrics into a single component (e.g. stacked bar) rather than spreading them across multiple oversized components.
+
+## Readability
+
+- Use short, descriptive component titles (≤40 characters).
+- Default to chart types that communicate at a glance: donut, horizontal bar, metric (single-value), gauge. Avoid pivot tables and matrix reports as dashboard components.
+- Apply meaningful sort order (descending by value, chronological) — never leave the default unsorted.
+- Limit report groupings to **2 levels max** in dashboard source reports to keep visuals clean.
+- Use conditional highlighting / color thresholds on metric components when a target value exists.
+
+## Layout
+
+- Arrange components in a logical reading order: KPI summary row at top, trend charts in the middle, detail tables (if any) at the bottom.
+- Keep the dashboard to a **single viewport** — the end user should see every component without scrolling.
+- If the data requires more than 12 components, split into multiple focused dashboards rather than one scrollable mega-dashboard.
+
+## Report Source Best Practices
+
+- Each dashboard component should reference a dedicated summary or matrix report scoped to the data it visualizes — no reusing one wide report for unrelated components.
+- Filter reports to a reasonable default date range (current FY, last 12 months) so components render meaningful data immediately.
+
+## Anti-Patterns — Never Do These
+
+- ❌ Components that span 2+ columns forcing horizontal scroll
+- ❌ Dashboards with 20+ components requiring vertical scroll
+- ❌ Tabular (detail) reports as dashboard source — use summary/matrix
+- ❌ Unfiltered reports pulling org-wide data into a dashboard component
+- ❌ Truncated axis labels caused by oversized chart data in undersized tiles

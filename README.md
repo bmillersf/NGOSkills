@@ -10,6 +10,7 @@ What this collection makes possible:
 
 - **Fully automated demo generation** — hand Cursor a set of raw discovery notes from a client meeting and it produces a complete, presentation-ready demo: a structured narrative with named personas, a verbatim step-by-step click path, seeded Salesforce data matched to the story, and a Playwright test suite that runs as an automated pre-flight check before you walk into the room. What used to take days of prep now takes minutes.
 - **Autonomous demo validation and repair** — `sf-demo-validate` reads your demo script and simulates delivering the demo end-to-end: it walks every click path step, takes Playwright screenshots to visually verify the UI matches what you expect, executes the full demo flow as the specific named demo user (shift sign-ups, intake form submissions), and loads the Experience Cloud portal as both a guest and a logged-in member. Anything that fails, it fixes: missing metadata gets generated and deployed, stale data gets re-seeded, broken flows get repaired, permission gaps get patched. Then it re-validates and gives you a scored pass/fail report -- all without a human touching the org.
+- **Integration storytelling and "art of the possible" simulation** — for demo environments where a live integration doesn't exist, the agent can show what an integration *would* look like: a Mermaid sequence diagram with a verbatim presenter talking track and a prepared answer for "is this live?", or Anonymous Apex that simulates the integration as real data (fake inbound payloads, records stamped as if they arrived from an external system, Platform Events fired as if triggered by third-party software). The audience sees the capability. No external system required.
 - **Deep Salesforce domain expertise on demand** — 44 skills covering every layer of the Salesforce platform: Apex, LWC, Flow, Metadata, SOQL, Deployment, Data Operations, Permissions, Integration, Connected Apps, Data Cloud (all 5 phases), Agentforce (build, test, observe, persona, script), OmniStudio (OmniScript, Integration Procedure, Data Mapper, FlexCard), and the full Nonprofit Cloud stack (fundraising, grants, program management, Experience Cloud). Each skill encodes the standards, patterns, and scoring rubrics I use -- so the agent produces production-quality output, not generic boilerplate.
 - **End-to-end nonprofit-specific intelligence** — from NPSP migration guidance and NPC data modeling to donor lifecycle management, grant pipelines, volunteer intake, program enrollment, and the portal experiences that serve constituents -- the agent knows the nonprofit platform the way a specialized architect does.
 
@@ -254,23 +255,29 @@ The routing rules ensure clean handoffs: Apex-only work stays in `sf-apex`, SOQL
 
 ```mermaid
 flowchart LR
-    CON[connected-apps] -->|auth for| INT[integration]
+    STORY["Storytelling<br/>(diagram + talking track)"]
+    ART["Art of the Possible<br/>(simulate with data)"]
+    PROD["Production Config<br/>(Named Credentials<br/>+ callout Apex)"]
+
+    INT[sf-integration] --> STORY & ART & PROD
+    VIZ[sf-diagram-mermaid] -->|generates| STORY
 ```
 
 | Skill | Description |
 |---|---|
-| **sf-integration** | Integration architecture with 120-point scoring -- Named Credentials, External Services, REST/SOAP callouts, Platform Events, and CDC. |
-| **sf-connected-apps** | Connected Apps and OAuth configuration with 120-point scoring -- OAuth flows, JWT bearer auth, and `.connectedApp-meta.xml` files. |
+| **sf-integration** | Integration architecture with three modes: **Storytelling** (Mermaid diagram + presenter talking track), **Art of the Possible** (simulate the integration with Anonymous Apex, fake payloads, and Platform Events), and **Production Config** (Named Credentials, External Services, REST/SOAP callouts, CDC). 120-point scoring applies to production mode. |
+| **sf-connected-apps** | Connected Apps and OAuth configuration with 120-point scoring -- OAuth flows, JWT bearer auth, and `.connectedApp-meta.xml` files. Production orgs only; not required in demo environments. |
 
 <details>
 <summary><strong>Under the hood</strong></summary>
 
-These two skills handle external connectivity as a pair:
+**sf-integration** determines which mode to apply before generating any artifacts:
 
-- **sf-connected-apps** owns the authentication layer. It configures OAuth flows (Authorization Code, JWT Bearer, Client Credentials, Device Authorization, PKCE), generates `.connectedApp-meta.xml` and `.eca-meta.xml` (External Client App) metadata, and sets up certificate-based auth. It scores at 120 points and includes shell scripts for secure credential setup that prompt for API keys via `read -s` (never hardcoded).
-- **sf-integration** owns everything after auth is established. It configures Named Credentials, External Credentials, External Services, and callout patterns (REST, SOAP, Platform Events, Change Data Capture). It includes metadata templates for named credential XML and scripts for CSP trusted site setup. It scores at 120 points.
+- **Mode 1 — Storytelling**: The user wants to explain or discuss what an integration would look like. The skill generates a Mermaid sequence diagram (delegated to `sf-diagram-mermaid`) paired with a presenter talking track and a prepared "If They Ask Is This Live?" response. No configuration is generated.
+- **Mode 2 — Art of the Possible**: The user wants the integration to feel real during a demo without a live connection. The skill generates Anonymous Apex that simulates the integration as real data: fake inbound payloads (a payment processor confirming a gift), seed records stamped as if they arrived from an external CRM (with realistic external IDs and source system fields), Platform Events that fire as if triggered by third-party software, and integration log records that make outbound calls visible in the UI. Each pattern ships with a presenter talking track.
+- **Mode 3 — Production Config**: The user explicitly asks to build the real integration. Full 5-phase workflow: Named Credentials (OAuth 2.0, JWT Bearer, Certificate, API Key), External Service registrations from OpenAPI specs, REST/SOAP callout patterns (sync and async Queueable), and Platform Event/CDC configuration. 120-point scoring applies.
 
-The boundary is clear: Connected Apps handles "how do we authenticate?" and Integration handles "how do we call out?" When both are needed, Connected Apps runs first to establish auth, then Integration builds the callout layer on top.
+**sf-connected-apps** is the companion skill for production auth. It owns the authentication layer before `sf-integration` builds the callout on top: OAuth flows, `.connectedApp-meta.xml`, and JWT bearer cert setup. In demo environments, this skill is rarely needed because Mode 1 and Mode 2 don't require live OAuth flows.
 
 </details>
 
@@ -381,7 +388,7 @@ The orchestrator prevents misrouting -- NPSP-specific questions never land in NP
 
 | Skill | Description |
 |---|---|
-| **sf-diagram-mermaid** | Salesforce architecture diagrams using Mermaid (with ASCII fallback) -- ERDs, sequence diagrams, flowcharts, and class diagrams. |
+| **sf-diagram-mermaid** | Salesforce architecture diagrams using Mermaid (with ASCII fallback) -- ERDs, sequence diagrams, flowcharts, and class diagrams. In demo environments, pairs every integration diagram with a structured presenter talking track, step-by-step narration, and a prepared "If They Ask Is This Live?" script. |
 | **sf-diagram-nanobananapro** | AI-powered image generation via Nano Banana Pro -- PNG/SVG output, UI mockups, wireframes, and visual ERDs. |
 | **sf-docs** | Official Salesforce documentation retrieval from developer.salesforce.com and help.salesforce.com, with JS-heavy page extraction. |
 
@@ -390,7 +397,7 @@ The orchestrator prevents misrouting -- NPSP-specific questions never land in NP
 
 These are cross-cutting utility skills that any domain can leverage:
 
-- **sf-diagram-mermaid** generates architecture diagrams as Mermaid code that renders inline on GitHub. It includes a library of pre-built Salesforce diagram templates: OAuth flow sequence diagrams (Authorization Code, JWT Bearer, Client Credentials, Device Authorization, PKCE, Refresh Token), API integration sequences, ERDs, class diagrams, and flowcharts. When Mermaid isn't supported, it falls back to ASCII art.
+- **sf-diagram-mermaid** generates architecture diagrams as Mermaid code that renders inline on GitHub. It includes a library of pre-built Salesforce diagram templates: OAuth flow sequence diagrams (Authorization Code, JWT Bearer, Client Credentials, Device Authorization, PKCE, Refresh Token), API integration sequences, ERDs, class diagrams, and flowcharts. When Mermaid isn't supported, it falls back to ASCII art. In demo environments, the skill adds a **Demo Integration Storytelling** output mode: every integration sequence diagram is delivered with a plain-English narrative, a presenter talking track with per-arrow narration, a capability hook closing line, and a prepared answer for when an audience member asks "is this actually live?"
 - **sf-diagram-nanobananapro** uses AI image generation (Nano Banana Pro) to produce PNG/SVG output for UI mockups, wireframes, visual ERDs, and architecture diagrams that need richer visual fidelity than Mermaid can provide.
 - **sf-docs** solves the problem of Salesforce documentation pages being JS-heavy and hard to extract. It provides guidance for reliably retrieving authoritative content from developer.salesforce.com and help.salesforce.com.
 
@@ -501,7 +508,7 @@ flowchart LR
     SEED -->|"scrape<br/>(recursive)"| RAW["content/raw/<br/>cached pages"]
     RAW -->|"process"| COMP["Compartmentalized<br/>NPSP · NPC · Shared"]
     COMP -->|"enhance"| SKILLS["Skill references/<br/>enriched docs"]
-    COMP -->|"index"| KW["keyword-index.json<br/>135+ keywords"]
+    COMP -->|"index"| KW["keyword-index.json<br/>200+ keywords"]
     KW --> HOOK["Cursor Hook<br/>(beforeSubmitPrompt)"]
     KW --> RULE["Cursor Rule<br/>(alwaysApply)"]
 
@@ -519,7 +526,7 @@ flowchart LR
 
 3. **Enhance** — Maps processed content to each of the 7 nonprofit skills and writes filtered, topic-relevant knowledge into each skill's `references/` directory for deeper context.
 
-4. **Index** — Builds `content/keyword-index.json` with 135+ keywords mapped across 7 nonprofit skills. Also regenerates the `.cursor/rules/nonprofit-auto-router.md` rule file.
+4. **Index** — Builds `content/keyword-index.json` with 200+ keywords mapped across skills in four routing tiers (demo lifecycle, capability showcase, integration storytelling, nonprofit domain). Also regenerates the `.cursor/rules/nonprofit-auto-router.md` rule file.
 
 ### Automatic Skill Routing
 
@@ -527,7 +534,7 @@ The engine solves the problem of users forgetting to invoke skills by name. Two 
 
 **Layer 1: Cursor Hook** — A `beforeSubmitPrompt` hook intercepts every prompt and scans for nonprofit keywords. When matches are found, it injects an `agent_message` telling the AI which skill(s) to apply. If both NPSP and NPC keywords are detected, it warns about platform ambiguity and routes to `sf-nonprofit-cloud` first.
 
-**Layer 2: Cursor Rule** — An `alwaysApply: true` rule file embeds the full keyword index. Even if the hook doesn't fire, the rule is always loaded and instructs the AI to match keywords automatically.
+**Layer 2: Cursor Rule** — An `alwaysApply: true` rule file embeds the full keyword index across four routing tiers: **Demo Lifecycle** (demo authoring, data seeding, validation, Playwright), **Capability Showcase** (Agentforce, Data Cloud, architecture diagrams), **Integration Storytelling** (conceptual diagrams, art of the possible simulation), and **Nonprofit Domain** (fundraising, grants, programs, portals, NPSP, NPC). Even if the hook doesn't fire, the rule is always loaded and instructs the AI to match keywords automatically.
 
 ### Refreshing Content
 
