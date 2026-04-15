@@ -1,0 +1,57 @@
+---
+description: Mandates org connection before authoring, product approval in plan mode, and metadata existence checks before creating anything
+globs:
+alwaysApply: true
+---
+
+# Org Discovery & Product Approval
+
+Three mandatory principles that apply to every skill working with a Salesforce org.
+
+## Mandate 1: Org Connection Before Authoring
+
+Before writing a demoscript, authoring demo data, or generating any Salesforce configuration:
+
+1. **Connect to the target org** — run `sf org display --target-org [alias] --json` to verify authentication
+2. **Run an org baseline scan** — discover installed packages, enabled features, existing custom objects, Experience Cloud sites, Agentforce config, and Data Cloud status
+3. **Use the baseline to inform every downstream decision** — what metadata to create, which layouts to use, which products are already enabled
+
+If no org alias is provided, **ask for one**:
+> "Which org should I connect to? I need to see what's already there before proceeding."
+
+Do NOT proceed with assumptions about what exists in the org.
+
+## Mandate 2: Product Recommendation Approval
+
+When any skill is about to recommend including Salesforce products in a demo solution, **pause and present the recommendations for user approval before proceeding**:
+
+- **Switch to plan mode** (or present a structured recommendation if plan mode is not available)
+- Present a product-by-product list showing:
+  - Products already enabled in the org (pre-checked)
+  - Products recommended based on discovery notes (with setup effort estimate)
+  - Products explicitly not recommended (with reasoning)
+- **Wait for the user to approve or reject each product**
+- Only generate demoscript steps, metadata, or configuration for approved products
+
+Products this applies to: Agentforce, Data Cloud, Experience Cloud, OmniStudio, Marketing Cloud, Slack, CRM Analytics/Tableau, and any other add-on capability.
+
+## Mandate 3: Query Before Create
+
+Before creating any Salesforce metadata (objects, fields, record types, page layouts, validation rules, permission sets):
+
+1. **Existence check** — query the target org to see if this exact API name already exists
+   ```bash
+   sf sobject describe --sobject [ObjectApiName] --target-org [alias] --json
+   ```
+2. **Layout resolution** — identify which page layout is assigned to the relevant record type + profile combination
+   ```bash
+   sf data query --query "SELECT Layout.Name, RecordType.DeveloperName, Profile.Name FROM ProfileLayout WHERE SObjectType = '[Object]'" --target-org [alias] --use-tooling-api --json
+   ```
+3. **Record type check** — verify no existing record type serves the same purpose under a different DeveloperName
+   ```bash
+   sf data query --query "SELECT Id, DeveloperName, Name, IsActive FROM RecordType WHERE SObjectType = '[Object]'" --target-org [alias] --json
+   ```
+
+**If the metadata already exists**: Present a diff and ask the user before proceeding. Never silently create a duplicate.
+
+**If adding a field to a page layout**: Use the layout resolution query to find the correct layout — never default to the first layout found or the system administrator's layout.
