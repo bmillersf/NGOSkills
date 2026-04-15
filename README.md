@@ -74,6 +74,64 @@ Using sf-demo-author, take these notes and generate a demoscript.md: [notes]
 
 ---
 
+## How It Works: End-to-End Demo Workflow
+
+Once the skills are installed, the full demo lifecycle runs through a 7-step pipeline. You provide raw notes from a client meeting, and the agent handles everything from there -- connecting to your org, building the demo script, seeding data, validating the environment, and producing a presenter-ready package. Here's the ideal workflow:
+
+![End-to-End Demo Workflow](assets/images/end-to-end-workflow.png)
+
+### Step 1: Connect to the org
+
+Before anything else, the agent authenticates to your Salesforce org and runs a baseline scan. It discovers what's already there -- installed packages (NPC, NPSP, V4S), custom objects, active Experience Cloud sites, whether Person Accounts are enabled, and which add-on products (Agentforce, Data Cloud, OmniStudio) are provisioned. This baseline informs every decision downstream.
+
+```
+Connect to my org "bth-demo" and show me what's installed
+```
+
+### Step 2: Provide discovery notes
+
+Paste in whatever you have -- a meeting transcript, bullet points from a discovery call, an email thread, or even a rough outline. The agent reads through it and extracts what it needs: who's in the audience, what they care about, which Salesforce products are relevant, what the core use case is, and where the "wow moment" should land.
+
+```
+Here are my notes from the BTH discovery call:
+- Audience: VP of Programs, IT Director, 2 volunteer coordinators
+- They manage 200+ volunteers across 5 sites
+- Pain: volunteer scheduling is manual, coordinators email spreadsheets
+- Want to see: volunteer self-service portal, shift sign-up, intake automation
+- Interested in AI for matching volunteers to programs
+```
+
+### Step 3: Approve product recommendations
+
+Based on your notes and the org baseline, the agent recommends which Salesforce products to include in the demo. It switches to plan mode and presents a structured list -- products already enabled in the org, products it recommends adding (with setup effort estimates), and products it's not recommending. You approve or reject each one before anything gets built. This prevents scope creep and ensures the demo stays focused on what the audience actually wants to see.
+
+### Step 4: Demo script generated
+
+The agent produces a complete `demoscript.md` -- a structured document with a narrative story arc (Situation, Challenge, Journey, Resolution), named personas with realistic details (not "User 1"), and a verbatim click-by-click path that a presenter can follow without guesswork. Every step includes the exact app, tab, button, field, and value to interact with, plus business-value talking points tied to the story. The script also includes YAML frontmatter listing demo users, a prerequisites section, data seed requirements, and a teardown section for cleanup.
+
+### Step 5: Data seeded
+
+The agent reads the personas and data requirements from the demoscript and generates story-coherent Salesforce records. Volunteers have real names, realistic application dates, and tutoring backgrounds that match the story. Shifts are future-dated 7-21 days out so they always look fresh. Gift histories span multiple years with plausible amounts. Everything is scoped to `@demo.` email domains so teardown never touches real data. The agent seeds the data using Anonymous Apex, `sf data` CLI commands, or JSON tree imports -- whatever fits the data shape.
+
+### Step 6: Validated and repaired
+
+`sf-demo-validate` reads the demoscript and systematically walks every step against the live org. It checks platform prerequisites, metadata, data quality, permissions, automations, UI rendering, Experience Cloud sites, and end-to-end user simulations (actually submitting forms, signing up for shifts, creating records as specific demo personas). When something fails -- a missing field, a stale record, a broken flow, a permission gap -- it delegates the fix to the appropriate skill, applies it, and re-validates. This loop runs up to 3 times before escalating anything it can't fix. The result is a scored pass/fail report across all validation categories.
+
+### Step 7: Ready to present
+
+The agent generates a Playwright test suite (`demo-preflight.spec.js`) that you run before every demo session as an automated pre-flight check. It also produces a `PRESENTER-GUIDE.md` with embedded screenshots, per-step talking points, and a quick-reference table. Run `scripts/preflight.sh` before you walk into the room -- if all tests pass, you're ready. If any fail, the report tells you exactly what broke and what to fix.
+
+```bash
+./scripts/preflight.sh --target-org bth-demo
+# ✅ All 12 tests passed — ready to demo
+```
+
+### What this looks like in practice
+
+The entire workflow -- from pasting discovery notes to having a validated, presenter-ready demo -- typically takes **15-30 minutes** of hands-on time. The agent does the heavy lifting: building the narrative, generating metadata, seeding data, and validating the environment. You review, approve product recommendations, and make any adjustments to the story. What used to take days of manual prep now fits into a single working session.
+
+---
+
 ## Repository Structure
 
 ```
