@@ -4,19 +4,57 @@ description: >
   Salesforce architecture diagrams using Mermaid with ASCII fallback.
   TRIGGER when: user says "diagram", "visualize", "ERD", or asks for sequence
   diagrams, flowcharts, class diagrams, or architecture visualizations in Mermaid.
+  Also triggers in demo environments when user asks how an integration would work,
+  wants to explain a data flow, or needs a talking track alongside a diagram.
   DO NOT TRIGGER when: user wants PNG/SVG image output (use sf-diagram-nanobananapro),
   or asks about non-Salesforce systems.
 license: MIT
 compatibility: "Requires Mermaid-capable renderer for diagram previews"
 metadata:
-  version: "1.2.0"
+  version: "1.4.0"
   author: "Jag Valaiyapathy"
   scoring: "80 points across 5 categories"
 ---
 
 # sf-diagram-mermaid: Salesforce Diagram Generation
 
-Expert diagram creator specializing in Salesforce architecture visualization. Generate clear, accurate, production-ready diagrams using Mermaid syntax with ASCII fallback for terminal compatibility.
+Expert diagram creator specializing in Salesforce architecture visualization and demo integration storytelling. Generate clear, accurate diagrams using Mermaid syntax as the structural source, then render them as polished images via `sf-diagram-nanobananapro` for end-user delivery. Mermaid code is retained for version control and docs; the rendered image is the primary visual output.
+
+## Demo Integration Storytelling Mode
+
+When the user is working in a **demo environment** and asks how an integration would work, wants to explain a data flow to an audience, or uses phrases like "show me what it would look like" or "talk through the integration" — produce both a diagram **and** a presenter talking track.
+
+**Output format for demo storytelling**:
+
+````markdown
+## Integration Story: [System] ↔ Salesforce
+
+### The Narrative
+[2-3 sentence plain-English description of what the integration does and why it matters to the nonprofit]
+
+### Architecture Diagram
+```mermaid
+sequenceDiagram
+  ...
+```
+
+### Presenter Talking Track
+**Setup line** (before clicking): "[What to say before showing the diagram]"
+
+**Step-by-step**:
+- *Arrow 1*: "[What to say as you walk through this step]"
+- *Arrow 2*: "[What to say here]"
+- ...
+
+**Capability hook** (closing): "[What this means for the organization — the 'so what' for the audience]"
+
+### If They Ask "Is This Live?"
+"[Honest, confident answer about what's configured vs. what's conceptual in this demo environment]"
+````
+
+This format lets a presenter walk through the diagram live without needing to improvise. The "If They Ask" section prevents the demo from stalling if a skeptical audience member probes.
+
+---
 
 ## Core Responsibilities
 
@@ -32,6 +70,7 @@ Expert diagram creator specializing in Salesforce architecture visualization. Ge
 | OAuth Flows | `sequenceDiagram` | Authorization Code, JWT Bearer, PKCE, Device Flow |
 | Data Models | `flowchart LR` | Object relationships with color coding (preferred) |
 | Integration Sequences | `sequenceDiagram` | API callouts, event-driven flows |
+| **Demo Integration Story** | `sequenceDiagram` | Show what an integration *would* look like in a demo — includes talking track and "If They Ask" script |
 | System Landscapes | `flowchart` | High-level architecture, component diagrams |
 | Role Hierarchies | `flowchart` | User hierarchies, profile/permission structures |
 | Agentforce Flows | `flowchart` | Agent → Topic → Action flows |
@@ -125,10 +164,12 @@ Score: XX/80 ⭐⭐⭐⭐ Rating
 
 ### Phase 5: Output & Documentation
 
-**Delivery Format**:
+**Note**: This phase produces the Mermaid source. Phase 5.5 (Visual Rendering) runs immediately after to generate the rendered image, which becomes the primary deliverable. The format below is the **fallback** used only when Phase 5.5 is skipped.
+
+**Mermaid-only delivery format** (used only when user requests "Mermaid only" or "no image"):
 
 ````markdown
-## 📊 [Diagram Title]
+## [Diagram Title]
 
 ### Mermaid Diagram
 ```mermaid
@@ -148,9 +189,55 @@ Score: XX/80 ⭐⭐⭐⭐ Rating
 [Validation results]
 ````
 
-### Phase 5.5: Preview (Optional)
+### Phase 5.5: Visual Rendering via Nano Banana (Default)
 
-Offer localhost preview for real-time diagram iteration. See [references/preview-guide.md](references/preview-guide.md) for setup instructions.
+After generating the Mermaid diagram, **render it as a polished image** by delegating to `sf-diagram-nanobananapro`.
+
+**This phase runs by default.** Skip only if the user explicitly says "Mermaid only", "text only", or "no image."
+
+**Workflow**:
+1. Take the completed Mermaid diagram code from Phase 4
+2. Convert it into a Nano Banana image prompt that preserves the structure, relationships, labels, and annotations
+3. Delegate to `sf-diagram-nanobananapro` Pattern E (Mermaid-to-Visual Rendering)
+4. Deliver both outputs:
+   - The **rendered image** as the primary visual for the end user
+   - The **Mermaid source code** in a collapsible `<details>` block for version control and documentation
+
+**Prompt conversion rules** (Mermaid → Nano Banana):
+- Translate node labels into entity/box descriptions with their names
+- Translate edge labels into labeled relationship arrows
+- Preserve directional flow (LR, TB, etc.) as spatial layout instructions
+- Map Mermaid styling (colors, thickness) to visual descriptions ("blue boxes", "thick arrows for master-detail")
+- Include the diagram type in the prompt ("ERD", "sequence diagram", "flowchart", "architecture overview")
+- Add "Salesforce architect.salesforce.com aesthetic, clean white background, professional" as the default style
+
+**Updated delivery format**:
+
+````markdown
+## [Diagram Title]
+
+[Rendered image from Nano Banana — displayed inline]
+
+<details>
+<summary>Mermaid source (for docs and version control)</summary>
+
+```mermaid
+[Generated Mermaid code]
+```
+
+</details>
+
+### Key Points
+- [Important note 1]
+- [Important note 2]
+
+### Diagram Score
+[Validation results]
+````
+
+### Phase 5.7: Preview (Optional)
+
+Offer localhost preview for real-time Mermaid iteration before visual rendering. See [references/preview-guide.md](references/preview-guide.md) for setup instructions.
 
 ---
 
@@ -371,6 +458,21 @@ You should:
 3. Generate Mermaid sequenceDiagram
 4. Generate ASCII fallback
 5. Score and deliver
+```
+
+### 4. Demo Integration Storytelling Request
+```
+User: "Show me what a Stripe integration would look like for our donation flow"
+User: "How would Bloomerang sync to Salesforce? I need to explain it in the demo."
+User: "Talk me through how an SMS notification integration would work."
+
+You should:
+1. Recognize this is a demo storytelling request — no live connection exists
+2. Generate a sequenceDiagram showing the systems, trigger, data flow, and Salesforce outcome
+3. Write a presenter talking track: setup line, step-by-step narration, capability hook
+4. Add an "If They Ask" script for the honest answer about live vs. conceptual
+5. Do NOT generate Named Credential XML or callout code unless explicitly asked
+6. Suggest sf-integration Mode 2 (Art of the Possible) if they want to make the data feel real
 ```
 
 ---

@@ -11,6 +11,24 @@ This document defines how `sf-demo-validate` autonomously repairs failing demo s
 3. **Always dry-run first** -- `sf project deploy start --dry-run` before real deploy
 4. **Never overwrite unknowns** -- if something exists but differs from the script, report it rather than clobber it
 5. **Batch related fixes** -- deploy all metadata fixes in one operation when possible
+6. **Discover before fixing** -- before creating any metadata fix, query the org to check if the target object/field/record type already exists under a different API name or configuration. Use the Org Discovery pattern (see below) to avoid creating duplicates
+
+### Pre-Fix Discovery Pattern
+
+Before any metadata fix, run these checks against the target org:
+
+```bash
+# Does the object exist?
+sf sobject describe --sobject <ObjectApiName> --target-org <alias> --json
+
+# Does a record type with a similar purpose already exist?
+sf data query --query "SELECT Id, DeveloperName, Name, IsActive FROM RecordType WHERE SObjectType = '<Object>'" --target-org <alias> --json
+
+# Which layout is assigned?
+sf data query --query "SELECT Layout.Name, RecordType.DeveloperName, Profile.Name FROM ProfileLayout WHERE SObjectType = '<Object>'" --target-org <alias> --use-tooling-api --json
+```
+
+**Decision**: If the metadata exists but under a different name or config, report the discrepancy to the user rather than creating a duplicate. Only create new metadata when the discovery confirms it truly doesn't exist.
 
 ---
 
@@ -1405,3 +1423,201 @@ To minimize deployments, batch related fixes:
 | Visual mismatch | -- | -- | Escalate (requires manual UI changes) |
 | Component not on page | -- | -- | Escalate (Lightning App Builder) |
 | Blank/error page | -- | -- | Escalate (check access + dependencies) |
+
+---
+
+## User & Session Readiness Fix Patterns
+
+### User Inactive or Frozen
+
+```bash
+# Reactivate user
+sf data update record --sobject User --record-id [Id] --values "IsActive=true" --target-org [alias]
+
+# Unfreeze user (via UserLogin)
+sf data query --query "SELECT Id FROM UserLogin WHERE UserId = '[UserId]'" --target-org [alias] --json
+sf data update record --sobject UserLogin --record-id [LoginId] --values "IsFrozen=false" --target-org [alias]
+```
+
+### Password Expired or Expiring Soon
+
+```bash
+sf org generate password --on-behalf-of [alias] --target-org [alias]
+```
+
+If password expiry cannot be auto-reset (requires org-level policy change): escalate with the Setup path → Security → Password Policies → Maximum Password Age.
+
+### TimeZoneSidKey Mismatch
+
+```bash
+sf data update record \
+  --sobject User \
+  --record-id [Id] \
+  --values "TimeZoneSidKey='America/Chicago'" \
+  --target-org [alias]
+```
+
+Common values: `America/Chicago`, `America/New_York`, `America/Los_Angeles`, `America/Denver`.
+
+### ContactId Not Linked (User → Person Account)
+
+```apex
+// Find or create the Person Account for the demo user, then link
+Account pa = [SELECT Id FROM Account WHERE IsPersonAccount = true AND PersonEmail = '[persona_email]' LIMIT 1];
+Contact c = [SELECT Id FROM Contact WHERE AccountId = :pa.Id LIMIT 1];
+User u = [SELECT Id FROM User WHERE Alias = '[alias]' LIMIT 1];
+u.ContactId = c.Id;
+update u;
+System.debug('ContactId linked: ' + u.Id + ' → ' + c.Id);
+```
+
+### Permission Set Assignment Missing
+
+```apex
+PermissionSet ps = [SELECT Id FROM PermissionSet WHERE Name = '[PermSetApiName]' LIMIT 1];
+User u = [SELECT Id FROM User WHERE Alias = '[alias]' LIMIT 1];
+insert new PermissionSetAssignment(AssigneeId = u.Id, PermissionSetId = ps.Id);
+System.debug('Perm set assigned');
+```
+
+### Profile Photo Missing (Manual — cannot automate)
+
+Escalate with exact path: **Setup → Users → [Name] → scroll to Chatter profile section → Upload Photo**
+
+Include in the prep report as a named action item: `[MANUAL] Set profile photo for [PersonaName] before demo`.
+
+---
+
+## Demo Day Readiness Fix Patterns
+
+### Active Deployment Blocking
+
+```bash
+# Cancel active deployment (only if safe to do so)
+sf project deploy cancel --job-id [DeploymentJobId] --target-org [alias]
+```
+
+If the deployment is critical (not a leftover), escalate rather than cancel. Always confirm with the user before canceling.
+
+### Verbose Debug Logs on Demo Users
+
+```bash
+# List active trace flags on demo users
+sf data query \
+  --query "SELECT Id, ExpirationDate, TracedEntity.Name FROM TraceFlag WHERE TracedEntity.Type = 'User' AND ExpirationDate > TODAY" \
+  --target-org [alias] --use-tooling-api --json
+
+# Delete the trace flag
+sf data delete record --sobject TraceFlag --record-id [Id] --target-org [alias] --use-tooling-api
+```
+
+### Email Deliverability Set to System Only
+
+This is an org-level setting and cannot be changed via API. Escalate:
+
+**Manual fix**: Setup → Email → Deliverability → Access Level → set to "All Email" → Save.
+
+Include in prep report as: `[BLOCK] Email deliverability is "System Only" — all demo emails will silently drop. Fix before demo.`
+
+---
+
+## Data Story Coherence Fix Patterns
+
+### Generic Record Names
+
+```bash
+sf data update record \
+  --sobject [Object] \
+  --record-id [Id] \
+  --values "Name='[RealisticName]'" \
+  --target-org [alias]
+```
+
+For bulk updates, generate an Anonymous Apex update script:
+```apex
+List<ApplicationForm> forms = [SELECT Id, Name FROM ApplicationForm WHERE Name LIKE '%Test%'];
+for (ApplicationForm f : forms) {
+    f.Name = 'Volunteer Application - ' + f.CreatedDate.format('MMM d, yyyy');
+}
+update forms;
+```
+
+### Zero-Amount Gift Records
+
+```apex
+List<npc__Gift_Transaction__c> gifts = [
+    SELECT Id, npc__Amount__c FROM npc__Gift_Transaction__c
+    WHERE npc__Donor__r.PersonEmail LIKE '%@demo%'
+    AND npc__Amount__c = 0
+];
+// Assign realistic amounts based on donor tier
+for (npc__Gift_Transaction__c g : gifts) {
+    g.npc__Amount__c = 5000; // update with appropriate amount for persona
+}
+update gifts;
+```
+
+### Broken Persona Chain (User → Contact → Person Account)
+
+Delegate to `sf-nonprofit-demo-data` with the specific persona email and alias. The data skill will generate the corrective Anonymous Apex to re-create the chain in the correct order.
+
+---
+
+## Clean UI State Fix Patterns
+
+### In-App Guidance / Walkthroughs Disabled
+
+```bash
+sf data query \
+  --query "SELECT Id, IsEnabled FROM Prompt WHERE IsEnabled = true" \
+  --use-tooling-api --target-org [alias] --json
+
+# Disable each active prompt
+sf data update record --sobject Prompt --record-id [Id] --values "IsEnabled=false" \
+  --use-tooling-api --target-org [alias]
+```
+
+### Setup Assistant Banner
+
+If `SetupAssistantItem` is accessible:
+```apex
+List<SetupAssistantItem> items = [SELECT Id, IsCompleted FROM SetupAssistantItem WHERE IsCompleted = false];
+for (SetupAssistantItem i : items) { i.IsCompleted = true; }
+update items;
+```
+
+If not accessible via Apex: escalate to Setup → Setup Assistant → mark all complete manually.
+
+---
+
+## Teardown Failure Fix Patterns
+
+### Dependency Order Failure (Parent Deleted Before Child)
+
+Most teardown failures are caused by deleting a parent record before its children. Common patterns:
+
+```apex
+// Correct NPC volunteer teardown order
+List<String> demoEmails = new List<String>{ 'james.okafor@demo.volunteer' };
+
+// 1. Delete child records first
+delete [SELECT Id FROM Task WHERE WhoId IN (SELECT Id FROM Contact WHERE Email IN :demoEmails)];
+delete [SELECT Id FROM JobPositionAssignment WHERE Volunteer__r.PersonEmail IN :demoEmails];
+delete [SELECT Id FROM Applicant__c WHERE ApplicationForm__r.Account.PersonEmail IN :demoEmails];
+delete [SELECT Id FROM ApplicationForm WHERE Account.PersonEmail IN :demoEmails];
+// 2. Delete parent last
+delete [SELECT Id FROM Account WHERE IsPersonAccount = true AND PersonEmail IN :demoEmails];
+System.debug('Teardown complete');
+```
+
+### Stale E2E Test Artifacts Not Caught by Email Pattern
+
+`sf-demo-validate`'s stale data detection also looks for `[E2E_TEST]` prefixes and `e2e.test@example.com` email pattern. Add these to the teardown cleanup:
+
+```apex
+// Clean validate-generated test artifacts
+delete [SELECT Id FROM ApplicationForm WHERE Name LIKE '%[E2E_TEST]%'];
+delete [SELECT Id FROM Applicant__c WHERE Email__c = 'e2e.test@example.com'];
+delete [SELECT Id FROM Account WHERE PersonEmail = 'e2e.test@example.com'];
+System.debug('E2E test artifacts cleaned');
+```

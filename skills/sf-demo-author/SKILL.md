@@ -14,7 +14,7 @@ description: >
   (use sf-demo-playwright), or writing Apex/LWC code (use sf-apex, sf-lwc).
 license: MIT
 metadata:
-  version: "1.0.0"
+  version: "2.0.0"
   author: "Brian Miller"
   scoring: "150 points across 6 categories"
 ---
@@ -61,7 +61,62 @@ Expert demo narrative architect. Transforms raw discovery notes, meeting transcr
 
 ---
 
-## Workflow (4-Phase Pattern)
+## Workflow (6-Phase Pattern)
+
+### Phase 0: Org Connect + Baseline
+
+Before authoring anything, connect to the target Salesforce org and scan what already exists.
+
+**Step 1 — Verify org connection**:
+```bash
+sf org display --target-org <alias> --json
+```
+If no alias was provided, ask: *"Which org should I connect to? I need to see what's already there before writing the demo script."*
+
+**Step 2 — Run baseline scan** (all commands in parallel):
+```bash
+sf org list metadata-types --target-org <alias> --json
+sf package installed list --target-org <alias> --json
+sf sobject list --sobject-type all --target-org <alias> --json
+sf data query --query "SELECT Id, Name, UrlPathPrefix, Status FROM Site WHERE Status = 'Active'" --target-org <alias> --json
+```
+
+**Step 3 — Record the baseline** in your working context:
+- Installed packages (NPC, NPSP, V4S, OFM, PMM, etc.)
+- Existing custom objects and fields
+- Active Experience Cloud sites
+- Whether Person Accounts are enabled
+- Whether Agentforce, Data Cloud, or OmniStudio are provisioned
+
+This baseline feeds every downstream phase — you must have it before making any recommendations.
+
+---
+
+### Phase 0.5: Product Recommendation Plan
+
+After notes intake (Phase 1) and before story architecture (Phase 2), present a **product recommendation** for user approval.
+
+**Switch to plan mode** and present a structured recommendation:
+
+```
+## Recommended Products for This Demo
+
+### Already enabled in the org
+- [x] Nonprofit Cloud (NPC) — Person Accounts, Gift Transaction detected
+- [x] Experience Cloud — active site "BTH_Portal" found
+
+### Recommended based on discovery notes (user must approve)
+- [ ] Agentforce — audience mentioned AI; setup effort: ~2 hours
+- [ ] Data Cloud — donor 360 view requested; setup effort: ~4 hours
+
+### Not recommended for this demo
+- OmniStudio — no guided form requirement in notes
+- Marketing Cloud — no email journey requirement
+```
+
+**Wait for the user to approve or reject each product.** Only generate demoscript steps, metadata, or configuration for approved products.
+
+---
 
 ### Phase 1: Notes Intake and Classification
 
@@ -119,6 +174,9 @@ Age: 34
 Motivation: Wants to match the right volunteers with the right kids fast
 Pain: Currently emails spreadsheets back and forth; misses shift gaps until the day before
 Salesforce user: volunteer-coordinator (alias: maria)
+Email: maria@demo.org
+Timezone: America/Chicago
+Permission sets: BTH_Volunteer_Coordinator
 ```
 
 Define at minimum:
@@ -126,7 +184,7 @@ Define at minimum:
 - Any **secondary personas** whose data or records appear (volunteers, donors, clients)
 - The **beneficiary** (the child, client, or cause that gives the story its "why")
 
-Personas feed directly into the demoscript's `users` frontmatter and the data that `sf-nonprofit-demo-data` will seed.
+Personas feed directly into the demoscript's `users[]` frontmatter **and** the data that `sf-nonprofit-demo-data` will seed. Every persona with a Salesforce user alias MUST appear in both the `users[]` YAML array and in a persona card.
 
 ---
 
@@ -136,10 +194,10 @@ Translate the story and use case into numbered demo steps following the [demoscr
 
 **Click path rules** (see [references/click-path-guide.md](references/click-path-guide.md)):
 1. Every action must be **verbatim** -- "Click the App Launcher (grid icon, top left), type 'Volunteer Hub', click the result" not "open the app"
-2. Every expected outcome must describe **exactly what the user sees** -- specific field values, record names, list counts
+2. Every expected outcome must describe **exactly what the user sees** -- specific field values, record names, list counts. Never write "shows the page" or "the record appears" -- name the actual field and value.
 3. Use `<!-- type: -->` tags on every step to enable precise validation
-4. Add `<!-- visual: true -->` to the 3–4 most visually compelling steps (the wow moments)
-5. Include explicit `**Check**` SOQL or Apex on any data or automation step
+4. Add `<!-- visual: true -->` to the 3–4 most visually compelling steps (the wow moments) — **always** pair with `<!-- visual_path: /lightning/... -->` on the line immediately after
+5. Include explicit `**Check**` SOQL block on every `type: data` and `type: automation` step
 6. Talking points must reference **business value**, not UI description
 
 **Step density**: Aim for 6–12 steps. Too few loses the story; too many loses the audience.
@@ -151,20 +209,70 @@ Translate the story and use case into numbered demo steps following the [demoscr
 Emit the complete `demoscript.md` using the format spec from [assets/demoscript-template.md](assets/demoscript-template.md), followed by:
 
 1. **Persona cards** (formatted as a separate `## Personas` section after the teardown)
-2. **Data requirements** (formatted as a `## Data Seed Requirements` section listing what `sf-nonprofit-demo-data` needs to generate)
+2. **Data requirements** (formatted as a `## Data Seed Requirements` section listing what `sf-nonprofit-demo-data` needs to generate — use this structured format):
+   ```
+   ## Data Seed Requirements
+   Platform: NPC | NPSP
+
+   ### Person Accounts / Contacts
+   - James Okafor | Email: james.okafor@demo.volunteer | Role: Volunteer applicant
+   - Maria Santos  | Email: maria@demo.org             | Role: Coordinator (User alias: maria)
+
+   ### ApplicationForms
+   - James Okafor: Status=Submitted, CreatedDate=TODAY-2, Description=tutoring background
+
+   ### JobPositionShifts
+   - 3 shifts, StartDate=TODAY+7 through TODAY+21, RemainingCapacity=5, Location=Community Kitchen
+
+   ### Users (configure existing or create)
+   - alias: maria | TimeZoneSidKey: America/Chicago | ContactId: → Maria Santos Person Account
+   - alias: jamie | TimeZoneSidKey: America/Chicago | ContactId: → James Okafor Person Account
+   ```
 3. **Story summary** (1 paragraph the presenter reads as the opening)
 4. **Presenter cheat sheet** (a 1-page summary: personas at a glance, step titles in order, 3 key talking points)
+
+### Teardown Section (required)
+
+Always generate a `## Teardown` section with Anonymous Apex that deletes all seeded records in reverse dependency order, targeting only `@demo.` email domains. Also include cleanup for `[E2E_TEST]`-prefixed records created by `sf-demo-validate` during validation runs:
+
+```apex
+// Demo teardown — targets only @demo. domains
+List<String> demoEmails = new List<String>{ '[all persona emails]' };
+delete [SELECT Id FROM Task WHERE Subject LIKE '%[E2E_TEST]%'];
+delete [SELECT Id FROM JobPositionAssignment WHERE Volunteer__r.PersonEmail IN :demoEmails];
+delete [SELECT Id FROM Applicant__c WHERE ApplicationForm__r.Account.PersonEmail IN :demoEmails];
+delete [SELECT Id FROM Applicant__c WHERE Email__c = 'e2e.test@example.com'];
+delete [SELECT Id FROM ApplicationForm WHERE Account.PersonEmail IN :demoEmails];
+delete [SELECT Id FROM ApplicationForm WHERE Name LIKE '%[E2E_TEST]%'];
+delete [SELECT Id FROM Account WHERE IsPersonAccount = true AND PersonEmail IN :demoEmails];
+System.debug('Teardown complete');
+```
+
+### NPC Platform Prerequisites (required for NPC demos)
+
+Always include in the `## Prerequisites` section for NPC orgs:
+- Person Accounts enabled
+- `ApplicationForm` record type with DeveloperName `NPC_Programs` is active
+- `Volunteer_Review` queue exists
+- `Description__c` field exists on `ApplicationForm`
+- Provisioner script `scripts/apex/provision-demo-member.apex` exists in local project
 
 ---
 
 ## Quality Checks Before Output
 
-Run mentally through:
+Run through every item — this is the Phase 1.5 checklist that `sf-demo-validate` will score the output against:
+
 - [ ] Can a presenter who wasn't in the discovery call follow this click path without asking questions?
 - [ ] Does every step tie back to the story arc?
 - [ ] Are all persona names used consistently (never "the user")?
-- [ ] Does the wow moment have `<!-- visual: true -->` and a strong `**Talking Points**` block?
-- [ ] Would `sf-demo-validate` be able to validate every step as written?
-- [ ] Are all data prerequisites specific enough for `sf-nonprofit-demo-data` to seed?
+- [ ] Does the wow moment have `<!-- visual: true -->` AND `<!-- visual_path: /lightning/... -->` AND a strong `**Talking Points**` block?
+- [ ] Does every `**Expected**` block name a specific field value or record — not "shows the page"?
+- [ ] Does every `type: data` step have a `**Check**` SOQL block?
+- [ ] Does the YAML frontmatter include `users[]` with every persona alias?
+- [ ] Does the `## Prerequisites` section cover NPC platform requirements (Person Accounts, RT, queue, custom fields)?
+- [ ] Does the `## Teardown` section exist and target only `@demo.` email domains?
+- [ ] Does the `## Data Seed Requirements` section have enough detail for `sf-nonprofit-demo-data` to generate all records without asking questions?
+- [ ] Are all User aliases in steps present in `users[]` frontmatter?
 
 If any check fails, fix before emitting.

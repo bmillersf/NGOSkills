@@ -8,7 +8,7 @@ description: >
   metadata (use sf-deploy), or Flow XML (use sf-flow).
 license: MIT
 metadata:
-  version: "1.1.0"
+  version: "1.2.0"
   author: "Jag Valaiyapathy"
   scoring: "120 points across 6 categories"
 ---
@@ -61,6 +61,31 @@ sf-data requires objects deployed to org. Always deploy BEFORE creating test dat
 - If querying: Query type, target org alias, object name or metadata type
 
 **Then**: Check existing metadata (`Glob: **/*-meta.xml`), verify sfdx-project.json exists.
+
+### Phase 1.5: Org Discovery
+
+Before generating ANY metadata, query the target org to avoid creating duplicates or misconfigurations.
+
+**Existence check** — verify whether the object/field already exists:
+```bash
+sf sobject describe --sobject <ObjectApiName> --target-org <alias> --json
+```
+
+**Record type check** — confirm no existing record type serves the same purpose:
+```bash
+sf data query --query "SELECT Id, DeveloperName, Name, IsActive FROM RecordType WHERE SObjectType = '<Object>'" --target-org <alias> --json
+```
+
+**Layout resolution** — identify the correct page layout for the target profile + record type:
+```bash
+sf data query --query "SELECT Layout.Name, RecordType.DeveloperName, Profile.Name FROM ProfileLayout WHERE SObjectType = '<Object>'" --target-org <alias> --use-tooling-api --json
+```
+
+**Decision rules**:
+- If the metadata **already exists and matches** the requirement: skip creation, report "already present"
+- If the metadata **already exists but differs**: present a diff to the user and ask before proceeding
+- If adding a field to a page layout: use the layout query result to find the correct layout — never default to `System Administrator` or the first layout found
+- If the object **does not exist**: proceed to Phase 2
 
 ### Phase 2: Template Selection / Query Execution
 

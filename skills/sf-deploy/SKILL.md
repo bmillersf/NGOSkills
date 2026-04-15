@@ -8,7 +8,7 @@ description: >
   XML (use sf-metadata), or querying org data (use sf-data).
 license: MIT
 metadata:
-  version: "2.2.0"
+  version: "2.3.0"
   author: "Jag Valaiyapathy"
 ---
 
@@ -126,6 +126,30 @@ test -f sfdx-project.json # Valid SFDX project
 - Grep for dependencies
 
 **Tasks to track**: Validate auth, Pre-tests, Deploy, Monitor, Post-tests, Verify
+
+### Phase 1.5: Org Discovery
+
+Before deploying, query the target org to understand what already exists. This prevents deploying duplicate metadata or assigning fields to the wrong layouts.
+
+**Metadata inventory** — check if the components you're about to deploy already exist:
+```bash
+sf org list metadata --metadata-type CustomObject --target-org <alias> --json
+sf org list metadata --metadata-type CustomField --target-org <alias> --json
+sf org list metadata --metadata-type PermissionSet --target-org <alias> --json
+```
+
+**Layout assignment verification** — confirm which layouts are assigned before deploying layout changes:
+```bash
+sf data query --query "SELECT Layout.Name, RecordType.DeveloperName, Profile.Name FROM ProfileLayout WHERE SObjectType = '<Object>'" --target-org <alias> --use-tooling-api --json
+```
+
+**Deploy diff report** — compare local metadata against org metadata:
+- If a component **exists in the org and matches local**: skip (already deployed)
+- If a component **exists in the org but differs**: show the diff to the user and ask before overwriting
+- If a component **exists locally but not in the org**: include in deploy
+- If a component **exists in the org but not locally**: warn the user (potential untracked customization)
+
+This discovery runs once before Phase 2 validation. The diff report feeds into the deploy scope — only changed or new components are included.
 
 ### Phase 2: Pre-Deployment Validation
 

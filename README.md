@@ -10,6 +10,7 @@ What this collection makes possible:
 
 - **Fully automated demo generation** — hand Cursor a set of raw discovery notes from a client meeting and it produces a complete, presentation-ready demo: a structured narrative with named personas, a verbatim step-by-step click path, seeded Salesforce data matched to the story, and a Playwright test suite that runs as an automated pre-flight check before you walk into the room. What used to take days of prep now takes minutes.
 - **Autonomous demo validation and repair** — `sf-demo-validate` reads your demo script and simulates delivering the demo end-to-end: it walks every click path step, takes Playwright screenshots to visually verify the UI matches what you expect, executes the full demo flow as the specific named demo user (shift sign-ups, intake form submissions), and loads the Experience Cloud portal as both a guest and a logged-in member. Anything that fails, it fixes: missing metadata gets generated and deployed, stale data gets re-seeded, broken flows get repaired, permission gaps get patched. Then it re-validates and gives you a scored pass/fail report -- all without a human touching the org.
+- **Integration storytelling and "art of the possible" simulation** — for demo environments where a live integration doesn't exist, the agent can show what an integration *would* look like: a Mermaid sequence diagram with a verbatim presenter talking track and a prepared answer for "is this live?", or Anonymous Apex that simulates the integration as real data (fake inbound payloads, records stamped as if they arrived from an external system, Platform Events fired as if triggered by third-party software). The audience sees the capability. No external system required.
 - **Deep Salesforce domain expertise on demand** — 44 skills covering every layer of the Salesforce platform: Apex, LWC, Flow, Metadata, SOQL, Deployment, Data Operations, Permissions, Integration, Connected Apps, Data Cloud (all 5 phases), Agentforce (build, test, observe, persona, script), OmniStudio (OmniScript, Integration Procedure, Data Mapper, FlexCard), and the full Nonprofit Cloud stack (fundraising, grants, program management, Experience Cloud). Each skill encodes the standards, patterns, and scoring rubrics I use -- so the agent produces production-quality output, not generic boilerplate.
 - **End-to-end nonprofit-specific intelligence** — from NPSP migration guidance and NPC data modeling to donor lifecycle management, grant pipelines, volunteer intake, program enrollment, and the portal experiences that serve constituents -- the agent knows the nonprofit platform the way a specialized architect does.
 
@@ -73,6 +74,64 @@ Using sf-demo-author, take these notes and generate a demoscript.md: [notes]
 
 ---
 
+## How It Works: End-to-End Demo Workflow
+
+Once the skills are installed, the full demo lifecycle runs through a 7-step pipeline. You provide raw notes from a client meeting, and the agent handles everything from there -- connecting to your org, building the demo script, seeding data, validating the environment, and producing a presenter-ready package. Here's the ideal workflow:
+
+![End-to-End Demo Workflow](assets/images/end-to-end-workflow.png)
+
+### Step 1: Connect to the org
+
+Before anything else, the agent authenticates to your Salesforce org and runs a baseline scan. It discovers what's already there -- installed packages (NPC, NPSP, V4S), custom objects, active Experience Cloud sites, whether Person Accounts are enabled, and which add-on products (Agentforce, Data Cloud, OmniStudio) are provisioned. This baseline informs every decision downstream.
+
+```
+Connect to my org "bth-demo" and show me what's installed
+```
+
+### Step 2: Provide discovery notes
+
+Paste in whatever you have -- a meeting transcript, bullet points from a discovery call, an email thread, or even a rough outline. The agent reads through it and extracts what it needs: who's in the audience, what they care about, which Salesforce products are relevant, what the core use case is, and where the "wow moment" should land.
+
+```
+Here are my notes from the BTH discovery call:
+- Audience: VP of Programs, IT Director, 2 volunteer coordinators
+- They manage 200+ volunteers across 5 sites
+- Pain: volunteer scheduling is manual, coordinators email spreadsheets
+- Want to see: volunteer self-service portal, shift sign-up, intake automation
+- Interested in AI for matching volunteers to programs
+```
+
+### Step 3: Approve product recommendations
+
+Based on your notes and the org baseline, the agent recommends which Salesforce products to include in the demo. It switches to plan mode and presents a structured list -- products already enabled in the org, products it recommends adding (with setup effort estimates), and products it's not recommending. You approve or reject each one before anything gets built. This prevents scope creep and ensures the demo stays focused on what the audience actually wants to see.
+
+### Step 4: Demo script generated
+
+The agent produces a complete `demoscript.md` -- a structured document with a narrative story arc (Situation, Challenge, Journey, Resolution), named personas with realistic details (not "User 1"), and a verbatim click-by-click path that a presenter can follow without guesswork. Every step includes the exact app, tab, button, field, and value to interact with, plus business-value talking points tied to the story. The script also includes YAML frontmatter listing demo users, a prerequisites section, data seed requirements, and a teardown section for cleanup.
+
+### Step 5: Data seeded
+
+The agent reads the personas and data requirements from the demoscript and generates story-coherent Salesforce records. Volunteers have real names, realistic application dates, and tutoring backgrounds that match the story. Shifts are future-dated 7-21 days out so they always look fresh. Gift histories span multiple years with plausible amounts. Everything is scoped to `@demo.` email domains so teardown never touches real data. The agent seeds the data using Anonymous Apex, `sf data` CLI commands, or JSON tree imports -- whatever fits the data shape.
+
+### Step 6: Validated and repaired
+
+`sf-demo-validate` reads the demoscript and systematically walks every step against the live org. It checks platform prerequisites, metadata, data quality, permissions, automations, UI rendering, Experience Cloud sites, and end-to-end user simulations (actually submitting forms, signing up for shifts, creating records as specific demo personas). When something fails -- a missing field, a stale record, a broken flow, a permission gap -- it delegates the fix to the appropriate skill, applies it, and re-validates. This loop runs up to 3 times before escalating anything it can't fix. The result is a scored pass/fail report across all validation categories.
+
+### Step 7: Ready to present
+
+The agent generates a Playwright test suite (`demo-preflight.spec.js`) that you run before every demo session as an automated pre-flight check. It also produces a `PRESENTER-GUIDE.md` with embedded screenshots, per-step talking points, and a quick-reference table. Run `scripts/preflight.sh` before you walk into the room -- if all tests pass, you're ready. If any fail, the report tells you exactly what broke and what to fix.
+
+```bash
+./scripts/preflight.sh --target-org bth-demo
+# ✅ All 12 tests passed — ready to demo
+```
+
+### What this looks like in practice
+
+The entire workflow -- from pasting discovery notes to having a validated, presenter-ready demo -- typically takes **15-30 minutes** of hands-on time. The agent does the heavy lifting: building the narrative, generating metadata, seeding data, and validating the environment. You review, approve product recommendations, and make any adjustments to the story. What used to take days of manual prep now fits into a single working session.
+
+---
+
 ## Repository Structure
 
 ```
@@ -83,6 +142,8 @@ scripts/
   nonprofit-knowledge-engine.py  # Scrapes SF docs, compartmentalizes NPSP vs NPC, builds keyword index
   refresh-nonprofit-content.sh   # One-command refresh for release-day updates
   requirements-knowledge-engine.txt  # Python dependencies for the knowledge engine
+assets/
+  images/                        # Rendered architecture diagrams (generated from Mermaid source)
 content/                         # Auto-generated knowledge base (populated by the engine)
   keyword-index.json             # Keyword→skill routing index (135+ keywords across 7 skills)
   npsp/                          # NPSP-classified content sections
@@ -93,6 +154,7 @@ content/                         # Auto-generated knowledge base (populated by t
   hooks.json                     # Cursor hook config for auto-skill-routing
   hooks/nonprofit-skill-router.* # Hook that auto-detects nonprofit keywords in prompts
   rules/nonprofit-auto-router.md # Always-applied rule with keyword index for auto-routing
+  rules/org-discovery.mdc        # Always-applied rule: org connection, product approval, query-before-create
 ```
 
 ## Architecture
@@ -101,38 +163,7 @@ The skills are organized into layered domains that mirror the Salesforce platfor
 
 ### Domain overview
 
-```mermaid
-flowchart TB
-    NOTES["Raw Notes / Discovery"] --> DA["Demo Authoring<br/>3 skills<br/>(author · data · playwright)"]
-    DA -->|"demoscript.md"| DV["Demo Validation<br/>1 skill"]
-    DV ==>|validates| AGENT & NP & OMNI & DC & CORE
-
-    VIZ["Visualization & Docs<br/>3 skills"]
-    AGENT["Agentforce & AI<br/>5 skills"]
-    NP["Nonprofit Cloud<br/>7 skills"]
-    OMNI["OmniStudio<br/>6 skills"]
-    DC["Data Cloud<br/>7 skills"]
-    INTEG["Integration & Security<br/>2 skills"]
-    CORE["Core Platform<br/>10 skills"]
-
-    AGENT -->|powered by| CORE
-    NP -->|built on| CORE
-    OMNI -->|extends| CORE
-    DC -.->|telemetry| AGENT
-    INTEG -->|callouts from| CORE
-    VIZ -.->|documents| CORE & NP & DC
-
-    style CORE fill:#1a73e8,color:#fff
-    style AGENT fill:#e8710a,color:#fff
-    style DC fill:#0d652d,color:#fff
-    style NP fill:#9334e6,color:#fff
-    style OMNI fill:#c5221f,color:#fff
-    style INTEG fill:#185abc,color:#fff
-    style DV fill:#b06000,color:#fff
-    style DA fill:#b06000,color:#fff
-    style VIZ fill:#137333,color:#fff
-    style NOTES fill:#f1f3f4,color:#333
-```
+![NGO Salesforce Skills — Domain Architecture](assets/images/domain-architecture.png)
 
 > **Core Platform** is the foundation -- every other Salesforce domain depends on it. **Agentforce**, **Nonprofit Cloud**, and **OmniStudio** each extend Core with domain-specific capabilities. **Data Cloud** feeds telemetry into Agentforce observability. **Integration & Security** provides external connectivity via Apex callouts. The **Demo Workflow** is a 4-skill pipeline: raw notes flow through `sf-demo-author` (demoscript authoring), `sf-nonprofit-demo-data` (data seeding), and `sf-demo-playwright` (test suite + presenter guide), before **Demo Validation** (`sf-demo-validate`) validates the entire stack end-to-end. **Visualization & Docs** is a cross-cutting utility.
 
@@ -140,23 +171,7 @@ flowchart TB
 
 Demo Validation (`sf-demo-validate`) is the skill that ties everything together. It operates as an autonomous validation and repair loop that exercises every other domain:
 
-```mermaid
-flowchart TB
-    DS["Demo Script<br/>(demoscript.md)"] --> DV["sf-demo-validate<br/>200-point scoring"]
-
-    DV -->|"1. org auth & prereqs"| CORE["Core Platform<br/>metadata, permissions, data"]
-    DV -->|"2. metadata & config"| META["sf-metadata<br/>sf-permissions<br/>sf-deploy"]
-    DV -->|"3. data quality"| DATA["sf-data<br/>sf-soql"]
-    DV -->|"4. automations"| AUTO["sf-flow<br/>sf-apex"]
-    DV -->|"5. UI & Experience Cloud"| UI["sf-lwc<br/>sf-nonprofit-<br/>experience-cloud"]
-    DV -->|"6. E2E user simulation"| E2E["sf-testing<br/>sf-debug"]
-    DV -->|"7. product-specific"| PROD["Agentforce<br/>Data Cloud<br/>OmniStudio"]
-
-    DV -->|"fix & re-validate<br/>(up to 3x)"| DV
-
-    style DV fill:#b06000,color:#fff
-    style DS fill:#fff3e0,color:#333
-```
+![Demo Validation Architecture](assets/images/demo-validation-architecture.png)
 
 The demo script (`demoscript.md`) is the source of truth. It defines the demo story -- the narrative, the personas, and the step-by-step walkthrough. `sf-demo-validate` reads this script and systematically validates that the org can deliver every step:
 
@@ -254,23 +269,29 @@ The routing rules ensure clean handoffs: Apex-only work stays in `sf-apex`, SOQL
 
 ```mermaid
 flowchart LR
-    CON[connected-apps] -->|auth for| INT[integration]
+    STORY["Storytelling<br/>(diagram + talking track)"]
+    ART["Art of the Possible<br/>(simulate with data)"]
+    PROD["Production Config<br/>(Named Credentials<br/>+ callout Apex)"]
+
+    INT[sf-integration] --> STORY & ART & PROD
+    VIZ[sf-diagram-mermaid] -->|generates| STORY
 ```
 
 | Skill | Description |
 |---|---|
-| **sf-integration** | Integration architecture with 120-point scoring -- Named Credentials, External Services, REST/SOAP callouts, Platform Events, and CDC. |
-| **sf-connected-apps** | Connected Apps and OAuth configuration with 120-point scoring -- OAuth flows, JWT bearer auth, and `.connectedApp-meta.xml` files. |
+| **sf-integration** | Integration architecture with three modes: **Storytelling** (Mermaid diagram + presenter talking track), **Art of the Possible** (simulate the integration with Anonymous Apex, fake payloads, and Platform Events), and **Production Config** (Named Credentials, External Services, REST/SOAP callouts, CDC). 120-point scoring applies to production mode. |
+| **sf-connected-apps** | Connected Apps and OAuth configuration with 120-point scoring -- OAuth flows, JWT bearer auth, and `.connectedApp-meta.xml` files. Production orgs only; not required in demo environments. |
 
 <details>
 <summary><strong>Under the hood</strong></summary>
 
-These two skills handle external connectivity as a pair:
+**sf-integration** determines which mode to apply before generating any artifacts:
 
-- **sf-connected-apps** owns the authentication layer. It configures OAuth flows (Authorization Code, JWT Bearer, Client Credentials, Device Authorization, PKCE), generates `.connectedApp-meta.xml` and `.eca-meta.xml` (External Client App) metadata, and sets up certificate-based auth. It scores at 120 points and includes shell scripts for secure credential setup that prompt for API keys via `read -s` (never hardcoded).
-- **sf-integration** owns everything after auth is established. It configures Named Credentials, External Credentials, External Services, and callout patterns (REST, SOAP, Platform Events, Change Data Capture). It includes metadata templates for named credential XML and scripts for CSP trusted site setup. It scores at 120 points.
+- **Mode 1 — Storytelling**: The user wants to explain or discuss what an integration would look like. The skill generates a Mermaid sequence diagram (delegated to `sf-diagram-mermaid`) paired with a presenter talking track and a prepared "If They Ask Is This Live?" response. No configuration is generated.
+- **Mode 2 — Art of the Possible**: The user wants the integration to feel real during a demo without a live connection. The skill generates Anonymous Apex that simulates the integration as real data: fake inbound payloads (a payment processor confirming a gift), seed records stamped as if they arrived from an external CRM (with realistic external IDs and source system fields), Platform Events that fire as if triggered by third-party software, and integration log records that make outbound calls visible in the UI. Each pattern ships with a presenter talking track.
+- **Mode 3 — Production Config**: The user explicitly asks to build the real integration. Full 5-phase workflow: Named Credentials (OAuth 2.0, JWT Bearer, Certificate, API Key), External Service registrations from OpenAPI specs, REST/SOAP callout patterns (sync and async Queueable), and Platform Event/CDC configuration. 120-point scoring applies.
 
-The boundary is clear: Connected Apps handles "how do we authenticate?" and Integration handles "how do we call out?" When both are needed, Connected Apps runs first to establish auth, then Integration builds the callout layer on top.
+**sf-connected-apps** is the companion skill for production auth. It owns the authentication layer before `sf-integration` builds the callout on top: OAuth flows, `.connectedApp-meta.xml`, and JWT bearer cert setup. In demo environments, this skill is rarely needed because Mode 1 and Mode 2 don't require live OAuth flows.
 
 </details>
 
@@ -379,10 +400,12 @@ The orchestrator prevents misrouting -- NPSP-specific questions never land in NP
 
 ### Visualization & Docs
 
+![Visualization Pipeline — Mermaid to Visual](assets/images/visualization-pipeline.png)
+
 | Skill | Description |
 |---|---|
-| **sf-diagram-mermaid** | Salesforce architecture diagrams using Mermaid (with ASCII fallback) -- ERDs, sequence diagrams, flowcharts, and class diagrams. |
-| **sf-diagram-nanobananapro** | AI-powered image generation via Nano Banana Pro -- PNG/SVG output, UI mockups, wireframes, and visual ERDs. |
+| **sf-diagram-mermaid** | Salesforce architecture diagrams using Mermaid as the structural source format -- ERDs, sequence diagrams, flowcharts, and class diagrams. After generating the Mermaid code, automatically renders a polished image via `sf-diagram-nanobananapro` (Phase 5.5). The Mermaid source is retained in a collapsible block for version control and documentation. In demo environments, pairs every integration diagram with a structured presenter talking track. |
+| **sf-diagram-nanobananapro** | AI-powered image generation via Nano Banana Pro -- the default visual rendering engine for all diagram output. Pattern E (Mermaid-to-Visual) converts Mermaid code into presentation-quality images using the `architect.salesforce.com` aesthetic. Also handles standalone use cases: UI mockups, wireframes, and visual ERDs from scratch. |
 | **sf-docs** | Official Salesforce documentation retrieval from developer.salesforce.com and help.salesforce.com, with JS-heavy page extraction. |
 
 <details>
@@ -390,8 +413,8 @@ The orchestrator prevents misrouting -- NPSP-specific questions never land in NP
 
 These are cross-cutting utility skills that any domain can leverage:
 
-- **sf-diagram-mermaid** generates architecture diagrams as Mermaid code that renders inline on GitHub. It includes a library of pre-built Salesforce diagram templates: OAuth flow sequence diagrams (Authorization Code, JWT Bearer, Client Credentials, Device Authorization, PKCE, Refresh Token), API integration sequences, ERDs, class diagrams, and flowcharts. When Mermaid isn't supported, it falls back to ASCII art.
-- **sf-diagram-nanobananapro** uses AI image generation (Nano Banana Pro) to produce PNG/SVG output for UI mockups, wireframes, visual ERDs, and architecture diagrams that need richer visual fidelity than Mermaid can provide.
+- **sf-diagram-mermaid** generates architecture diagrams as Mermaid code -- the structural source format. It includes a library of pre-built Salesforce diagram templates: OAuth flow sequence diagrams (Authorization Code, JWT Bearer, Client Credentials, Device Authorization, PKCE, Refresh Token), API integration sequences, ERDs, class diagrams, and flowcharts. After generating the Mermaid code, the skill automatically delegates to **sf-diagram-nanobananapro** (Phase 5.5) to render a polished image. The rendered image is the primary deliverable; the Mermaid source is included in a collapsible `<details>` block for docs and version control. Users can opt out with "Mermaid only" or "no image" to skip rendering. In demo environments, the skill adds a **Demo Integration Storytelling** output mode: every integration sequence diagram is delivered with a plain-English narrative, a presenter talking track with per-arrow narration, a capability hook closing line, and a prepared answer for when an audience member asks "is this actually live?"
+- **sf-diagram-nanobananapro** is the visual rendering engine. Its primary role is **Pattern E: Mermaid-to-Visual Rendering** -- converting Mermaid diagram code into presentation-quality images using the `architect.salesforce.com` aesthetic (dark borders, light translucent fills, rounded corners, Salesforce cloud-specific color coding). It parses Mermaid nodes, edges, subgraphs, and layout direction, then generates optimized Nano Banana prompts. It also handles standalone use cases: ERDs from org metadata queries (Pattern A), LWC/UI mockups (Pattern B), parallel Gemini code review (Pattern C), and documentation research (Pattern D). Supports a draft-iterate-final workflow at 1K/4K resolution.
 - **sf-docs** solves the problem of Salesforce documentation pages being JS-heavy and hard to extract. It provides guidance for reliably retrieving authoritative content from developer.salesforce.com and help.salesforce.com.
 
 </details>
@@ -400,20 +423,7 @@ These are cross-cutting utility skills that any domain can leverage:
 
 These three skills form the front half of the demo pipeline -- taking you from raw notes all the way to a validated, presenter-ready demo with automated pre-flight checks.
 
-```mermaid
-flowchart LR
-    NOTES["Raw Notes<br/>(transcript / bullets)"]
-    NOTES --> DA["sf-demo-author<br/>(story + personas<br/>+ click path)"]
-    DA -->|"Data Seed Requirements"| DD["sf-nonprofit-demo-data<br/>(seed NPC/NPSP records)"]
-    DA -->|"demoscript.md"| PW["sf-demo-playwright<br/>(test suite<br/>+ presenter guide)"]
-    DD & PW -->|"org ready<br/>tests pass"| DV["sf-demo-validate<br/>(validate + repair)"]
-
-    style DA fill:#b06000,color:#fff
-    style DD fill:#b06000,color:#fff
-    style PW fill:#b06000,color:#fff
-    style DV fill:#b06000,color:#fff
-    style NOTES fill:#f1f3f4,color:#333
-```
+![Demo Workflow Pipeline](assets/images/demo-workflow.png)
 
 | Skill | Description |
 |---|---|
@@ -426,7 +436,9 @@ flowchart LR
 
 These three skills form a linear pipeline that runs in order before `sf-demo-validate`:
 
-**sf-demo-author** (Phase 1 — Authoring) runs a 4-phase workflow:
+**sf-demo-author** (Phase 1 — Authoring) runs a 6-phase workflow:
+0. **Org Connect + Baseline** — connects to the target org via `sf org display`, runs a baseline scan (packages, objects, sites, features), and records the results. The agent will not proceed without an org connection.
+0.5. **Product Recommendation Plan** — after notes intake, switches to plan mode and presents a product-by-product recommendation (Agentforce, Data Cloud, Experience Cloud, etc.) for user approval. Only approved products are included in the demo.
 1. **Notes Intake** — classifies raw input to extract audience signals (who's in the room), platform signals (NPC, NPSP, Agentforce, etc.), and use case signals (volunteer management, fundraising, program enrollment)
 2. **Story Architecture** — builds a 4-beat narrative arc (Situation → Challenge → Journey → Resolution) using nonprofit-specific story patterns with pre-built emotional hooks that connect technology to mission impact
 3. **Persona Definition** — creates named, realistic personas (never "User 1") with roles, motivations, and pain points. Every persona gets a Salesforce user alias that feeds into the demoscript's `users` frontmatter and the data seed requirements
@@ -448,6 +460,20 @@ Output: `demoscript.md` + persona cards + data seed requirements + a presenter c
 When a Playwright test fails, the skill diagnoses the failure type and delegates to `sf-demo-validate` with a specific repair instruction (e.g., field value mismatch → stale demo data → re-seed via `sf-nonprofit-demo-data`).
 
 </details>
+
+### Org Discovery & Product Approval
+
+Every skill that touches a Salesforce org follows three mandatory principles enforced by an always-applied Cursor rule (`org-discovery.mdc`):
+
+![Org Discovery & Product Approval](assets/images/org-discovery.png)
+
+**Mandate 1 -- Org Connection Before Authoring**: Before writing a demoscript, generating metadata, or seeding data, the agent connects to the target org and runs a baseline scan: installed packages, custom objects, Experience Cloud sites, Person Accounts, Agentforce/Data Cloud/OmniStudio status. This baseline informs every downstream decision.
+
+**Mandate 2 -- Product Recommendation Approval**: When any skill is about to recommend including a Salesforce product (Agentforce, Data Cloud, Experience Cloud, OmniStudio, etc.) in a demo, it switches to plan mode and presents the recommendation for user approval. Products already enabled in the org are pre-checked; recommended products include setup effort estimates; products not suited for the demo are listed with reasoning. The agent waits for the user to approve or reject each product before proceeding.
+
+**Mandate 3 -- Query Before Create**: Before creating any metadata (objects, fields, record types, layouts, permission sets), the agent queries the org to check if it already exists. If it exists and matches, skip. If it exists but differs, show a diff and ask. If adding fields to layouts, query `ProfileLayout` via the Tooling API to find the correct layout -- never guess. This principle is enforced in `sf-metadata` (Phase 1.5), `sf-deploy` (Phase 1.5), and `sf-demo-validate`'s fix loop (Rule 6).
+
+---
 
 ### Demo Validation
 
@@ -495,21 +521,7 @@ The knowledge engine is a Python-based pipeline that scrapes official Salesforce
 
 ### How It Works
 
-```mermaid
-flowchart LR
-    SEED["30+ Seed URLs<br/>(help articles, PDFs,<br/>GitHub, Trailhead)"]
-    SEED -->|"scrape<br/>(recursive)"| RAW["content/raw/<br/>cached pages"]
-    RAW -->|"process"| COMP["Compartmentalized<br/>NPSP · NPC · Shared"]
-    COMP -->|"enhance"| SKILLS["Skill references/<br/>enriched docs"]
-    COMP -->|"index"| KW["keyword-index.json<br/>135+ keywords"]
-    KW --> HOOK["Cursor Hook<br/>(beforeSubmitPrompt)"]
-    KW --> RULE["Cursor Rule<br/>(alwaysApply)"]
-
-    style SEED fill:#f1f3f4,color:#333
-    style HOOK fill:#9334e6,color:#fff
-    style RULE fill:#9334e6,color:#fff
-    style KW fill:#1a73e8,color:#fff
-```
+![Nonprofit Knowledge Engine](assets/images/knowledge-engine.png)
 
 **4-phase pipeline:**
 
@@ -519,7 +531,7 @@ flowchart LR
 
 3. **Enhance** — Maps processed content to each of the 7 nonprofit skills and writes filtered, topic-relevant knowledge into each skill's `references/` directory for deeper context.
 
-4. **Index** — Builds `content/keyword-index.json` with 135+ keywords mapped across 7 nonprofit skills. Also regenerates the `.cursor/rules/nonprofit-auto-router.md` rule file.
+4. **Index** — Builds `content/keyword-index.json` with 200+ keywords mapped across skills in four routing tiers (demo lifecycle, capability showcase, integration storytelling, nonprofit domain). Also regenerates the `.cursor/rules/nonprofit-auto-router.md` rule file.
 
 ### Automatic Skill Routing
 
@@ -527,7 +539,7 @@ The engine solves the problem of users forgetting to invoke skills by name. Two 
 
 **Layer 1: Cursor Hook** — A `beforeSubmitPrompt` hook intercepts every prompt and scans for nonprofit keywords. When matches are found, it injects an `agent_message` telling the AI which skill(s) to apply. If both NPSP and NPC keywords are detected, it warns about platform ambiguity and routes to `sf-nonprofit-cloud` first.
 
-**Layer 2: Cursor Rule** — An `alwaysApply: true` rule file embeds the full keyword index. Even if the hook doesn't fire, the rule is always loaded and instructs the AI to match keywords automatically.
+**Layer 2: Cursor Rule** — An `alwaysApply: true` rule file embeds the full keyword index across four routing tiers: **Demo Lifecycle** (demo authoring, data seeding, validation, Playwright), **Capability Showcase** (Agentforce, Data Cloud, architecture diagrams), **Integration Storytelling** (conceptual diagrams, art of the possible simulation), and **Nonprofit Domain** (fundraising, grants, programs, portals, NPSP, NPC). Even if the hook doesn't fire, the rule is always loaded and instructs the AI to match keywords automatically.
 
 ### Refreshing Content
 
