@@ -11,7 +11,7 @@ What this collection makes possible:
 - **Fully automated demo generation** — hand Cursor a set of raw discovery notes from a client meeting and it produces a complete, presentation-ready demo: a structured narrative with named personas, a verbatim step-by-step click path, seeded Salesforce data matched to the story, and a Playwright test suite that runs as an automated pre-flight check before you walk into the room. What used to take days of prep now takes minutes.
 - **Autonomous demo validation and repair** — `sf-demo-validate` reads your demo script and simulates delivering the demo end-to-end: it walks every click path step, takes Playwright screenshots to visually verify the UI matches what you expect, executes the full demo flow as the specific named demo user (shift sign-ups, intake form submissions), and loads the Experience Cloud portal as both a guest and a logged-in member. Anything that fails, it fixes: missing metadata gets generated and deployed, stale data gets re-seeded, broken flows get repaired, permission gaps get patched. Then it re-validates and gives you a scored pass/fail report -- all without a human touching the org.
 - **Integration storytelling and "art of the possible" simulation** — for demo environments where a live integration doesn't exist, the agent can show what an integration *would* look like: a Mermaid sequence diagram with a verbatim presenter talking track and a prepared answer for "is this live?", or Anonymous Apex that simulates the integration as real data (fake inbound payloads, records stamped as if they arrived from an external system, Platform Events fired as if triggered by third-party software). The audience sees the capability. No external system required.
-- **Deep Salesforce domain expertise on demand** — 44 skills covering every layer of the Salesforce platform: Apex, LWC, Flow, Metadata, SOQL, Deployment, Data Operations, Permissions, Integration, Connected Apps, Data Cloud (all 5 phases), Agentforce (build, test, observe, persona, script), OmniStudio (OmniScript, Integration Procedure, Data Mapper, FlexCard), and the full Nonprofit Cloud stack (fundraising, grants, program management, Experience Cloud). Each skill encodes the standards, patterns, and scoring rubrics I use -- so the agent produces production-quality output, not generic boilerplate.
+- **Deep Salesforce domain expertise on demand** — 46 skills covering every layer of the Salesforce platform: Apex, LWC, Flow, Metadata, SOQL, Deployment, Data Operations, Permissions, Integration, Connected Apps, Data Cloud (all 5 phases), Agentforce (build, test, observe, persona, script), OmniStudio (OmniScript, Integration Procedure, Data Mapper, FlexCard), and the full Nonprofit Cloud stack (fundraising, grants, program management, Experience Cloud). Each skill encodes the standards, patterns, and scoring rubrics I use -- so the agent produces production-quality output, not generic boilerplate.
 - **End-to-end nonprofit-specific intelligence** — from NPSP migration guidance and NPC data modeling to donor lifecycle management, grant pipelines, volunteer intake, program enrollment, and the portal experiences that serve constituents -- the agent knows the nonprofit platform the way a specialized architect does.
 
 These skills encode my approach to Salesforce architecture, coding standards, and demo delivery into reusable instructions that give any AI agent the domain knowledge to work the way I would -- with the depth, precision, and nonprofit context that generic AI assistance can't provide. The skills are written in standard markdown and work identically in **Cursor** (native skill system, auto-triggered) and **Claude** (via Claude Projects or direct conversation). See [CLAUDE.md](CLAUDE.md) for Claude-specific setup.
@@ -135,7 +135,7 @@ The entire workflow -- from pasting discovery notes to having a validated, prese
 ## Repository Structure
 
 ```
-skills/                          # Salesforce-domain skills (44 skills)
+skills/                          # Salesforce-domain skills (46 skills)
 CLAUDE.md                        # Claude setup guide (Projects, per-conversation, API)
 scripts/
   generate-claude-bundle.sh      # Generates a bundled Claude system prompt from all skills
@@ -369,6 +369,7 @@ The execution flow at runtime is: **OmniScript -> Integration Procedure -> Data 
 flowchart LR
     NPC[nonprofit-cloud] --> NPF[fundraising] & NPG[grants] & NPPC[program-case]
     NPC --> NPEC[experience-cloud] --> NPUX[experience-cloud-ux]
+    NPEC --> NPBUILD[experience-cloud-build]
     NPSP[npsp] -.->|migrates to| NPC
 ```
 
@@ -378,6 +379,7 @@ flowchart LR
 | **sf-nonprofit-npsp** | NPSP managed package architecture with 120-point scoring -- Opportunity-based donations, Recurring Donations, Household Accounts, Affiliations, Customizable Rollups, Engagement Plans, and `npsp__`/`npe01__`/`npo02__` namespace objects. |
 | **sf-nonprofit-experience-cloud** | Nonprofit Experience Cloud architecture with 120-point scoring -- donor/volunteer/client/grantee portals, sharing rules, and guest access. |
 | **sf-nonprofit-experience-cloud-ux** | Nonprofit portal UX/UI design with 100-point scoring -- branding, navigation flows, responsive design, accessibility, and wireframes. |
+| **sf-nonprofit-experience-cloud-build** | Nonprofit Experience Cloud build methodology -- brand-mine a reference org website, translate into a design system (BrandingSet + theme customCSS), decompose pages into purposeful LWCs, and wire routing, guest access, and deployment for donor/giving/volunteer/member portals. |
 | **sf-nonprofit-fundraising** | Fundraising architecture with 120-point scoring -- donor management, gift entry, campaigns, soft credits, recurring giving, and payment processing. |
 | **sf-nonprofit-grants** | Grant management architecture with 110-point scoring -- applications, review workflows, disbursements, budgets, and compliance tracking. |
 | **sf-nonprofit-program-case** | Program and case management architecture with 120-point scoring -- enrollment, service delivery, intake, outcome tracking, and referrals. |
@@ -392,7 +394,7 @@ The Nonprofit skills use a **platform-detection orchestrator** pattern with doma
 - **sf-nonprofit-fundraising** owns donor management on NPC: gift entry, campaigns, soft credits, recurring giving, payment processing, and donor engagement strategies. It includes reference docs on the donor lifecycle and gift processing workflows.
 - **sf-nonprofit-grants** covers the grantmaking pipeline: applications, review workflows, funding awards, disbursements, budgets, compliance tracking, and funder reporting. It includes reference docs on application pipelines and disbursement compliance.
 - **sf-nonprofit-program-case** handles service delivery: program enrollment, case management, intake processes, outcome tracking, referral management, and wraparound services. It includes reference docs on enrollment patterns and case management workflows.
-- **sf-nonprofit-experience-cloud** builds the portal layer: donor portals, volunteer portals, client portals, grantee portals using LWR or Aura sites. It configures sharing rules, guest access, and site membership. When the portal needs UX design work (branding, navigation, wireframes, responsive design), it hands off to **sf-nonprofit-experience-cloud-ux**.
+- **sf-nonprofit-experience-cloud** builds the portal layer: donor portals, volunteer portals, client portals, grantee portals using LWR or Aura sites. It configures sharing rules, guest access, and site membership. When the portal needs UX design work (branding, navigation, wireframes, responsive design), it hands off to **sf-nonprofit-experience-cloud-ux**. When it's time to actually build the site -- mining a reference org website for brand and IA, translating that into a BrandingSet + theme customCSS, decomposing the homepage into purposeful LWCs, and wiring custom routes, guest access, and deployment order -- it hands off to **sf-nonprofit-experience-cloud-build**.
 
 The orchestrator prevents misrouting -- NPSP-specific questions never land in NPC skills and vice versa. Domain skills (fundraising, grants, program/case) are NPC-only; NPSP work stays in the dedicated NPSP skill.
 
@@ -421,12 +423,13 @@ These are cross-cutting utility skills that any domain can leverage:
 
 ### Demo Workflow
 
-These three skills form the front half of the demo pipeline -- taking you from raw notes all the way to a validated, presenter-ready demo with automated pre-flight checks.
+These four skills form the front half of the demo pipeline -- taking you from raw notes all the way to a validated, presenter-ready demo with automated pre-flight checks. `sf-demo-orchestrate` is the single-trigger entry point that runs the whole pipeline; the other three are the phase workers it delegates to.
 
 ![Demo Workflow Pipeline](assets/images/demo-workflow.png)
 
 | Skill | Description |
 |---|---|
+| **sf-demo-orchestrate** | End-to-end demo pipeline orchestrator. From one trigger phrase ("run the full demo workflow", "build me a demo for <org>", "notes to presenter-ready"), it runs all 7 steps from the project README -- org connect + baseline, notes intake, product-approval gate, `sf-demo-author`, `sf-nonprofit-demo-data`, `sf-demo-validate` repair loop, `sf-demo-playwright` -- with a live `DEMO-PIPELINE-STATUS.md` that tracks every phase, score, and artifact. Hard stops for user approval at product recommendations and final sign-off. |
 | **sf-demo-author** | Transforms raw notes, meeting transcripts, or bullet-point requirements into a fully structured `demoscript.md` with narrative story arc, named personas, verbatim click-by-click steps, and presenter talking points. Output feeds directly into the rest of the demo pipeline. |
 | **sf-nonprofit-demo-data** | Nonprofit demo data factory. Reads persona definitions and data requirements from the demoscript, detects NPC vs NPSP, and generates story-coherent data packages -- JSON trees, `sf data` CLI commands, and Anonymous Apex with realistic names, amounts, and future-dated records. Includes teardown scripts that target `@demo.` email domains to never touch real data. |
 | **sf-demo-playwright** | Persistent Playwright test suite and presenter guide generator. Converts the demoscript click path into a reusable `demo-preflight.spec.js`, a `PRESENTER-GUIDE.md` with embedded screenshots and talking points, and a `preflight.sh` script to run as an automated pre-flight check before every demo session. |
@@ -434,7 +437,9 @@ These three skills form the front half of the demo pipeline -- taking you from r
 <details>
 <summary><strong>Under the hood</strong></summary>
 
-These three skills form a linear pipeline that runs in order before `sf-demo-validate`:
+**sf-demo-orchestrate** (Phase 0 — Orchestration) is the single-prompt entry point for the whole pipeline. When the user says something like "run the full demo workflow for bth-demo" or "take me from these notes to presenter-ready", the auto-router prefers `sf-demo-orchestrate` over any single-phase skill. It does **not** re-implement authoring, seeding, or validation -- it delegates in order to `sf-demo-author`, `sf-nonprofit-demo-data`, `sf-demo-validate`, and `sf-demo-playwright`, and it enforces two human-in-the-loop gates that single-phase prompts sometimes skip: Phase 3 product-recommendation approval (plan mode, user must accept each product) and Phase 7 final sign-off (review the presenter package before closing the pipeline). A live `DEMO-PIPELINE-STATUS.md` at the workspace root records every phase transition, score, and artifact path, so the pipeline can resume from the last incomplete phase if interrupted.
+
+The four demo-lifecycle skills below form the linear pipeline that `sf-demo-orchestrate` drives, in order: author -> data -> validate -> Playwright. Each one can still be invoked on its own when the user only wants that phase.
 
 **sf-demo-author** (Phase 1 — Authoring) runs a 6-phase workflow:
 0. **Org Connect + Baseline** — connects to the target org via `sf org display`, runs a baseline scan (packages, objects, sites, features), and records the results. The agent will not proceed without an org connection.

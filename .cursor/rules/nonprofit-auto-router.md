@@ -29,7 +29,10 @@ automatically apply the matching skill(s) from the keyword index below.
 
 When multiple skills match, prefer in this order:
 
-### Demo Lifecycle (resolve first — these define the type of task)
+### End-to-End Demo Pipeline (resolve first — beats every single-phase skill)
+0. `sf-demo-orchestrate` — user asks for the **whole pipeline** in one prompt (notes -> presenter-ready). Routes through all four single-phase skills in order with approval gates.
+
+### Demo Lifecycle (resolve next — these define the type of task)
 1. `sf-demo-author` — writing or authoring a demo script from notes
 2. `sf-nonprofit-demo-data` — seeding or generating demo data
 3. `sf-demo-validate` — validating or repairing a demo environment
@@ -66,6 +69,13 @@ When multiple skills match, prefer in this order:
 ---
 
 ## Keyword Index
+
+### sf-demo-orchestrate
+
+  build me a demo, build the demo, demo pipeline, demo workflow, end to end demo, end-to-end demo
+  from discovery to presenter, full demo, full demo workflow, go from notes to demo, notes to demo
+  orchestrate demo, orchestrate the demo, presenter ready, run the demo, run the full demo
+  run the pipeline, run the workflow, ship a demo, take me from notes
 
 ### sf-demo-author
 
