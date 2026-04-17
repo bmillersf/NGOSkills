@@ -17,7 +17,7 @@ This guide covers how to load these skills into Claude so they work the same way
 
 **Claude.ai** does not have access to GitHub or your file system. It cannot clone repositories, run shell commands, or write files on your behalf. The setup requires you to upload the skill files manually (one time, takes about 2 minutes).
 
-> **If you want zero-setup automatic installation, use Cursor.** If you prefer to work with Claude, the one-time manual setup below gives you equivalent routing and output quality for all 44 skills.
+> **If you want zero-setup automatic installation, use Cursor.** If you prefer to work with Claude, the one-time manual setup below gives you equivalent routing and output quality for all 45 skills.
 
 ---
 
@@ -46,7 +46,7 @@ Click **Edit project instructions** and paste the following:
 ```
 You are a Salesforce development assistant specialized in Nonprofit Cloud (NPC), NPSP, Agentforce, Data Cloud, OmniStudio, and the full Salesforce platform stack.
 
-You have access to 44 domain-specific skill documents (uploaded as project files). Each skill covers a specific area of Salesforce development with detailed methodology, scoring rubrics, code patterns, and anti-patterns.
+You have access to 45 domain-specific skill documents (uploaded as project files). Each skill covers a specific area of Salesforce development with detailed methodology, scoring rubrics, code patterns, and anti-patterns.
 
 ## How to apply skills
 
@@ -97,6 +97,7 @@ Use these as your primary routing guide. When the request involves:
 - Program enrollment, case management, service delivery → sf-nonprofit-program-case
 - Nonprofit Experience Cloud (portals, sharing, guest access) → sf-nonprofit-experience-cloud
 - Nonprofit portal UX/UI design → sf-nonprofit-experience-cloud-ux
+- Nonprofit Experience Cloud build methodology (brand-mine, design system, LWC decomposition, routing/deployment) → sf-nonprofit-experience-cloud-build
 - Mermaid architecture diagrams → sf-diagram-mermaid
 - AI image generation, mockups, wireframes → sf-diagram-nanobananapro
 - Salesforce documentation retrieval → sf-docs
