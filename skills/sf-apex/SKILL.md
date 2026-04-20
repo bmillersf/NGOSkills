@@ -30,6 +30,8 @@ Expert Apex developer specializing in clean code, SOLID principles, and 2025 bes
 
 ### Phase 1: Requirements Gathering
 
+**Delegation**: keep in **parent**. Requirements gathering is a user-facing dialog that needs full conversational context.
+
 **Ask the user** to gather:
 - Class type (Trigger, Service, Selector, Batch, Queueable, Test, Controller)
 - Primary purpose (one sentence)
@@ -44,6 +46,8 @@ Expert Apex developer specializing in clean code, SOLID principles, and 2025 bes
 ---
 
 ### Phase 2: Design & Template Selection
+
+**Delegation**: keep in **parent**. Template + architecture decisions (Service vs Selector vs Trigger Action, sharing keyword, namespace strategy) are foundational and short — subagent overhead isn't worth it.
 
 **Select template**:
 | Class Type | Template |
@@ -67,6 +71,8 @@ Expert Apex developer specializing in clean code, SOLID principles, and 2025 bes
 ---
 
 ### Phase 3: Code Generation/Review
+
+**Delegation**: when generating **3+ independent classes** (e.g. a Service + Selector + Domain trio, or N Trigger Actions), fire one `generalPurpose` subagent per class in a single tool-call message per the parallel pattern in `sf-subagent-orchestration`. Each subagent gets the template, naming conventions, target object, and the 150-point scoring rubric as acceptance criteria; each returns the generated `.cls` paths and its self-scored result. The parent integrates and runs the guardrail check below. For a single class, stay in the **parent**.
 
 **For Generation**:
 1. Create class file in `force-app/main/default/classes/`
@@ -122,6 +128,8 @@ If ANY of these patterns would be generated, **STOP and ask the user**:
 
 ### Phase 4: Deployment
 
+**Delegation**: hand off to `sf-deploy`, which itself delegates the long `sf project deploy start` loops to a `shell` subagent per `sf-subagent-orchestration`. Verbose deploy output never enters this skill's context.
+
 **Step 1: Validation**
 Use the **sf-deploy** skill: "Deploy classes at force-app/main/default/classes/ to [target-org] with --dry-run"
 
@@ -133,6 +141,8 @@ Use the **sf-deploy** skill: "Proceed with actual deployment to [target-org]"
 ---
 
 ### Phase 5: Documentation & Testing Guidance
+
+**Delegation**: keep in **parent**. The completion summary is short and synthesises results from prior phases — no benefit from a fresh subagent context.
 
 **Completion Summary**:
 ```

@@ -77,6 +77,26 @@ Expert frontend engineer specializing in Lightning Web Components for Salesforce
 
 ---
 
+## Subagent Delegation
+
+LWC work is one of the strongest fits for subagent delegation in this repo because most multi-component features build N independent bundles from N independent specs. Apply the policy in [`sf-subagent-orchestration`](../sf-subagent-orchestration/SKILL.md):
+
+| PICKLES phase | Mode | Why |
+|---|---|---|
+| **P - Prototype** (wireframes, mock data, stakeholder dialog) | **Parent** | Decision-laden + user-facing |
+| **I - Integrate** (data source choice: LDS / Apex / GraphQL) | **Parent** | Architectural call that constrains every later phase |
+| **C - Composition** (3+ independent component bundles) | `generalPurpose` subagents in **parallel** | One bundle per agent; parent integrates the composed view |
+| **C - Composition** (1-2 components or tightly coupled parent+child) | **Parent** | Subagent overhead not worth it |
+| **K - Kinetics**, **L - Libraries**, **S - Security** policy decisions | **Parent** | Cross-cutting; needs full picture |
+| **E - Execution** (Jest test authoring across N components) | `generalPurpose` subagents in parallel | One test file per component, parent runs the suite |
+| **Deployment + Jest run** (`sf project deploy start`, `sfdx force:lightning:lwc:test:run`) | `shell` subagent | Verbose CLI output stays out of parent context |
+
+**Default rule**: when the user asks for "build me 3+ LWCs" / "build the homepage components" / "scaffold the donor portal LWCs", fire one `generalPurpose` subagent per component in a **single tool-call message**. Each subagent receives: the component spec, the brand tokens / SLDS 2 styling hooks, the data source choice from Phase I, and the 165-point scoring rubric as acceptance criteria. Each returns paths + self-scored result. The parent never re-reads the generated bundles unless integration requires it.
+
+For the canonical worked example of this pattern across 6 LWCs in parallel, see the `sf-nonprofit-experience-cloud-build` Phase 3 delegation note.
+
+---
+
 ## Key Component Patterns
 
 ### Wire vs Imperative Apex Calls

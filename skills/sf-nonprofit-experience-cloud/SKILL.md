@@ -120,6 +120,23 @@ For unauthenticated pages (public-facing content):
 
 ---
 
+## Subagent Delegation
+
+Portal architecture work spans org discovery, sharing-rule design, profile configuration, and (often) deploy + verify loops — exactly the multi-phase shape that benefits from delegation. Apply the policy in [`sf-subagent-orchestration`](../sf-subagent-orchestration/SKILL.md):
+
+| Activity | Mode | Why |
+|---|---|---|
+| Site type, authentication model, and NPC vs NPSP portal-user decisions (this skill's "Architecture Patterns" section) | **Parent** | Architectural decisions; need full context |
+| Surveying the target org for existing sites, networks, profiles, sharing rules | `explore` subagent | Read-heavy; returns a digest of what exists |
+| Authoring sharing sets / sharing rules / guest profile XML for N objects | `generalPurpose` subagents in **parallel** (one per object) | Each object's sharing config is independent |
+| Deploying the network + profile + sharing metadata bundle | `shell` subagent | Verbose deploy output stays out of parent context |
+| Verifying portal access as guest + member (curl + `Login As` smoke check) | `shell` subagent | Repetitive verification loop; returns pass/fail per route |
+| When the portal needs to actually be **built** (LWCs, theme, routes, deploy) | Hand off to `sf-nonprofit-experience-cloud-build` | That skill has its own per-phase delegation map |
+
+**Default rule for this skill**: keep architecture/design in the parent; delegate every long CLI loop and every parallelizable per-object configuration unit to subagents. When the user's request crosses into "build the LWCs and publish the site", route to `sf-nonprofit-experience-cloud-build` rather than doing it here.
+
+---
+
 ## Key Configuration Steps
 
 ### 1. Enable Experience Cloud

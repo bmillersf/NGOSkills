@@ -11,7 +11,7 @@ What this collection makes possible:
 - **Fully automated demo generation** — hand Cursor a set of raw discovery notes from a client meeting and it produces a complete, presentation-ready demo: a structured narrative with named personas, a verbatim step-by-step click path, seeded Salesforce data matched to the story, and a Playwright test suite that runs as an automated pre-flight check before you walk into the room. What used to take days of prep now takes minutes.
 - **Autonomous demo validation and repair** — `sf-demo-validate` reads your demo script and simulates delivering the demo end-to-end: it walks every click path step, takes Playwright screenshots to visually verify the UI matches what you expect, executes the full demo flow as the specific named demo user (shift sign-ups, intake form submissions), and loads the Experience Cloud portal as both a guest and a logged-in member. Anything that fails, it fixes: missing metadata gets generated and deployed, stale data gets re-seeded, broken flows get repaired, permission gaps get patched. Then it re-validates and gives you a scored pass/fail report -- all without a human touching the org.
 - **Integration storytelling and "art of the possible" simulation** — for demo environments where a live integration doesn't exist, the agent can show what an integration *would* look like: a Mermaid sequence diagram with a verbatim presenter talking track and a prepared answer for "is this live?", or Anonymous Apex that simulates the integration as real data (fake inbound payloads, records stamped as if they arrived from an external system, Platform Events fired as if triggered by third-party software). The audience sees the capability. No external system required.
-- **Deep Salesforce domain expertise on demand** — 46 skills covering every layer of the Salesforce platform: Apex, LWC, Flow, Metadata, SOQL, Deployment, Data Operations, Permissions, Integration, Connected Apps, Data Cloud (all 5 phases), Agentforce (build, test, observe, persona, script), OmniStudio (OmniScript, Integration Procedure, Data Mapper, FlexCard), and the full Nonprofit Cloud stack (fundraising, grants, program management, Experience Cloud). Each skill encodes the standards, patterns, and scoring rubrics I use -- so the agent produces production-quality output, not generic boilerplate.
+- **Deep Salesforce domain expertise on demand** — 47 skills covering every layer of the Salesforce platform: Apex, LWC, Flow, Metadata, SOQL, Deployment, Data Operations, Permissions, Integration, Connected Apps, Data Cloud (all 5 phases), Agentforce (build, test, observe, persona, script), OmniStudio (OmniScript, Integration Procedure, Data Mapper, FlexCard), and the full Nonprofit Cloud stack (fundraising, grants, program management, Experience Cloud). Each skill encodes the standards, patterns, and scoring rubrics I use -- so the agent produces production-quality output, not generic boilerplate.
 - **End-to-end nonprofit-specific intelligence** — from NPSP migration guidance and NPC data modeling to donor lifecycle management, grant pipelines, volunteer intake, program enrollment, and the portal experiences that serve constituents -- the agent knows the nonprofit platform the way a specialized architect does.
 
 These skills encode my approach to Salesforce architecture, coding standards, and demo delivery into reusable instructions that give any AI agent the domain knowledge to work the way I would -- with the depth, precision, and nonprofit context that generic AI assistance can't provide. The skills are written in standard markdown and work identically in **Cursor** (native skill system, auto-triggered) and **Claude** (via Claude Projects or direct conversation). See [CLAUDE.md](CLAUDE.md) for Claude-specific setup.
@@ -135,7 +135,7 @@ The entire workflow -- from pasting discovery notes to having a validated, prese
 ## Repository Structure
 
 ```
-skills/                          # Salesforce-domain skills (46 skills)
+skills/                          # Salesforce-domain skills (47 skills)
 CLAUDE.md                        # Claude setup guide (Projects, per-conversation, API)
 scripts/
   generate-claude-bundle.sh      # Generates a bundled Claude system prompt from all skills
@@ -418,6 +418,26 @@ These are cross-cutting utility skills that any domain can leverage:
 - **sf-diagram-mermaid** generates architecture diagrams as Mermaid code -- the structural source format. It includes a library of pre-built Salesforce diagram templates: OAuth flow sequence diagrams (Authorization Code, JWT Bearer, Client Credentials, Device Authorization, PKCE, Refresh Token), API integration sequences, ERDs, class diagrams, and flowcharts. After generating the Mermaid code, the skill automatically delegates to **sf-diagram-nanobananapro** (Phase 5.5) to render a polished image. The rendered image is the primary deliverable; the Mermaid source is included in a collapsible `<details>` block for docs and version control. Users can opt out with "Mermaid only" or "no image" to skip rendering. In demo environments, the skill adds a **Demo Integration Storytelling** output mode: every integration sequence diagram is delivered with a plain-English narrative, a presenter talking track with per-arrow narration, a capability hook closing line, and a prepared answer for when an audience member asks "is this actually live?"
 - **sf-diagram-nanobananapro** is the visual rendering engine. Its primary role is **Pattern E: Mermaid-to-Visual Rendering** -- converting Mermaid diagram code into presentation-quality images using the `architect.salesforce.com` aesthetic (dark borders, light translucent fills, rounded corners, Salesforce cloud-specific color coding). It parses Mermaid nodes, edges, subgraphs, and layout direction, then generates optimized Nano Banana prompts. It also handles standalone use cases: ERDs from org metadata queries (Pattern A), LWC/UI mockups (Pattern B), parallel Gemini code review (Pattern C), and documentation research (Pattern D). Supports a draft-iterate-final workflow at 1K/4K resolution.
 - **sf-docs** solves the problem of Salesforce documentation pages being JS-heavy and hard to extract. It provides guidance for reliably retrieving authoritative content from developer.salesforce.com and help.salesforce.com.
+
+</details>
+
+### Agent Orchestration
+
+| Skill | Description |
+|---|---|
+| **sf-subagent-orchestration** | Subagent delegation policy for long-running Salesforce work. Defines **when** to spawn subagents (`explore` for read-heavy discovery, `generalPurpose` for parallel independent units, `shell` for verbose CLI loops), **what contract** to pass them (mission, context, constraints, return), and **what to keep in the parent** (decisions, integration, user gates). Co-activates with every other multi-phase `sf-*` skill so per-phase `**Delegation:**` annotations have a single source of truth. |
+
+<details>
+<summary><strong>Under the hood</strong></summary>
+
+`sf-subagent-orchestration` is a **policy skill**, not a domain skill — it doesn't generate code, query an org, or build a demo. Its job is to keep the parent agent's context window healthy on long jobs (Experience Cloud builds, end-to-end demo pipelines, multi-component features) by formalising when and how to delegate to Cursor's `Task` subagents.
+
+Two design choices make it useful:
+
+1. **Co-activation tier in the auto-router** — it doesn't need its own keyword trigger. The router applies it whenever any other multi-phase `sf-*` skill is selected. The parent agent then has both the domain skill (what to build) and the orchestration policy (how to split the work) loaded together.
+2. **The `**Delegation:**` annotation pattern** — every multi-phase domain skill (`sf-demo-orchestrate`, `sf-nonprofit-experience-cloud-build`, `sf-apex`, `sf-lwc`, `sf-deploy`, `sf-nonprofit-experience-cloud`) annotates its phases with one short `**Delegation:**` line that names the subagent type and the mission shape. The policy itself lives in one place; the per-skill annotations are pointers, not duplicates.
+
+Default rule of thumb baked into the skill: if the work is *generative + parallelizable* or *exploration-heavy + summary-returnable*, delegate. If it's *coordination + decisions*, keep it in the parent. The skill ships with a decision checklist, a parallel-delegation pattern (single tool-call message containing N `Task` calls), a `shell`-subagent recipe for `sf project deploy start` / `sf community publish` cycles, and an anti-pattern table (don't delegate decisions, don't pass the whole transcript as context, don't use `generalPurpose` where `explore` would do).
 
 </details>
 
