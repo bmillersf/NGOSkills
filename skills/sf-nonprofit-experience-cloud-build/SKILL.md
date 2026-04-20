@@ -18,6 +18,7 @@ metadata:
     - sf-nonprofit-experience-cloud
     - sf-nonprofit-experience-cloud-ux
     - sf-lwc
+    - sf-subagent-orchestration
 ---
 
 # sf-nonprofit-experience-cloud-build: Nonprofit Portal Build Methodology
@@ -49,6 +50,8 @@ Phase Progress:
 
 ### Phase 1 — Brand-mine the reference website
 
+**Delegation**: spawn an `explore` subagent per `sf-subagent-orchestration` with mission *"Visit <reference-url>, return color palette (hex), font pairing (display + body), homepage IA section list in order, voice/tone samples, and complete asset URL inventory as a structured summary."* The parent never sees raw HTML — only the digested summary.
+
 Before writing any code, extract from the reference site:
 
 1. **Assets** — fetch the homepage and key sub-pages with `WebFetch` or `curl`. Download and save:
@@ -69,6 +72,8 @@ Save assets into `force-app/main/default/staticresources/<orgName>Assets/` and d
 
 ### Phase 2 — Translate brand into a design system
 
+**Delegation**: keep in **parent**. Design tokens are foundational decisions that every later phase depends on.
+
 Wire the brand into the site in two places so every LWC inherits it:
 
 1. **BrandingSet** (`experiences/<Site>/brandingSets/*.json`):
@@ -85,6 +90,8 @@ Wire the brand into the site in two places so every LWC inherits it:
 See [reference.md](reference.md#design-system-wiring) for a complete customCSS template.
 
 ### Phase 3 — Decompose the page into purposeful LWCs
+
+**Delegation**: fire one `generalPurpose` subagent per LWC in a single tool-call message (parallel pattern from `sf-subagent-orchestration`). Each subagent receives: the design tokens from Phase 2, the LWC's spec (purpose, props, behavior), the static resource name, and an acceptance criteria checklist. Each returns a summary + file paths. The parent integrates the composed view in Phase 5.
 
 **Rule: never build mega-LWCs.** Each story on the homepage = one LWC. Compose the view in the ExperienceBundle's `views/home.json`.
 
@@ -110,6 +117,10 @@ For transactional flows (donate, sign up, register) use a separate route with a 
 See [examples.md](examples.md) for concrete component shells you can adapt.
 
 ### Phase 4 — Wire routing, guest access, and deployment
+
+**Delegation split**:
+- Routing/profile/network metadata authoring → **parent** (small, interdependent, decision-laden)
+- The actual deploy + publish + verify loop → **`shell` subagent** per `sf-subagent-orchestration`. Verbose `sf project deploy` output and curl verification stay out of the parent's context; the subagent returns a status summary only.
 
 This phase has the most Salesforce-specific gotchas. Get these wrong and nothing renders.
 
@@ -140,6 +151,8 @@ A single `sf project deploy start` of everything at once often fails because the
 See [reference.md](reference.md) for complete metadata templates and the full gotcha catalog.
 
 ### Phase 5 — Publish and verify end-to-end
+
+**Delegation**: `shell` subagent per `sf-subagent-orchestration` runs the full verification checklist below as a single mission and returns pass/fail per item. Parent reviews the summary and reports to the user.
 
 Before calling the site done, verify:
 

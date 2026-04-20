@@ -29,6 +29,9 @@ automatically apply the matching skill(s) from the keyword index below.
 
 When multiple skills match, prefer in this order:
 
+### Always Co-Activate (does not replace other matches; runs alongside)
+- `sf-subagent-orchestration` — co-activates whenever **any** other multi-phase `sf-*` skill is selected (anything in the End-to-End Demo Pipeline tier, the Demo Lifecycle tier, the Capability Showcase tier, or the Nonprofit Domain tier). It supplies the delegation policy (when to spawn `explore` / `generalPurpose` / `shell` subagents, the standard contract, parallel patterns) so the active skill's phase-level `**Delegation:**` annotations have a single source of truth. Single-question prompts that don't activate any other `sf-*` skill do **not** trigger this skill.
+
 ### End-to-End Demo Pipeline (resolve first — beats every single-phase skill)
 0. `sf-demo-orchestrate` — user asks for the **whole pipeline** in one prompt (notes -> presenter-ready). Routes through all four single-phase skills in order with approval gates.
 
@@ -69,6 +72,13 @@ When multiple skills match, prefer in this order:
 ---
 
 ## Keyword Index
+
+### sf-subagent-orchestration
+
+  *(co-activation skill — no direct user trigger required; auto-applies whenever another multi-phase sf-* skill is active)*
+  Direct triggers: delegate subagent, delegation policy, parallel subagents, run in parallel, spawn subagent
+  spawn subagents, subagent contract, subagent delegation, subagent orchestration, subagent pattern
+  subagent strategy, when to delegate
 
 ### sf-demo-orchestrate
 

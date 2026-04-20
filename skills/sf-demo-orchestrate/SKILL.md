@@ -25,6 +25,7 @@ metadata:
     - sf-nonprofit-demo-data
     - sf-demo-validate
     - sf-demo-playwright
+    - sf-subagent-orchestration
 ---
 
 # sf-demo-orchestrate: End-to-End Demo Pipeline
@@ -74,6 +75,8 @@ If the user only wants one phase (author, seed, validate, Playwright), defer to 
 
 ### Phase 1 — Connect to the org
 
+**Delegation**: `shell` subagent per `sf-subagent-orchestration` runs `sf org display`, the package + object + site queries, and returns a structured baseline summary (5-10 bullets). Verbose CLI output never enters parent context.
+
 Invoke `sf org display --target-org <alias>` and run the standard baseline scan (installed packages, custom objects, Experience Cloud sites, Person Accounts enabled, Agentforce / Data Cloud / OmniStudio status). Record the baseline in `DEMO-PIPELINE-STATUS.md` under **Phase 1 — Baseline**.
 
 Governing rule: the workspace-level `org-discovery.mdc` rule (Mandate 1) already forbids authoring without this step. This phase makes the mandate explicit and auditable.
@@ -81,6 +84,8 @@ Governing rule: the workspace-level `org-discovery.mdc` rule (Mandate 1) already
 **Halt condition**: no org connection, unreachable org, or multiple orgs with no `--target-org` hint -> stop and ask the user which org to use.
 
 ### Phase 2 — Intake discovery notes
+
+**Delegation**: keep in **parent**. Notes parsing is a decision-laden classification step (audience, platform, use case signals) whose output every later phase reads — context must persist.
 
 Look for notes in (priority order):
 
@@ -91,6 +96,8 @@ Look for notes in (priority order):
 Parse the notes once here and store a structured summary (audience, platform signals, use case signals, explicit product asks) in `DEMO-PIPELINE-STATUS.md` — **do not re-parse** in Phase 4. `sf-demo-author` will consume the same summary.
 
 ### Phase 3 — Product recommendation gate (HARD STOP)
+
+**Delegation**: keep in **parent**. This is a human-in-the-loop decision gate — never delegate user approval to a subagent.
 
 Switch to plan mode. Present a product-by-product table with three columns:
 
@@ -107,6 +114,8 @@ This gate is identical in spirit to `sf-demo-author` Phase 0.5 and Mandate 2 of 
 
 ### Phase 4 — Delegate to sf-demo-author
 
+**Delegation**: `generalPurpose` subagent per `sf-subagent-orchestration`. Mission: run `sf-demo-author` Phases 1-4 against the approved notes + product list and return `demoscript.md`, persona cards, data seed requirements, and a presenter cheat sheet (file paths only — parent does not need the full demoscript bytes in context to coordinate).
+
 Hand the approved notes + product list to `sf-demo-author` and instruct it to run its Phases 1-4 (notes intake, story architecture, persona definition, click path generation). Phase 0 and 0.5 from `sf-demo-author` have already been satisfied by Phases 1 and 3 of this orchestrator — do not re-run them.
 
 Expected artifacts:
@@ -119,6 +128,8 @@ Record artifact paths in `DEMO-PIPELINE-STATUS.md` -> **Phase 4 — Artifacts** 
 
 ### Phase 5 — Delegate to sf-nonprofit-demo-data
 
+**Delegation**: `generalPurpose` subagent per `sf-subagent-orchestration` for record generation (Apex / JSON tree authoring), then a `shell` subagent for the actual `sf data` import + Anonymous Apex execution. Verbose import logs stay in the shell subagent's context; parent receives a row-count summary plus paths to the seed and teardown scripts.
+
 Hand the persona cards and data seed requirements to `sf-nonprofit-demo-data`. Let it run platform detection (NPC vs NPSP), persona-to-record mapping, generation (JSON tree / Apex / `sf data`), freshness rules, and teardown script generation.
 
 Expected artifacts:
@@ -128,6 +139,8 @@ Expected artifacts:
 Verify seeding by running the skill's own smoke check, then record in **Phase 5 — Seed Results**.
 
 ### Phase 6 — Validate and repair (loop up to 3×)
+
+**Delegation**: `shell` subagent per `sf-subagent-orchestration` runs each `sf-demo-validate` attempt and returns the 10-category score breakdown plus the failed-step list (not the full validation log). The pass/fail decision and any "accept partial / re-run / escalate" call stays in the **parent**.
 
 Invoke `sf-demo-validate` against the generated `demoscript.md`. The sub-skill already owns its 10-category / 200-point rubric and its own repair loop (delegating fixes to `sf-metadata`, `sf-deploy`, `sf-permissions`, `sf-data`, `sf-flow`, etc.).
 
@@ -140,6 +153,11 @@ Orchestrator-level rules:
 Each attempt appends to `DEMO-PIPELINE-STATUS.md` -> **Phase 6 — Validation History** with timestamp, score, and failure summary.
 
 ### Phase 7 — Ready to present (HARD STOP)
+
+**Delegation split** per `sf-subagent-orchestration`:
+- Test suite + presenter guide authoring → `generalPurpose` subagent (returns artifact paths)
+- `preflight.sh` execution → `shell` subagent (returns pass/fail counts only)
+- Final user sign-off → **parent** (human-in-the-loop, never delegated)
 
 Invoke `sf-demo-playwright` to emit:
 

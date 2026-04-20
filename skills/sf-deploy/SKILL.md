@@ -118,6 +118,8 @@ test -f sfdx-project.json # Valid SFDX project
 
 ### Phase 1: Pre-Deployment Analysis
 
+**Delegation**: keep the user dialog (target org, scope, rollback strategy) in the **parent**. Delegate the metadata file scan (`Glob` over `force-app/**/*.{cls,trigger,xml,js,html,css}` and dependency `Grep`) to an `explore` subagent per `sf-subagent-orchestration` — it returns a digest (component counts by type, dependency graph) without dumping every file path into the parent.
+
 **Ask the user** to gather: Target org, deployment scope, validation requirements, rollback strategy.
 
 **Analyze**:
@@ -128,6 +130,8 @@ test -f sfdx-project.json # Valid SFDX project
 **Tasks to track**: Validate auth, Pre-tests, Deploy, Monitor, Post-tests, Verify
 
 ### Phase 1.5: Org Discovery
+
+**Delegation**: `shell` subagent per `sf-subagent-orchestration` runs every `sf org list metadata`, `sf data query` (Tooling API), and the deploy diff comparison. The subagent returns a structured diff report (skip / overwrite / new / warn) — the parent never sees the raw JSON output of every metadata listing.
 
 Before deploying, query the target org to understand what already exists. This prevents deploying duplicate metadata or assigning fields to the wrong layouts.
 
@@ -153,6 +157,8 @@ This discovery runs once before Phase 2 validation. The diff report feeds into t
 
 ### Phase 2: Pre-Deployment Validation
 
+**Delegation**: `shell` subagent per `sf-subagent-orchestration`. Test runs and `--dry-run` validations are exactly the "long-running CLI loops" pattern — verbose output stays in the subagent's context, and only pass/fail + failed-test list comes back to the parent.
+
 ```bash
 sf org display --target-org <alias> --json             # Check connection
 sf apex run test --test-level RunLocalTests --target-org <alias> --wait 10 --json  # Local tests
@@ -160,6 +166,8 @@ sf project deploy start --dry-run --test-level RunLocalTests --target-org <alias
 ```
 
 ### Phase 3: Deployment Execution
+
+**Delegation**: `shell` subagent per `sf-subagent-orchestration`, optionally with `run_in_background: true` if the parent has other work queued. The subagent returns: deploy job ID, success/fail, top-N error lines (not the full log), coverage summary. This is the canonical use case for `shell` delegation.
 
 **Commands by scope**:
 ```bash
@@ -180,6 +188,8 @@ Handle failures: Parse errors, identify failed components, suggest fixes.
 
 ### Phase 4: Post-Deployment Verification
 
+**Delegation**: `shell` subagent per `sf-subagent-orchestration` runs `sf project deploy report`, smoke tests, and coverage queries. Returns a verification summary — pass/fail per check, coverage % per class touched, links to artifacts.
+
 ```bash
 sf project deploy report --job-id <job-id> --target-org <alias> --json
 ```
@@ -187,6 +197,8 @@ sf project deploy report --job-id <job-id> --target-org <alias> --json
 Verify components, run smoke tests, check coverage.
 
 ### Phase 5: Documentation
+
+**Delegation**: keep in **parent**. Documentation synthesises the structured summaries returned by Phases 1-4 subagents into the final report — needs full coordination context.
 
 Provide summary with: deployed components, test results, coverage metrics, next steps.
 
