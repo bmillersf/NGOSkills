@@ -92,9 +92,11 @@ This baseline feeds every downstream phase — you must have it before making an
 
 ---
 
-### Phase 0.5: Product Recommendation Plan
+### Phase 0.5: Product + Duration Recommendation Plan
 
-After notes intake (Phase 1) and before story architecture (Phase 2), present a **product recommendation** for user approval.
+After notes intake (Phase 1) and before story architecture (Phase 2), present **two** approvals: a **product recommendation** and a **target demo duration**. Both must be confirmed before authoring proceeds — they jointly bound story depth, step count, and visual moments.
+
+> If you were invoked from `sf-demo-orchestrate`, both values were already approved at the orchestrator's Phase 3 gate. Read `demo_duration_minutes` and the approved product list from `DEMO-PIPELINE-STATUS.md` and skip the prompt below — do not re-ask.
 
 **Switch to plan mode** and present a structured recommendation:
 
@@ -112,9 +114,22 @@ After notes intake (Phase 1) and before story architecture (Phase 2), present a 
 ### Not recommended for this demo
 - OmniStudio — no guided form requirement in notes
 - Marketing Cloud — no email journey requirement
+
+## Target Demo Duration
+How long is the presenter's slot? Pick a tier (or give a custom minute count):
+
+| Tier        | Minutes | Steps  | Visual | Personas | Story shape                          |
+|-------------|---------|--------|--------|----------|--------------------------------------|
+| Lightning   |   5     | 3-4    | 1      | 1        | Challenge -> Resolution (no setup)   |
+| Short *(default)* | 15 | 6-8 | 1-2    | 1-2      | 4-beat arc, condensed                |
+| Standard    |  30     | 9-12   | 2-3    | 2-3      | Full 4-beat arc                      |
+| Extended    |  45     | 12-16  | 3      | 2-4      | Full arc + admin/setup view          |
+| Workshop    |  60     | 16-22  | 3-4    | 3-4      | Full arc + handoffs + Q&A buffer     |
 ```
 
-**Wait for the user to approve or reject each product.** Only generate demoscript steps, metadata, or configuration for approved products.
+**Wait for the user to approve or reject each product AND confirm a duration tier.** If no duration is given, default to **Short (15 min)** and call it out so they can correct it. If a non-tier number is given (e.g. 20 min), pick the nearest tier and note the rounding.
+
+Only generate demoscript steps, metadata, or configuration for approved products. The chosen duration becomes `demo_duration_minutes:` in the demoscript YAML frontmatter and bounds Phase 2 (story depth) and Phase 4 (step count, visual count, talking-point density).
 
 ---
 
@@ -158,7 +173,16 @@ RESOLUTION → The outcome -- what changed, what's possible now
 - Show the person behind the data (a volunteer named James, not "User 1")
 - Make the before/after tangible (3-day manual process vs. 10 minutes)
 
-Write a 2–3 sentence story summary that the presenter can say as an opening before step 1. This goes in the demoscript frontmatter as `story_summary`.
+**Scale the arc to `demo_duration_minutes`** (see [references/story-framework.md](references/story-framework.md#story-arc-by-demo-duration)):
+
+| Duration | Beats to keep | Opening verbal | Closing verbal |
+|---|---|---|---|
+| 5 min | Challenge -> Resolution only | 1 sentence | 1 sentence |
+| 15 min | All 4 beats, condensed | 2-3 sentences | 1-2 sentences |
+| 30 min | All 4 beats, full | 3-4 sentences | 2-3 sentences |
+| 45-60 min | All 4 beats + secondary persona arc | 3-4 sentences + persona intro | 2-3 sentences + call to action |
+
+Write a story summary sized for the chosen tier (1 sentence at 5 min, up to 4 sentences + persona setup at 60 min). This goes in the demoscript frontmatter as `story_summary`.
 
 ---
 
@@ -196,11 +220,21 @@ Translate the story and use case into numbered demo steps following the [demoscr
 1. Every action must be **verbatim** -- "Click the App Launcher (grid icon, top left), type 'Volunteer Hub', click the result" not "open the app"
 2. Every expected outcome must describe **exactly what the user sees** -- specific field values, record names, list counts. Never write "shows the page" or "the record appears" -- name the actual field and value.
 3. Use `<!-- type: -->` tags on every step to enable precise validation
-4. Add `<!-- visual: true -->` to the 3–4 most visually compelling steps (the wow moments) — **always** pair with `<!-- visual_path: /lightning/... -->` on the line immediately after
+4. Add `<!-- visual: true -->` to the most visually compelling steps (the wow moments) — count is bounded by the duration tier below — **always** pair with `<!-- visual_path: /lightning/... -->` on the line immediately after
 5. Include explicit `**Check**` SOQL block on every `type: data` and `type: automation` step
 6. Talking points must reference **business value**, not UI description
 
-**Step density**: Aim for 6–12 steps. Too few loses the story; too many loses the audience.
+**Step density by `demo_duration_minutes`** (see [references/click-path-guide.md](references/click-path-guide.md#step-density-by-demo-duration)):
+
+| Duration | Steps | Visual steps | Talking-point depth | Per-step time budget |
+|---|---|---|---|---|
+| 5 min  | 3-4   | 1   | 1 sentence each, only on the wow step           | ~75 sec |
+| 15 min | 6-8   | 1-2 | 1-2 sentences on every step, full block on wow  | ~90-120 sec |
+| 30 min | 9-12  | 2-3 | Full talking-point block on every step          | ~150 sec |
+| 45 min | 12-16 | 3   | Full block + admin/setup commentary             | ~150-180 sec |
+| 60 min | 16-22 | 3-4 | Full block + handoff narration + Q&A pause cues | ~150-180 sec |
+
+The step count must land **inside** the band for the chosen tier — not below (loses the story) and not above (overruns the slot). If the approved product list cannot fit the chosen duration, surface the conflict to the user (or to the orchestrator) before generating; do not silently overflow.
 
 ---
 
@@ -228,8 +262,18 @@ Emit the complete `demoscript.md` using the format spec from [assets/demoscript-
    - alias: maria | TimeZoneSidKey: America/Chicago | ContactId: → Maria Santos Person Account
    - alias: jamie | TimeZoneSidKey: America/Chicago | ContactId: → James Okafor Person Account
    ```
-3. **Story summary** (1 paragraph the presenter reads as the opening)
-4. **Presenter cheat sheet** (a 1-page summary: personas at a glance, step titles in order, 3 key talking points)
+3. **Story summary** (1 paragraph the presenter reads as the opening, sized to the duration tier per Phase 2)
+4. **Presenter cheat sheet** (a 1-page summary: personas at a glance, step titles **with per-step time budget**, 3 key talking points, and the total target runtime banner — e.g. *"Target: 15 min — 7 steps × ~120 sec + 2 min opening/closing"*)
+
+The demoscript YAML frontmatter MUST include:
+
+```yaml
+demo_duration_minutes: 15           # required; one of 5 / 15 / 30 / 45 / 60 (or nearest tier)
+demo_duration_tier: short           # lightning | short | standard | extended | workshop
+target_step_runtime_seconds: 120    # used by sf-demo-playwright preflight pacing
+```
+
+These keys are read by `sf-demo-validate` (to check step count vs. tier band), `sf-demo-playwright` (to set realistic timeouts and to print pacing hints in `PRESENTER-GUIDE.md`), and `sf-demo-orchestrate` (to surface duration in the final sign-off panel).
 
 ### Teardown Section (required)
 
@@ -274,5 +318,10 @@ Run through every item — this is the Phase 1.5 checklist that `sf-demo-validat
 - [ ] Does the `## Teardown` section exist and target only `@demo.` email domains?
 - [ ] Does the `## Data Seed Requirements` section have enough detail for `sf-nonprofit-demo-data` to generate all records without asking questions?
 - [ ] Are all User aliases in steps present in `users[]` frontmatter?
+- [ ] Does the YAML frontmatter include `demo_duration_minutes`, `demo_duration_tier`, and `target_step_runtime_seconds`?
+- [ ] Does the step count fall inside the tier band (e.g. 6-8 for `short`, 9-12 for `standard`)?
+- [ ] Does the visual-step count fall inside the tier band?
+- [ ] Does the presenter cheat sheet show the total target runtime banner and per-step time budget?
+- [ ] Does the story summary length match the tier (1 sentence at 5 min, up to ~4 sentences at 60 min)?
 
 If any check fails, fix before emitting.

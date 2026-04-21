@@ -10,9 +10,12 @@ description: >
   (sf-demo-playwright). Emits a single DEMO-PIPELINE-STATUS.md that tracks
   every phase, score, and artifact. TRIGGER when: user says "run the full demo
   workflow", "build me a demo for <org>", "end-to-end demo from these notes",
-  "take me from discovery to presenter-ready", "orchestrate the demo", or any
-  phrase that asks for all 7 steps of the pipeline from a single request. DO
-  NOT TRIGGER when: the user only wants a demoscript (use sf-demo-author),
+  "take me from discovery to presenter-ready", "orchestrate the demo", "prep
+  for a demo", "prep a demo", "prepare a demo", "prepare for a demo", "I
+  want to prep for a demo", "demo prep", "get me ready for a demo", "ready
+  the demo", or any phrase that asks for all 7 steps of the pipeline from a
+  single request. DO NOT TRIGGER when: the user only wants a demoscript
+  (use sf-demo-author),
   only wants data seeded (use sf-nonprofit-demo-data), only wants validation
   (use sf-demo-validate), or only wants a Playwright suite (use
   sf-demo-playwright).
@@ -95,11 +98,13 @@ Look for notes in (priority order):
 
 Parse the notes once here and store a structured summary (audience, platform signals, use case signals, explicit product asks) in `DEMO-PIPELINE-STATUS.md` — **do not re-parse** in Phase 4. `sf-demo-author` will consume the same summary.
 
-### Phase 3 — Product recommendation gate (HARD STOP)
+### Phase 3 — Product + duration gate (HARD STOP)
 
 **Delegation**: keep in **parent**. This is a human-in-the-loop decision gate — never delegate user approval to a subagent.
 
-Switch to plan mode. Present a product-by-product table with three columns:
+Switch to plan mode. Present **two** approvals: the recommended product list **and** a target demo duration. Both must be confirmed before Phase 4 starts because they jointly determine story depth, step density, and visual count.
+
+**3a. Product approval table:**
 
 | Product | Status in org | Recommend? |
 |---|---|---|
@@ -108,15 +113,29 @@ Switch to plan mode. Present a product-by-product table with three columns:
 | Data Cloud | Not enabled | Skip (out of scope for this demo) |
 | Experience Cloud | Active site `arlington-donor` | Include |
 
-Wait for the user to approve or reject each row. Record the decisions under **Phase 3 — Approved Products**. Do not proceed to Phase 4 until the user has explicitly approved.
+**3b. Demo duration prompt:**
+
+Ask: *"How long is the presenter's slot? Pick one tier (or give a custom minute count and I'll round to the nearest tier)."*
+
+| Tier | Minutes | Story shape | Step density | Visual steps | Personas |
+|---|---|---|---|---|---|
+| **Lightning** | 5 | Challenge → Resolution (skip Situation setup) | 3-4 | 1 | 1 driver |
+| **Short** *(default)* | 15 | 4-beat arc, condensed | 6-8 | 1-2 | 1-2 |
+| **Standard** | 30 | Full 4-beat arc | 9-12 | 2-3 | 2-3 |
+| **Extended** | 45 | Full arc + admin/setup view | 12-16 | 3 | 2-4 |
+| **Workshop** | 60 | Full arc + handoffs + Q&A buffer | 16-22 | 3-4 | 3-4 |
+
+If the user does not specify a duration, default to **Short (15 min)** and call that out so they can correct it. If they give a non-tier number (e.g. 20 min), pick the nearest tier and note the rounding.
+
+Wait for the user to approve products **and** confirm the duration. Record both under **Phase 3 — Approved Products** and **Phase 3 — Demo Duration** in the status file. Do not proceed to Phase 4 until both are approved.
 
 This gate is identical in spirit to `sf-demo-author` Phase 0.5 and Mandate 2 of `org-discovery.mdc`. The orchestrator ensures it happens even when the user drops into the pipeline from a single "run the whole thing" prompt.
 
 ### Phase 4 — Delegate to sf-demo-author
 
-**Delegation**: `generalPurpose` subagent per `sf-subagent-orchestration`. Mission: run `sf-demo-author` Phases 1-4 against the approved notes + product list and return `demoscript.md`, persona cards, data seed requirements, and a presenter cheat sheet (file paths only — parent does not need the full demoscript bytes in context to coordinate).
+**Delegation**: `generalPurpose` subagent per `sf-subagent-orchestration`. Mission: run `sf-demo-author` Phases 1-4 against the approved notes + product list **+ approved `demo_duration_minutes`** and return `demoscript.md`, persona cards, data seed requirements, and a presenter cheat sheet (file paths only — parent does not need the full demoscript bytes in context to coordinate).
 
-Hand the approved notes + product list to `sf-demo-author` and instruct it to run its Phases 1-4 (notes intake, story architecture, persona definition, click path generation). Phase 0 and 0.5 from `sf-demo-author` have already been satisfied by Phases 1 and 3 of this orchestrator — do not re-run them.
+Hand the approved notes, product list, **and `demo_duration_minutes`** to `sf-demo-author` and instruct it to run its Phases 1-4 (notes intake, story architecture, persona definition, click path generation). Phase 0 and 0.5 from `sf-demo-author` have already been satisfied by Phases 1 and 3 of this orchestrator — do not re-run them. The duration must appear in the demoscript YAML frontmatter as `demo_duration_minutes:` and bound the step count, story depth, and visual count per the tier table in Phase 3.
 
 Expected artifacts:
 - `demoscript.md` (story arc, personas, click path, prerequisites, cleanup section)
@@ -146,8 +165,8 @@ Invoke `sf-demo-validate` against the generated `demoscript.md`. The sub-skill a
 
 Orchestrator-level rules:
 
-- **Pass gate**: score >= 180 / 200 AND all critical categories (Org connection, Metadata, Data, Permissions, E2E simulation) at full marks. Record pass.
-- **Partial fail**: score 120-179 or non-critical category gap -> let `sf-demo-validate` run its repair loop; re-run once after repair.
+- **Pass gate**: score >= 180 / 200 AND all critical categories (Org connection, Metadata, Data, Permissions, E2E simulation) at full marks **AND step count is within the duration tier band approved in Phase 3** (e.g. a 15-min demo with 14 steps fails this gate — re-author or re-confirm duration). Record pass.
+- **Partial fail**: score 120-179, non-critical category gap, or step count outside the tier band -> let `sf-demo-validate` run its repair loop or send back to `sf-demo-author` to trim/expand to fit the duration; re-run once after repair.
 - **Hard fail**: score < 120 after 3 repair attempts, or a critical-category failure that cannot be auto-repaired -> halt and surface the failure diagnosis to the user.
 
 Each attempt appends to `DEMO-PIPELINE-STATUS.md` -> **Phase 6 — Validation History** with timestamp, score, and failure summary.
@@ -172,6 +191,7 @@ Then present the user with the **final sign-off panel**:
 ```
 Demo pipeline complete.
   Org:              bth-demo
+  Duration tier:    Short (15 min) — 7 steps, 2 visual moments
   Validation score: 196 / 200
   Pre-flight tests: 12 / 12 passing
   Artifacts:
@@ -216,8 +236,13 @@ Written to the workspace root and updated after every phase transition. Template
 - [x] Agentforce (provisioned during run)
 - [ ] Data Cloud (rejected)
 
+## Phase 3 — Demo Duration         [COMPLETE]
+- Tier: Short (15 min)  -- step band 6-8, visual band 1-2, personas 1-2
+- Source: explicit user input ("we have a 15 minute slot")
+
 ## Phase 4 — Demoscript            [COMPLETE]
 - Artifact: demoscript.md
+- demo_duration_minutes: 15  (7 steps, 2 visual -- within tier)
 - sf-demo-author score: 142 / 150
 
 ## Phase 5 — Seed                  [COMPLETE]
@@ -254,7 +279,10 @@ Do **not**:
 | Phase 1: no org alias supplied | Ask user which org; do not guess |
 | Phase 2: notes missing and no paste | Pause and request notes; do not fabricate |
 | Phase 3: user rejects every recommended product | Ask whether to proceed with org-as-is or abort |
+| Phase 3: user gives no duration | Default to Short (15 min) and tell the user; let them override before unlocking Phase 4 |
+| Phase 3: user demands a duration that doesn't fit the product list (e.g. 5 min for 4 products) | Surface the conflict, recommend either trimming products or moving to a longer tier, and ask the user to pick |
 | Phase 4: `sf-demo-author` produces < 100 / 150 | Surface the weak categories and ask whether to accept or re-run with tightened notes |
+| Phase 4: step count is outside the duration tier band | Send back to `sf-demo-author` with the explicit target step range; do not advance to Phase 5 |
 | Phase 5: seed script errors | Let `sf-nonprofit-demo-data` self-diagnose once; if still failing, halt |
 | Phase 6: hard fail after 3 attempts | Halt, attach the validation report, ask user whether to accept partial pass or remediate manually |
 | Phase 7: preflight.sh fails any test | Re-loop through Phase 6 once; if still failing, halt at pre-Phase 7 |
