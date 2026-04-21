@@ -82,9 +82,12 @@ When multiple skills match, prefer in this order:
 
 ### sf-demo-orchestrate
 
-  build me a demo, build the demo, demo pipeline, demo workflow, end to end demo, end-to-end demo
-  from discovery to presenter, full demo, full demo workflow, go from notes to demo, notes to demo
-  orchestrate demo, orchestrate the demo, presenter ready, run the demo, run the full demo
+  build me a demo, build the demo, demo pipeline, demo prep, demo workflow, end to end demo, end-to-end demo
+  from discovery to presenter, full demo, full demo workflow, get me ready for a demo, get ready for a demo
+  go from notes to demo, i want to prep for a demo, i want to prepare for a demo, notes to demo
+  orchestrate demo, orchestrate the demo, prep a demo, prep for a demo, prep for the demo, prep the demo
+  prepare a demo, prepare for a demo, prepare for the demo, prepare the demo, prepping a demo
+  prepping for a demo, presenter ready, ready the demo, run the demo, run the full demo
   run the pipeline, run the workflow, ship a demo, take me from notes
 
 ### sf-demo-author

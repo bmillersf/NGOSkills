@@ -162,3 +162,26 @@ Reference these for consistent step writing:
 
 **Global Search**:
 > Click the search bar at the top of the page (magnifying glass icon). Type "[search term]". Press Enter. Click the first result: "[Record Name]".
+
+---
+
+## Step Density by Demo Duration
+
+The right number of steps is a function of the presenter's slot, not the product list. Authoring more steps than the slot can hold is the #1 reason live demos run over and lose the close. Use this table to size the click path.
+
+| Tier | Minutes | Steps | Visual steps | Talking-point depth | Per-step budget | What to cut first if over |
+|---|---|---|---|---|---|---|
+| Lightning | 5 | 3-4 | 1 | 1 sentence each, only on the wow step | ~75 sec | Skip Situation setup, skip secondary personas, skip admin/setup steps |
+| Short *(default)* | 15 | 6-8 | 1-2 | 1-2 sentences on every step, full block on wow | ~90-120 sec | Drop secondary persona arcs, collapse navigation steps |
+| Standard | 30 | 9-12 | 2-3 | Full talking-point block on every step | ~150 sec | Drop the admin/setup view, collapse near-duplicate clicks |
+| Extended | 45 | 12-16 | 3 | Full block + admin/setup commentary | ~150-180 sec | Trim Q&A buffer first, then a secondary persona |
+| Workshop | 60 | 16-22 | 3-4 | Full block + handoff narration + Q&A pause cues | ~150-180 sec | Trim handoffs, then admin/setup |
+
+### Rules for using this table
+
+1. The chosen tier is set by `demo_duration_minutes` in the demoscript YAML frontmatter (or by the orchestrator's Phase 3 gate). Do not pick the tier on the fly.
+2. **Step count must land inside the band** — not below (loses the story) and not above (overruns the slot). 14 steps in a 15-min demo is a fail; trim or move to the 30-min tier.
+3. **Visual steps must land inside the band** — too many screenshots dilutes impact and pads runtime.
+4. The per-step budget includes the click + the talking points + any expected wait. If a step's verbal narration alone exceeds the budget, that step is doing too much — split it or trim the narration.
+5. The cheat sheet should print a runtime banner: *"Target: 15 min — 7 steps × ~120 sec + 2 min opening/closing"*. If the math doesn't fit, the demoscript is wrong, not the math.
+6. If the approved product list cannot fit the chosen duration (e.g. 4 products in a 5-min Lightning slot), surface the conflict back to the user/orchestrator before generating — do not silently overflow.

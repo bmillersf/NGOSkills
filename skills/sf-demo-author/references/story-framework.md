@@ -103,3 +103,25 @@ The wow moment is the step where the audience leans forward. It should be:
 - **Concrete**: a specific number, name, or outcome -- not a general capability
 
 Mark it with `<!-- visual: true -->` and give it the strongest `**Talking Points**` block in the script.
+
+---
+
+## Story Arc by Demo Duration
+
+The 4-beat arc is the same shape at every duration, but the relative weight of each beat changes. Compress the arc to fit the slot — never stretch a 5-minute story to 30 minutes by repeating the same beat.
+
+| Tier | Minutes | Beats to keep | Opening verbal | Closing verbal | Persona depth |
+|---|---|---|---|---|---|
+| Lightning | 5 | Challenge -> Resolution only (skip Situation setup) | 1 sentence ("Meet Maria. She has 30 seconds to find James's application.") | 1 sentence ("That used to take a week.") | 1 driver only |
+| Short *(default)* | 15 | All 4 beats, condensed (Situation in 1 line) | 2-3 sentences | 1-2 sentences | 1-2 personas, name the driver + the beneficiary |
+| Standard | 30 | Full 4-beat arc with breathing room | 3-4 sentences | 2-3 sentences | 2-3 personas, full persona cards introduced verbally |
+| Extended | 45 | Full arc + an admin/setup view ("here's how this got configured in 5 minutes") | 3-4 sentences + persona intro | 2-3 sentences + roadmap teaser | 2-4 personas, optional handoff between two |
+| Workshop | 60 | Full arc + multi-persona handoffs + Q&A pause cues every ~3 steps | 4 sentences + persona intro + agenda | 3 sentences + call to action + next-steps slide | 3-4 personas, explicit handoffs between roles |
+
+### Rules for using this table
+
+1. **Always keep Resolution.** No matter how short the slot, the audience needs to see the payoff. If you only have time for one beat, make it the Resolution.
+2. **Skip Situation before you skip Challenge.** Setup is the most expendable beat; the inciting moment is what makes the demo a story instead of a feature tour.
+3. **The opening and closing verbals are part of the runtime.** Budget them inside `demo_duration_minutes` — don't treat them as free.
+4. **Don't add personas to fill time.** A 60-min demo with one persona is fine if the journey earns it. A 5-min demo with 3 personas will fail.
+5. **Match the wow-moment count to the tier.** Lightning gets 1 wow moment. Workshop gets 3-4. The Phase 4 click path table in `click-path-guide.md` is the source of truth for visual-step counts.
