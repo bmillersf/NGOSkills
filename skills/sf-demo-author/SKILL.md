@@ -243,7 +243,7 @@ The step count must land **inside** the band for the chosen tier — not below (
 Emit the complete `demoscript.md` using the format spec from [assets/demoscript-template.md](assets/demoscript-template.md), followed by:
 
 1. **Persona cards** (formatted as a separate `## Personas` section after the teardown)
-2. **Data requirements** (formatted as a `## Data Seed Requirements` section listing what `sf-nonprofit-demo-data` needs to generate — use this structured format):
+2. **Data requirements** (formatted as a `## Data Seed Requirements` section listing what `sf-nonprofit-demo-data` needs to generate — use this structured format). For each record block, you MAY include an `Empty fields:` line listing fields the demo intentionally leaves blank because a later step fills them in live; the seeding skill reads this list and populates **every other writeable field** with realistic values:
    ```
    ## Data Seed Requirements
    Platform: NPC | NPSP
@@ -254,6 +254,8 @@ Emit the complete `demoscript.md` using the format spec from [assets/demoscript-
 
    ### ApplicationForms
    - James Okafor: Status=Submitted, CreatedDate=TODAY-2, Description=tutoring background
+     Empty fields: Background_Check_Status__c, Approval_Notes__c
+     # ^ Step 4 of the demo shows Maria filling these in live
 
    ### JobPositionShifts
    - 3 shifts, StartDate=TODAY+7 through TODAY+21, RemainingCapacity=5, Location=Community Kitchen
@@ -262,6 +264,8 @@ Emit the complete `demoscript.md` using the format spec from [assets/demoscript-
    - alias: maria | TimeZoneSidKey: America/Chicago | ContactId: → Maria Santos Person Account
    - alias: jamie | TimeZoneSidKey: America/Chicago | ContactId: → James Okafor Person Account
    ```
+
+   **Rule**: walk the click path in order. Any time a step has the presenter typing, selecting, or checking a value into a field on a record that was seeded earlier, add that field to the `Empty fields:` line of that record. If the click path leaves a field alone, it should be populated at seed time so the layout looks complete.
 3. **Story summary** (1 paragraph the presenter reads as the opening, sized to the duration tier per Phase 2)
 4. **Presenter cheat sheet** (a 1-page summary: personas at a glance, step titles **with per-step time budget**, 3 key talking points, and the total target runtime banner — e.g. *"Target: 15 min — 7 steps × ~120 sec + 2 min opening/closing"*)
 
@@ -317,6 +321,7 @@ Run through every item — this is the Phase 1.5 checklist that `sf-demo-validat
 - [ ] Does the `## Prerequisites` section cover NPC platform requirements (Person Accounts, RT, queue, custom fields)?
 - [ ] Does the `## Teardown` section exist and target only `@demo.` email domains?
 - [ ] Does the `## Data Seed Requirements` section have enough detail for `sf-nonprofit-demo-data` to generate all records without asking questions?
+- [ ] For every record whose fields the click path types into, does the matching record block include an `Empty fields:` line so the seeding skill knows to leave those fields blank?
 - [ ] Are all User aliases in steps present in `users[]` frontmatter?
 - [ ] Does the YAML frontmatter include `demo_duration_minutes`, `demo_duration_tier`, and `target_step_runtime_seconds`?
 - [ ] Does the step count fall inside the tier band (e.g. 6-8 for `short`, 9-12 for `standard`)?
