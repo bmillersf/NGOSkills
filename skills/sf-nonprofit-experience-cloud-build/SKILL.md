@@ -35,6 +35,45 @@ Apply this skill whenever the user asks to:
 - Create a donor portal, giving site, member portal, or customer community
 - Add a public-facing donation / signup / self-service flow inside a community
 
+## Component selection policy: standard-first
+
+**Default to standard Experience Cloud / Lightning components. Write a custom LWC only when standard components cannot meet the requirement.** Brand is delivered at the theme layer (Phase 2) and applies to both standard and custom components, so "it should look branded" is never a reason to go custom.
+
+**Decision rule — use a standard component when any of these is true:**
+
+- A standard component already renders the required data or behavior (restyling via `customCSS` or SLDS utilities is not a reason to replace it).
+- The requirement is CRUD on a Salesforce record → Record Detail, Create Record Form, Edit Record Form, Related List — Single.
+- The requirement is navigation, search, profile, topics, recommendations, headlines, or tiles → all have first-party equivalents.
+- The requirement is a static content block → Rich Content Editor or HTML Editor.
+- The requirement is a guided multi-step form → **Screen Flow embedded via the standard Flow component** is the default. Fall back to a custom LWC only when Flow provably cannot express the logic (e.g. payment-gateway integration, multi-object atomic commit beyond Flow's capability, or UI patterns Flow cannot render).
+
+**A custom LWC is justified only when at least one is true — document which in the plan:**
+
+- The UI composes data from multiple objects or external systems in a layout no standard component supports.
+- The interaction requires conditional branching / client-side state that Flow cannot express.
+- Deep-linking, query-param parsing, or analytics events are required and the standard component does not emit them.
+- Guest-aware conditional rendering is required that standard components do not gate.
+
+**Standard → custom mapping (use this as the audit checklist):**
+
+| Need | Prefer (standard) | Go custom only if |
+|------|-------------------|-------------------|
+| Global nav / menu | Navigation Menu, Profile Header | Mega-menu driven by Apex or non-NavigationMenu data |
+| Hero / banner | HTML Editor or Rich Content Editor (themed) | Hero parameterizes over a Custom Metadata / Apex-backed model |
+| Tile grid / cards | Tile Menu, Card, Related List — Single | Tiles must deep-link with query params the standard does not emit |
+| Pull quote / testimonial | Rich Content Editor + themed `.quote-block` | Rotating from an object with complex sort / personalization |
+| Event / list surfaces | List View, Calendar, Related List — Single | Design requires merged badges, filters, or cross-object joins |
+| Record view | Record Detail, Record Banner, Related List — Single | Cross-object composed dashboard no standard layout represents |
+| Form / submit | Create Record Form; or Screen Flow via the Flow component | Multi-step wizard with payment gateway or multi-object atomicity |
+| FAQ / content blocks | Accordion, Tabs, Headline, Rich Content Editor | — |
+| Search | Search Bar, Search Results | Faceted search across custom indexes |
+
+**Enforcement in every phase:**
+
+- **Phase 1 brand-mining** — when listing homepage sections, tag each section with the standard component that will render it. Only sections with no standard match advance to the custom-LWC list.
+- **Phase 3 decomposition** — must begin with a written standard-component audit (see below). No custom-LWC subagents are spawned until the audit is captured.
+- **Phase 5 verification** — the review summary must list the standard:custom ratio and the one-line justification for each custom component.
+
 ## The five-phase workflow
 
 Copy this checklist at the start of the engagement:
@@ -43,7 +82,7 @@ Copy this checklist at the start of the engagement:
 Phase Progress:
 - [ ] Phase 1: Brand-mine the reference website
 - [ ] Phase 2: Translate brand into a design system
-- [ ] Phase 3: Decompose the page into purposeful LWCs
+- [ ] Phase 3: Compose standard-first, custom LWCs only where standard falls short
 - [ ] Phase 4: Wire routing, guest access, and deployment
 - [ ] Phase 5: Publish and verify end-to-end
 ```
@@ -89,26 +128,32 @@ Wire the brand into the site in two places so every LWC inherits it:
 
 See [reference.md](reference.md#design-system-wiring) for a complete customCSS template.
 
-### Phase 3 — Decompose the page into purposeful LWCs
+### Phase 3 — Compose the page standard-first; build custom LWCs only where needed
 
-**Delegation**: fire one `generalPurpose` subagent per LWC in a single tool-call message (parallel pattern from `sf-subagent-orchestration`). Each subagent receives: the design tokens from Phase 2, the LWC's spec (purpose, props, behavior), the static resource name, and an acceptance criteria checklist. Each returns a summary + file paths. The parent integrates the composed view in Phase 5.
+**Delegation**:
+- The standard-component audit is done in the **parent** (it scopes the whole phase).
+- After the audit, fire one `generalPurpose` subagent *per surviving custom LWC* in a single tool-call message (parallel pattern from `sf-subagent-orchestration`). Each subagent receives: the design tokens from Phase 2, the LWC's spec (purpose, props, behavior), the static resource name, and an acceptance criteria checklist. Each returns a summary + file paths. The parent integrates the composed view in Phase 5.
 
-**Rule: never build mega-LWCs.** Each story on the homepage = one LWC. Compose the view in the ExperienceBundle's `views/home.json`.
+**Phase 3 opens with a mandatory standard-component audit.** Walk the Phase 1 IA section by section. For each section, name the standard component that will render it. Only sections that fail the "Component selection policy" decision rule advance to the custom-LWC list. Record the audit as a short table in the plan so it is reviewable *before* any custom code is written.
 
-Typical LWC set for a marketing-style community homepage:
+**Rule: never build mega-LWCs.** When custom is justified, each story = one LWC. Compose the view in the ExperienceBundle's `views/home.json` by mixing standard and custom components. Do **not** rewrap standard components inside a custom shell just to unify styling — theme them instead.
 
-| LWC | Purpose |
-|-----|---------|
-| `<org>Header` | Logo, primary nav, primary CTA (donate / sign up) |
-| `<org>HeroBanner` | Full-width hero with eyebrow + headline + 1-2 CTAs |
-| `<org>OpportunitiesGrid` | 3-6 tiles linking to deeper actions (often deep-linked with URL params) |
-| `<org>QuoteBanner` | Leadership / testimonial pull-quote |
-| `<org>UpcomingEvents` | Curated event list with date badges |
-| `<org>Dashboard` | Authenticated-user summary (hidden for guests) |
+**Standard-first composition for a marketing-style community homepage** (flip this to custom only with an explicit justification):
 
-**Dual-audience pattern**: public marketing LWCs render for everyone; authenticated dashboards must use `@salesforce/user/isGuest` to gate rendering *and* to short-circuit any `@wire` Apex calls so guest sessions don't throw errors.
+| Section | Default choice | Custom only if |
+|---------|---------------|----------------|
+| Global header | **Standard** Navigation Menu + Profile Header (themed) | Header composes Apex-driven widgets or cross-site auth state |
+| Hero | **Standard** HTML Editor (themed) or Rich Content Editor | Hero is parameterized from Custom Metadata / Apex |
+| Programs / ministry grid | **Standard** Tile Menu or Card | Tiles must deep-link with query params the standard does not emit → custom `<org>OpportunitiesGrid` |
+| Pull quote | **Standard** Rich Content Editor + themed `.quote-block` | Rotating quotes from an object with complex selection rules |
+| Upcoming events | **Standard** List View or Related List — Single | Design requires merged date badges / filters not in OOTB list |
+| Donate / signup flow | **Standard** Screen Flow via the Flow component | Payment gateway or multi-object atomicity Flow cannot express → custom multi-step form LWC |
+| Authenticated dashboard | **Standard** Record Detail + Related Lists | Cross-object composed view no standard layout represents → custom `<org>Dashboard` |
+| FAQ / content | **Standard** Accordion, Tabs, Headline | — |
 
-For transactional flows (donate, sign up, register) use a separate route with a dedicated **multi-step form LWC**:
+**Dual-audience pattern** (applies to any custom LWC you do ship): public marketing components render for everyone; authenticated dashboards must use `@salesforce/user/isGuest` to gate rendering *and* to short-circuit any `@wire` Apex calls so guest sessions don't throw errors. Standard components already gate themselves — another reason to prefer them.
+
+**If a custom multi-step form survives the Flow-first audit**, use a separate route with a dedicated multi-step form LWC:
 
 - Stepper with visible progress (e.g. `Amount → Info → Payment → Review`)
 - Parse URL params on `connectedCallback` so tiles can deep-link with pre-selected values (`?fund=General%20Fund&amount=50`)
@@ -163,6 +208,7 @@ Before calling the site done, verify:
 - [ ] Authenticated user sees dashboard LWCs that guests don't
 - [ ] Every custom route is listed in NavigationMenu if user-discoverable
 - [ ] Community status in `sf data query "SELECT Name, Status FROM Network"` is `Live`
+- [ ] **Standard-first audit**: list the final standard:custom component ratio and the one-line justification for each custom component. If any custom component's justification reduces to "for branding" or "to look nicer," revert to the standard equivalent and re-theme.
 
 If a route returns "Page not available," 95% of the time it is one of:
 - `/s/s/` double-prefix in a navigation URL (see basePath rule above)
