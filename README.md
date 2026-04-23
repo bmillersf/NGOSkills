@@ -14,11 +14,11 @@ What this collection makes possible:
 - **Deep Salesforce domain expertise on demand** — 47 skills covering every layer of the Salesforce platform: Apex, LWC, Flow, Metadata, SOQL, Deployment, Data Operations, Permissions, Integration, Connected Apps, Data Cloud (all 5 phases), Agentforce (build, test, observe, persona, script), OmniStudio (OmniScript, Integration Procedure, Data Mapper, FlexCard), and the full Nonprofit Cloud stack (fundraising, grants, program management, Experience Cloud). Each skill encodes the standards, patterns, and scoring rubrics I use -- so the agent produces production-quality output, not generic boilerplate.
 - **End-to-end nonprofit-specific intelligence** — from NPSP migration guidance and NPC data modeling to donor lifecycle management, grant pipelines, volunteer intake, program enrollment, and the portal experiences that serve constituents -- the agent knows the nonprofit platform the way a specialized architect does.
 
-These skills encode my approach to Salesforce architecture, coding standards, and demo delivery into reusable instructions that give any AI agent the domain knowledge to work the way I would -- with the depth, precision, and nonprofit context that generic AI assistance can't provide. The skills are written in standard markdown and work identically in **Cursor** (native skill system, auto-triggered) and **Claude** (via Claude Projects or direct conversation). See [CLAUDE.md](CLAUDE.md) for Claude-specific setup.
+These skills encode my approach to Salesforce architecture, coding standards, and demo delivery into reusable instructions that give any AI agent the domain knowledge to work the way I would -- with the depth, precision, and nonprofit context that generic AI assistance can't provide. The skills are written in standard markdown and work identically in **Cursor** (native skill system, auto-triggered), **Claude Code** (native skill system via `~/.claude/skills/`, auto-triggered), and **Claude.ai** (via Claude Projects or direct conversation). See [CLAUDE.md](CLAUDE.md) for Claude-specific setup.
 
 ## Getting Started
 
-Skills work in both **Cursor** and **Claude**. The SKILL.md files are standard markdown -- no conversion needed.
+Skills work in **Cursor**, **Claude Code** (CLI), and **Claude.ai**. The same `SKILL.md` files power all three -- no conversion, no duplication. Both Cursor and Claude Code read the skills directly from this repo, so a single `git pull` updates every environment at once. Any new skill added from either system becomes instantly available in the other.
 
 ### Cursor
 
@@ -46,9 +46,40 @@ Pull the latest changes from the NGOsfskills repo and update my Cursor skills.
 
 ---
 
-### Claude
+### Claude Code (CLI)
 
-> **Note:** Unlike Cursor, Claude cannot clone repositories or install files automatically. The setup below is a one-time manual process (~2 minutes) after which Claude routes and applies skills identically to Cursor.
+Claude Code has a native skill system that reads from `~/.claude/skills/`. Point it at this repo with a single symlink so every skill becomes available globally, auto-triggered the same way Cursor handles them.
+
+**Install (one time)** — from a shell:
+
+```bash
+ln -s /path/to/NGOSkills/skills ~/.claude/skills
+```
+
+That's it. The symlink makes `~/.claude/skills` *be* the repo's `skills/` directory. Restart Claude Code and all 47 skills are available, matched automatically by their `TRIGGER when` descriptions.
+
+**Bidirectional parity** — because `~/.claude/skills` is a symlink to the Cursor repo's `skills/` folder, the two environments share one source of truth:
+
+- A skill added or edited in Cursor is instantly visible to Claude Code
+- A skill added or edited via Claude Code is instantly visible to Cursor
+- `git pull` updates both environments at once
+- No copy step, no sync script, no drift
+
+**Verify** — in any Claude Code session:
+
+```
+Write an Apex class that handles volunteer intake
+```
+
+The `sf-apex` skill loads automatically and applies its 5-phase workflow and 150-point scoring rubric.
+
+**Update** — `git pull` in the repo. No other action needed.
+
+---
+
+### Claude.ai
+
+> **Note:** Unlike Cursor and Claude Code, Claude.ai cannot clone repositories or access your filesystem. The setup below is a one-time manual process (~2 minutes) after which Claude.ai routes and applies skills identically to the native environments.
 
 **Claude Projects (recommended)** — full automatic skill routing, persistent across all conversations:
 
