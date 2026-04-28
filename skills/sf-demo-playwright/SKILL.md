@@ -114,7 +114,7 @@ test.describe('[Demo Title] Pre-flight Checks', () => {
 `navigation`:
 ```javascript
 test('Step 1: Open the Volunteer Hub App', async ({ page }) => {
-    await page.goto(`${instanceUrl}/lightning/app/BTH_Volunteer_Hub`);
+    await page.goto(`${instanceUrl}/lightning/app/Acme_Volunteer_Hub`);
     await expect(page).toHaveTitle(/Volunteer Hub/);
     await page.screenshot({ path: 'screenshots/step-01-volunteer-hub.png', fullPage: false });
 });
@@ -141,7 +141,7 @@ test('Step 3: View James Okafor Application', async ({ page }) => {
 test('Step 5: Verify Intake Flow is Active', async ({ page }) => {
     // SOQL assertion via sf data query
     const result = JSON.parse(execSync(
-        `sf data query --query "SELECT IsActive FROM FlowDefinitionView WHERE ApiName = 'BTH_Volunteer_Intake' AND IsActive = true" --json --target-org ${orgAlias}`
+        `sf data query --query "SELECT IsActive FROM FlowDefinitionView WHERE ApiName = 'Acme_Volunteer_Intake' AND IsActive = true" --json --target-org ${orgAlias}`
     ).toString());
     expect(result.result.totalSize).toBeGreaterThan(0);
 });
@@ -150,7 +150,7 @@ test('Step 5: Verify Intake Flow is Active', async ({ page }) => {
 `experience` (Experience Cloud):
 ```javascript
 test('Step 7: Guest Portal Loads', async ({ page }) => {
-    const portalUrl = await getExperienceSiteUrl('BTH_Volunteer_Hub1');
+    const portalUrl = await getExperienceSiteUrl('Acme_Volunteer_Hub1');
     await page.goto(portalUrl);
     await expect(page.locator('h1, .siteforceContentArea')).toBeVisible();
     await page.screenshot({ path: 'screenshots/step-07-guest-portal.png', fullPage: true });
@@ -241,7 +241,7 @@ Generated: [date]  |  Org: [alias]  |  Last validated: [date]
 
 ![Step 1 Screenshot](screenshots/step-01-volunteer-hub.png)
 
-**You do**: Click the App Launcher (grid icon, top left). Type "Volunteer Hub". Click "BTH Volunteer Hub".
+**You do**: Click the App Launcher (grid icon, top left). Type "Volunteer Hub". Click "Acme Volunteer Hub".
 
 **You see**: The Volunteer Hub home page with the Application list view showing recent submissions.
 

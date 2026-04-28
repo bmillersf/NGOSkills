@@ -14,7 +14,7 @@ What they care about: Getting the right volunteers matched to the right kids/cli
 Daily pain: Email chains, spreadsheets, shift gaps discovered the day before
 Salesforce user alias: maria
 Profile: Custom "Volunteer Coordinator" or "Standard User"
-Permission sets: BTH_Volunteer_Coordinator (or equivalent)
+Permission sets: Acme_Volunteer_Coordinator (or equivalent)
 Demo actions: Reviews applications, approves volunteers, assigns shifts, monitors capacity
 ```
 

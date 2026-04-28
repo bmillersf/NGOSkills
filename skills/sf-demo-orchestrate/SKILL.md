@@ -57,10 +57,10 @@ One trigger phrase -> a presenter-ready demo. This skill does **not** re-impleme
 
 Apply this skill when the user asks for the **whole pipeline in one go** — phrases like:
 
-- "Run the full demo workflow for BTH"
+- "Run the full demo workflow for Acme"
 - "Build me an end-to-end demo from these notes"
 - "Take me from discovery to presenter-ready"
-- "Orchestrate the demo for my bth-demo org"
+- "Orchestrate the demo for my acme-demo org"
 - "I pasted notes — give me a finished demo"
 
 If the user only wants one phase (author, seed, validate, Playwright), defer to the matching single-purpose skill instead. The auto-router handles that disambiguation.
@@ -190,7 +190,7 @@ Then present the user with the **final sign-off panel**:
 
 ```
 Demo pipeline complete.
-  Org:              bth-demo
+  Org:              acme-demo
   Duration tier:    Short (15 min) — 7 steps, 2 visual moments
   Validation score: 196 / 200
   Pre-flight tests: 12 / 12 passing
@@ -203,7 +203,7 @@ Demo pipeline complete.
   Next actions:
     1. Review PRESENTER-GUIDE.md before the session
     2. Run ./scripts/preflight.sh 30 min before go-time
-    3. `git commit -am "demo: BTH discovery -> presenter-ready"` to version it
+    3. `git commit -am "demo: Acme discovery -> presenter-ready"` to version it
 ```
 
 Wait for explicit "looks good / ship it" before closing the pipeline. Do not auto-commit; version control is always the user's call.
@@ -215,7 +215,7 @@ Written to the workspace root and updated after every phase transition. Template
 ```markdown
 # Demo Pipeline Status
 
-- **Target org:** bth-demo
+- **Target org:** acme-demo
 - **Started:** 2026-04-17 12:51 PST
 - **Current phase:** 6 — Validated & Repaired (attempt 2)
 - **Overall:** IN_PROGRESS
@@ -247,7 +247,7 @@ Written to the workspace root and updated after every phase transition. Template
 
 ## Phase 5 — Seed                  [COMPLETE]
 - 12 volunteers, 5 programs, 24 shifts, 8 gifts
-- Teardown: scripts/apex/teardown-bth-demo.apex
+- Teardown: scripts/apex/teardown-acme-demo.apex
 
 ## Phase 6 — Validation            [IN_PROGRESS, attempt 2 of 3]
 - Attempt 1: 158 / 200 (missing ProgramEngagement FLS, stale shift dates)

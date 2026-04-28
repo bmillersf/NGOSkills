@@ -31,7 +31,7 @@ Claude Projects let you upload files as permanent knowledge and set persistent i
 
 **Step 1: Create a new Claude Project**
 
-In Claude.ai, click **Projects** in the left sidebar → **New Project**. Name it something like `NGO Salesforce Skills` or `BTH Salesforce Agent`.
+In Claude.ai, click **Projects** in the left sidebar → **New Project**. Name it something like `NGO Salesforce Skills` or `Acme Salesforce Agent`.
 
 **Step 2: Upload the skill files**
 

@@ -402,7 +402,7 @@ if (!staleForms.isEmpty()) {
 
 ```apex
 List<Account> jamiePA = [SELECT Id, PersonContactId FROM Account
-                          WHERE PersonEmail = 'bth.volunteerdemo@example.com' LIMIT 1];
+                          WHERE PersonEmail = 'acme.volunteerdemo@example.com' LIMIT 1];
 if (!jamiePA.isEmpty()) {
     List<JobPositionAssignment> dupes = [
         SELECT Id FROM JobPositionAssignment
@@ -676,8 +676,8 @@ req.setMethod('POST');
 req.setHeader('Content-Type', 'application/json');
 req.setHeader('Authorization', 'Bearer ' + UserInfo.getSessionId());
 req.setBody(JSON.serialize(new Map<String, Object>{
-    'label' => 'BTH Volunteer Reports',
-    'name' => 'BTH_Volunteer_Reports',
+    'label' => 'Acme Volunteer Reports',
+    'name' => 'Acme_Volunteer_Reports',
     'type' => 'report'
 }));
 Http http = new Http();
@@ -689,7 +689,7 @@ System.debug('Report folder created: ' + folderId);
 
 **Step 2: Create Report via REST**
 
-**CRITICAL**: Custom report types deployed via Metadata API are referenced in the Analytics REST API with a `__c` suffix. For example, a report type with DeveloperName `BTH_Volunteer_Assignments` must be referenced as `BTH_Volunteer_Assignments__c` in the `reportType.type` field.
+**CRITICAL**: Custom report types deployed via Metadata API are referenced in the Analytics REST API with a `__c` suffix. For example, a report type with DeveloperName `Acme_Volunteer_Assignments` must be referenced as `Acme_Volunteer_Assignments__c` in the `reportType.type` field.
 
 **CRITICAL**: Lookup fields in custom report types must use the dotted relationship-to-Name format for column references (e.g., `JobPositionAssignment.AssignedContact.Name`, not `JobPositionAssignment.AssignedContact`). Use the describe endpoint (`/analytics/report-types/[TypeName__c]`) to discover valid column names.
 
@@ -706,9 +706,9 @@ req.setHeader('Content-Type', 'application/json');
 req.setHeader('Authorization', 'Bearer ' + UserInfo.getSessionId());
 
 Map<String, Object> reportMetadata = new Map<String, Object>{
-    'name' => 'BTH Volunteers YTD',
-    'developerName' => 'BTH_Volunteers_YTD',
-    'reportType' => new Map<String, Object>{ 'type' => 'BTH_Volunteer_Assignments__c' },
+    'name' => 'Acme Volunteers YTD',
+    'developerName' => 'Acme_Volunteers_YTD',
+    'reportType' => new Map<String, Object>{ 'type' => 'Acme_Volunteer_Assignments__c' },
     'reportFormat' => 'TABULAR',
     'folderId' => folderId,
     'detailColumns' => new List<String>{
@@ -883,7 +883,7 @@ When some links in the chain fire but others don't:
 
 ### Coordinator Can't See Records
 
-1. Verify `BTH_Volunteer_Coordinator` perm set is assigned to the coordinator user
+1. Verify `Acme_Volunteer_Coordinator` perm set is assigned to the coordinator user
 2. Verify the perm set grants Read access to `ApplicationForm` and related objects
 3. Check sharing rules — the coordinator may need "View All" or specific sharing
 
