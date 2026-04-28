@@ -1,6 +1,6 @@
 # NGO Salesforce Skills
 
-**Author:** Brian Miller (Senion Solution Engineer @ Salesforce) 
+**Author:** Brian Miller (Senior Solution Engineer @ Salesforce) 
 
 **Co-Author:** Opus 4.6
 
@@ -25,9 +25,10 @@ Skills work in **Cursor**, **Claude Code** (CLI), and **Claude.ai**. The same `S
 **Install** — open Cursor and prompt:
 
 ```
-Clone https://github.com/brianmiller_sfemu/NGOsfskills.git into my
-Cursor skills directory and set up all the skills so they're available
-in my environment.
+Clone https://github.com/bmillersf/NGOSkills.git into my Cursor skills
+directory and set up all the skills so they're available in my environment.
+Then run scripts/sync-skills.sh --fix to wire up the per-skill symlinks
+and the always-apply rules.
 ```
 
 **Verify** — prompt with any trigger phrase:
@@ -41,29 +42,33 @@ The `sf-apex` skill activates automatically and follows its 5-phase workflow and
 **Update** — prompt:
 
 ```
-Pull the latest changes from the NGOsfskills repo and update my Cursor skills.
+Pull the latest changes from the NGOSkills repo and update my Cursor skills.
 ```
+
+After a `git pull`, run `scripts/sync-skills.sh --check` to verify nothing has drifted (or `--fix` to auto-create any missing symlinks for newly added skills).
 
 ---
 
 ### Claude Code (CLI)
 
-Claude Code has a native skill system that reads from `~/.claude/skills/`. Point it at this repo with a single symlink so every skill becomes available globally, auto-triggered the same way Cursor handles them.
+Claude Code has a native skill system that reads from `~/.claude/skills/` and a global behavior policy at `~/.claude/CLAUDE.md`. Point both at this repo with two symlinks so every skill becomes available globally, auto-triggered the same way Cursor handles them, and the agent inherits the same autonomy/parallel-delegation policy as Cursor.
 
 **Install (one time)** — from a shell:
 
 ```bash
-ln -s /path/to/NGOSkills/skills ~/.claude/skills
+git clone https://github.com/bmillersf/NGOSkills.git ~/Cursor/Skills/NGOSkills
+cd ~/Cursor/Skills/NGOSkills
+scripts/sync-skills.sh --fix
 ```
 
-That's it. The symlink makes `~/.claude/skills` *be* the repo's `skills/` directory. Restart Claude Code and all 47 skills are available, matched automatically by their `TRIGGER when` descriptions.
+The script creates the directory-level skills symlink (`~/.claude/skills` → `<repo>/skills`), the per-skill symlinks for Cursor (`~/.cursor/skills/<name>` → `<repo>/skills/<name>`), the per-rule symlinks for Cursor (`~/.cursor/rules/<rule>` → `<repo>/.cursor/rules/<rule>`), and the Claude global policy symlink (`~/.claude/CLAUDE.md` → `<repo>/.cursor/rules/agent-autonomy.mdc`). Restart Claude Code and all 47 skills are available, matched automatically by their `TRIGGER when` descriptions, with the always-apply autonomy and parallel-delegation policy already loaded.
 
-**Bidirectional parity** — because `~/.claude/skills` is a symlink to the Cursor repo's `skills/` folder, the two environments share one source of truth:
+**Bidirectional parity** — because both clients read directly from this repo via symlinks, they share one source of truth:
 
 - A skill added or edited in Cursor is instantly visible to Claude Code
 - A skill added or edited via Claude Code is instantly visible to Cursor
 - `git pull` updates both environments at once
-- No copy step, no sync script, no drift
+- The optional `scripts/sync-skills.sh --check` health check confirms nothing has drifted; `--fix` creates symlinks for any newly added skills or rules
 
 **Verify** — in any Claude Code session:
 
@@ -73,7 +78,7 @@ Write an Apex class that handles volunteer intake
 
 The `sf-apex` skill loads automatically and applies its 5-phase workflow and 150-point scoring rubric.
 
-**Update** — `git pull` in the repo. No other action needed.
+**Update** — `git pull` in the repo, then `scripts/sync-skills.sh --check` to confirm clean state. New skills get linked automatically with `--fix`.
 
 ---
 
@@ -166,9 +171,13 @@ The entire workflow -- from pasting discovery notes to having a validated, prese
 ## Repository Structure
 
 ```
-skills/                          # Salesforce-domain skills (47 skills)
-CLAUDE.md                        # Claude setup guide (Projects, per-conversation, API)
+skills/                          # Salesforce-domain skills (47 sf-* skills)
+skills-cursor/                   # Cursor-ecosystem utilities (babysit, create-hook,
+                                 #   statusline, update-cli-config) — Cursor-only
+CLAUDE.md                        # Claude.ai setup guide (Projects, per-conversation, API)
 scripts/
+  sync-skills.sh                 # Health-check (--check) and idempotent fix (--fix) for
+                                 #   all skill, rule, and Claude-config symlinks
   generate-claude-bundle.sh      # Generates a bundled Claude system prompt from all skills
   nonprofit-knowledge-engine.py  # Scrapes SF docs, compartmentalizes NPSP vs NPC, builds keyword index
   refresh-nonprofit-content.sh   # One-command refresh for release-day updates
@@ -184,8 +193,13 @@ content/                         # Auto-generated knowledge base (populated by t
 .cursor/
   hooks.json                     # Cursor hook config for auto-skill-routing
   hooks/nonprofit-skill-router.* # Hook that auto-detects nonprofit keywords in prompts
+  rules/agent-autonomy.mdc       # Always-applied: autonomous execution, parallel-first
+                                 #   delegation, git-worktree variants, canonical skill
+                                 #   creation. ALSO the source for ~/.claude/CLAUDE.md
+                                 #   so both clients inherit the same policy.
   rules/nonprofit-auto-router.md # Always-applied rule with keyword index for auto-routing
   rules/org-discovery.mdc        # Always-applied rule: org connection, product approval, query-before-create
+  rules/dashboard-report-ux.mdc  # Always-applied rule: dashboard and report UX standards
 ```
 
 ## Architecture
@@ -637,9 +651,22 @@ Content classified as NPSP never appears in NPC skill references and vice versa.
 
 ## Usage
 
-1. Clone this repository into your Cursor skills directory (typically `~/.cursor/skills/`).
-2. Skills are automatically discovered by Cursor when their `SKILL.md` frontmatter matches the user's current task context.
-3. Each skill contains a `SKILL.md` file with trigger conditions, scoring rubrics, and step-by-step instructions that guide the AI agent.
+1. Clone this repository to a stable location (e.g., `~/Cursor/Skills/NGOSkills`) — **not** directly into `~/.cursor/skills/`. The repo is the canonical source; Cursor and Claude read it via symlinks managed by `scripts/sync-skills.sh`.
+2. Run `scripts/sync-skills.sh --fix` once to wire up all symlinks (per-skill in `~/.cursor/skills/`, directory-level at `~/.claude/skills`, per-rule in `~/.cursor/rules/`, and `~/.claude/CLAUDE.md`).
+3. Skills are automatically discovered when their `SKILL.md` frontmatter (`TRIGGER when:` / `DO NOT TRIGGER when:`) matches the user's prompt — no explicit invocation needed.
+4. Each skill contains a `SKILL.md` file with trigger conditions, scoring rubrics, and step-by-step instructions that guide the AI agent.
+
+### Health check
+
+After any `git pull` (or any time you suspect drift):
+
+```bash
+scripts/sync-skills.sh --check     # read-only audit, exits 1 on drift
+scripts/sync-skills.sh --fix       # idempotent: creates missing symlinks
+scripts/sync-skills.sh --quiet     # only show drift/actions, hide ok lines
+```
+
+The script never deletes anything without the explicit `--replace-real` flag, and even then backs up to `/tmp` before touching disk. It also refuses to operate if a canonical source path becomes a symlink itself, preventing accidental self-referencing loops.
 
 ## Skill Anatomy
 
