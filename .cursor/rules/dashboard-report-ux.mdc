@@ -1,0 +1,88 @@
+---
+description: Enforces dashboard and report UX standards — compact components, no scrolling, readable at a glance
+alwaysApply: true
+---
+
+# Dashboard & Report UX Standards
+
+When any skill generates Salesforce dashboards or reports, apply these constraints.
+
+## Dashboard Component Sizing
+
+- Each component must occupy **at most 9 tiles** (e.g. 3×3, 3×2, 2×3). Never exceed 9 tiles per component.
+- Use tile size to communicate importance: KPI metrics → 1–2 tiles, trend charts → 4–6 tiles, summary tables → up to 9 tiles.
+- Set `<columnSize>` in dashboard XML to use Salesforce's standard sizing — do not inflate tile dimensions beyond the platform default. Never use values that force horizontal scrolling.
+- Target **12 components or fewer** per dashboard so everything is visible without vertical scrolling on a standard 1080p display.
+- Group related metrics into a single component (e.g. stacked bar) rather than spreading them across multiple oversized components.
+
+## Readability
+
+- Use short, descriptive component titles (≤40 characters).
+- Default to chart types that communicate at a glance: donut, horizontal bar, metric (single-value), gauge. Avoid pivot tables and matrix reports as dashboard components.
+- Apply meaningful sort order (descending by value, chronological) — never leave the default unsorted.
+- Limit report groupings to **2 levels max** in dashboard source reports to keep visuals clean.
+- Use conditional highlighting / color thresholds on metric components when a target value exists.
+
+## Dashboard Component Text Standards
+
+Every text slot on a dashboard component is visible to the audience. Empty, default, or placeholder text ("Untitled Component", "Sum of Amount", "Record Count") instantly looks unfinished. Fill every slot with intentional, audience-facing copy.
+
+### Required text slots and how to write them
+
+| Slot | XML element | What to write | Bad | Good |
+|---|---|---|---|---|
+| Component title (`<title>`) | `<title>` | Plain English, audience-facing, ≤40 chars, no field API names | `Sum_of_npc__Amount__c` | `Total Gifts This Year` |
+| Component header / subtitle | `<header>` | Optional context ("YTD as of today"), ≤60 chars | `Header` | `Year-to-date through this week` |
+| Component footer | `<footer>` | Source / freshness note ("Refreshed daily 6 AM CT"), ≤60 chars | `(empty)` | `Refreshed daily • Excludes pledges` |
+| Metric label (single-value) | `<metricLabel>` | Unit or qualifier shown next to the number, ≤20 chars | `Total` | `Donors • FY26` |
+| Axis title — X | `<chartAxisXLabel>` | Plain English label for the dimension, ≤24 chars | `CALENDAR_MONTH` | `Month` |
+| Axis title — Y | `<chartAxisYLabel>` | Plain English measure with unit, ≤24 chars | `SUM:Amount` | `Gifts ($)` |
+| Legend labels | source report column labels | Plain English, ≤20 chars per series | `npc__Status__c` | `Status` |
+| Group-by label in summary report | report `<groupingLevel>` `<header>` overrides | Plain English with case ("By Program") | `program__c` | `By Program` |
+| Tooltip / data-label units | report column custom labels | Always include the unit ($, %, count, hrs) when the number is ambiguous | `247000` | `$247,000` |
+| Empty-state text | dashboard component `<chartTextNoDataMessage>` (where supported) | One-line guidance not a stack trace | `No records found.` | `No gifts yet for this period — check back after EOD batch.` |
+| Filter labels (dynamic dashboard) | dashboard `<filter>` `<name>` | What the user picks, not the field | `npc__Region__c` | `Region` |
+
+### Text-content rules
+
+1. **No API names ever appear on screen.** Strip namespace prefixes (`npc__`, `npsp__`, `pmdm__`), trailing `__c`, and underscores. Convert to title case. If a field has no UI label, set one before using it on a dashboard.
+2. **No SOQL function syntax on screen.** "Sum of Amount" is OK, "SUM(npc__Amount__c)" is not. Salesforce defaults to the latter — override with the report column custom label.
+3. **Units belong in the title or the axis label, not both.** A bar chart titled "Gifts ($)" should not also have "$" in every data label. Pick one location and remove duplication.
+4. **Date formats stay consistent across the dashboard.** Pick one (`Mon YYYY`, `Q1 FY26`, `2026-W17`) and use it on every component. Mixed date formats look like the dashboard was assembled by three different people.
+5. **Match the audience's vocabulary.** Donors are not "Records". Volunteers are not "Users". Gifts are not "Opportunities" in an NPC org. Translate platform terms into the org's domain language in every visible label.
+6. **Numbers ≥ 10,000 use thousands separators.** `$247,000` not `$247000`. Use the report column display format, not Apex `String.valueOf()`.
+7. **Truncate gracefully.** If a label hits the slot's character limit, end with a complete word, not mid-syllable. Never let Salesforce auto-truncate with `…` on a public-facing dashboard.
+8. **The dashboard has a title too.** Set `<dashboard><title>` and `<dashboard><description>` — these appear in the dashboard list view and in shared links.
+
+### Report column setup that drives clean dashboard text
+
+Even with perfect dashboard XML, dashboards inherit text from their source report's column setup. So in every report that powers a dashboard component:
+
+- Set a **column custom label** for every grouping and aggregate column (e.g. group by `npc__Program__r.Name` with column label "Program"; aggregate `SUM(npc__Amount__c)` with label "Gifts ($)").
+- Use **Display Units** on the report header (Show in Thousands / Millions) when amounts are ≥ 6 digits, so the dashboard shows `$247K` instead of `$247,000`.
+- Set a **report description** (1 sentence, business voice) — it shows under the report title when a viewer drills in from the dashboard.
+
+## Layout
+
+- Arrange components in a logical reading order: KPI summary row at top, trend charts in the middle, detail tables (if any) at the bottom.
+- Keep the dashboard to a **single viewport** — the end user should see every component without scrolling.
+- If the data requires more than 12 components, split into multiple focused dashboards rather than one scrollable mega-dashboard.
+
+## Report Source Best Practices
+
+- Each dashboard component should reference a dedicated summary or matrix report scoped to the data it visualizes — no reusing one wide report for unrelated components.
+- Filter reports to a reasonable default date range (current FY, last 12 months) so components render meaningful data immediately.
+
+## Anti-Patterns — Never Do These
+
+- ❌ Components that span 2+ columns forcing horizontal scroll
+- ❌ Dashboards with 20+ components requiring vertical scroll
+- ❌ Tabular (detail) reports as dashboard source — use summary/matrix
+- ❌ Unfiltered reports pulling org-wide data into a dashboard component
+- ❌ Truncated axis labels caused by oversized chart data in undersized tiles
+- ❌ Component title that includes an API name, namespace prefix, or `__c` suffix
+- ❌ Default Salesforce labels left untouched ("Sum of Amount", "Record Count", "Untitled Component", "CALENDAR_MONTH")
+- ❌ A chart with a single bar / one wedge of a donut that takes 90%+ of the visual (the data shape problem — fix it by re-seeding distribution per `sf-nonprofit-demo-data` Report-Shaped Data Generation)
+- ❌ Mixed date formats across components on the same dashboard
+- ❌ Numbers shown without unit context ($, %, count, hrs) when the unit isn't obvious from the title
+- ❌ Empty `<header>` / `<footer>` / `<description>` slots when a one-line audience-facing string would clarify the component

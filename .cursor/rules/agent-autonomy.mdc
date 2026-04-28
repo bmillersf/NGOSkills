@@ -1,0 +1,132 @@
+---
+description: Always-apply behavior policy for autonomous execution, parallel subagents, git worktrees, and skill-creation routing. Applies to every session in Cursor (and mirrored to Claude via ~/.claude/CLAUDE.md).
+globs:
+alwaysApply: true
+---
+
+# Agent Behavior Policy
+
+Three directives govern every session: **autonomous execution**, **parallel-first delegation**, and **canonical skill creation**. They apply to all assistants (Claude in Cursor, Claude Code, or any other client that loads this file).
+
+---
+
+## 1. Autonomous Execution
+
+**Default action:** if you can complete the task without asking, do it. Re-prompting the user for things you could resolve yourself wastes the user's time and is the single most common complaint.
+
+**Only ask the user when one of the following is true:**
+
+- The next step is **destructive and irreversible** (force push, drop database, delete files outside `/tmp` that are not in version control, deploy to a production org).
+- There are **multiple genuinely valid paths** with materially different trade-offs (e.g., "Postgres vs Redis vs in-memory cache" for new infrastructure). One-line "do you want X" with a clear default does NOT qualify — pick the default and proceed.
+- A **required input is missing** and cannot be inferred from context, file system, recent edits, or the user's earlier messages in this conversation.
+- The user **explicitly asked to be checked in with** at this step.
+
+**Things that are NOT reasons to ask:**
+
+- "Should I run the test suite?" → just run it.
+- "Want me to fix the lint errors I introduced?" → just fix them.
+- "Should I read the related file?" → just read it.
+- "Should I create the missing directory?" → just create it.
+- "Want me to commit?" → only ask about commits if the user hasn't already implied one. Otherwise complete the work and report.
+- "Should I keep going?" — never. If the next step is obvious, take it.
+
+If you find yourself drafting more than one clarifying question, you are almost certainly over-asking. Pick sensible defaults and execute; surface the assumptions in your final summary so the user can correct them in one round-trip rather than N.
+
+---
+
+## 2. Parallel-First Delegation
+
+When work has structurally independent units, **spawn subagents in parallel by default**. Do not iterate sequentially through tasks that could run side-by-side.
+
+### When to delegate (no permission needed)
+
+| Pattern | Action |
+|---|---|
+| **N independent file/web reads** before implementation | One `explore` subagent per area, in parallel, in a single tool-call batch |
+| **N independent units** to build (multiple LWCs, Apex classes, flows, tests, components) | One `generalPurpose` subagent per unit, in parallel |
+| **Long-running CLI loop** (deploy, watch, verify, retry) | One `shell` subagent; never block the parent on streaming output |
+| **Best-of-N attempts** or **isolated experiments** (try the same task 3 ways and pick the winner) | `best-of-n-runner` — it spawns each attempt in its own git worktree and branch automatically |
+| **Heavy exploration** that would burn parent context (>10 files, >5 web fetches, deep code search) | `explore` subagent (read-only, returns digest) |
+
+### Subagent contract (always include)
+
+When spawning, give the subagent:
+
+1. **Goal** — one sentence
+2. **Inputs** — exact paths, URLs, or data it needs
+3. **Constraints** — what NOT to do, what conventions to follow
+4. **Return format** — what the parent needs back (a path, a summary, a diff, a status)
+5. **Done criteria** — how the subagent knows it's complete
+
+Then **launch all of them in a single tool-call batch** (multiple Task invocations in one message). Do not launch one, wait, then launch the next, unless they have data dependencies.
+
+### When NOT to delegate
+
+- Single narrow question or short turn
+- Task requires the parent's full conversational context
+- Decisions / trade-offs (parent must decide)
+- Final integration / wire-up step
+
+This policy supersedes any older "ask before delegating" guidance. The default is delegate; the exception is keep-in-parent.
+
+### Git worktrees for parallel implementation
+
+For tasks where multiple independent variants need to coexist (refactors, experiments, A/B implementations), prefer `best-of-n-runner` over manual branching. It:
+
+- Creates a fresh git worktree per attempt under `.worktrees/<branch>`
+- Each attempt gets its own branch
+- Caller can compare diffs across attempts before merging
+- No risk of one attempt clobbering another
+
+Use it any time you'd otherwise be tempted to "try this approach, then if it doesn't work try another."
+
+---
+
+## 3. Canonical Skill Creation
+
+**All new skills are created in the canonical NGOSkills repo** so they auto-propagate to both Cursor and Claude via the existing symlink architecture.
+
+### Where new skills go
+
+| Skill type | Canonical location | Triggered when |
+|---|---|---|
+| Salesforce / nonprofit / domain skill | `~/Cursor/Skills/NGOSkills/skills/<name>/` | User asks for a new `sf-*` skill, domain skill, or anything that fits the NGOSkills scope |
+| Cursor-ecosystem skill (workflows, tooling, meta) | `~/Cursor/Skills/NGOSkills/skills-cursor/<name>/` | User asks for a new dev-workflow skill that isn't Salesforce-specific |
+| Truly project-local, never reused | `<project>/.cursor/skills/<name>/` | Rare. Confirm with user before choosing this path |
+
+**Never create a new skill directly in `~/.cursor/skills/` or `~/.claude/skills/`.** Those directories contain symlinks to canonical or built-ins. Direct creation there breaks the auto-sync model and will be flagged as drift by `sync-skills.sh`.
+
+### After creating a skill
+
+Always run, in this exact order:
+
+1. `~/Cursor/Skills/NGOSkills/scripts/sync-skills.sh --fix` — creates the per-skill symlink in `~/.cursor/skills/<name>` (Claude picks it up automatically through the directory-level symlink at `~/.claude/skills`)
+2. `~/Cursor/Skills/NGOSkills/scripts/sync-skills.sh --check` — confirms drift=0
+3. (if the user is ready) `git add . && git commit` inside `~/Cursor/Skills/NGOSkills` — never auto-push without explicit user approval
+
+### SKILL.md requirements
+
+Every new SKILL.md MUST have YAML frontmatter with:
+
+```yaml
+---
+name: <skill-name>
+description: >
+  One-sentence summary.
+  TRIGGER when: <plain-text scenarios that should activate this skill>
+  DO NOT TRIGGER when: <scenarios that look related but should route elsewhere, with the alternative skill named in parentheses>
+---
+```
+
+The `TRIGGER when:` / `DO NOT TRIGGER when:` clauses are what both Cursor and Claude semantically match against the user's plain-text prompts. A skill without them will not be auto-routed and will only activate when the user names it explicitly. Treat missing triggers as an authoring bug.
+
+---
+
+## Compatibility note
+
+This file is the source of truth. It is loaded by:
+
+- **Cursor** automatically as a global rule (via `~/.cursor/rules/agent-autonomy.mdc` symlink → this file)
+- **Claude Code** via `~/.claude/CLAUDE.md` (symlink → this file)
+
+If you edit this file, both clients pick up the change on the next session start. Do not duplicate this content elsewhere; edit it here and let the symlinks distribute it.
