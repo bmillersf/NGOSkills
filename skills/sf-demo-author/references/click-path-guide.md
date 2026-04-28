@@ -16,7 +16,7 @@ Every action must specify:
 > Open the volunteer app and find the applicant
 
 ### Good (verbatim):
-> Click the App Launcher (the grid of dots, top left of the nav bar). In the search field, type "Volunteer Hub". Click "BTH Volunteer Hub" in the results. The app opens showing the Applicant list view with recent submissions.
+> Click the App Launcher (the grid of dots, top left of the nav bar). In the search field, type "Volunteer Hub". Click "Acme Volunteer Hub" in the results. The app opens showing the Applicant list view with recent submissions.
 
 ---
 

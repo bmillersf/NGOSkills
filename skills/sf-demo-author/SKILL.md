@@ -105,7 +105,7 @@ After notes intake (Phase 1) and before story architecture (Phase 2), present **
 
 ### Already enabled in the org
 - [x] Nonprofit Cloud (NPC) — Person Accounts, Gift Transaction detected
-- [x] Experience Cloud — active site "BTH_Portal" found
+- [x] Experience Cloud — active site "Acme_Portal" found
 
 ### Recommended based on discovery notes (user must approve)
 - [ ] Agentforce — audience mentioned AI; setup effort: ~2 hours
@@ -200,7 +200,7 @@ Pain: Currently emails spreadsheets back and forth; misses shift gaps until the 
 Salesforce user: volunteer-coordinator (alias: maria)
 Email: maria@demo.org
 Timezone: America/Chicago
-Permission sets: BTH_Volunteer_Coordinator
+Permission sets: Acme_Volunteer_Coordinator
 ```
 
 Define at minimum:

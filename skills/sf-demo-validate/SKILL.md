@@ -357,11 +357,11 @@ For every `data` step and as a cross-cutting concern, validate the *quality* of 
 Beyond checking permission sets exist and are assigned, validate their **contents**:
 
 1. **Apex class access**: Verify each permission set grants access to the Apex classes listed in the demo script:
-   - `BTH_Volunteer_Guest_Run_Intake_Flow` → `VolunteerExploreGuestController`, `VolunteerIntakeGuestController`, `VolunteerIntakeSubmitInvocable`
-   - `BTH_Volunteer_Member_Demo` → all guest controllers + `VolunteerShiftSignupController`
-   - `BTH_Volunteer_Coordinator` → coordinator-level class access
+   - `Acme_Volunteer_Guest_Run_Intake_Flow` → `VolunteerExploreGuestController`, `VolunteerIntakeGuestController`, `VolunteerIntakeSubmitInvocable`
+   - `Acme_Volunteer_Member_Demo` → all guest controllers + `VolunteerShiftSignupController`
+   - `Acme_Volunteer_Coordinator` → coordinator-level class access
 2. **Network member groups**: Verify the Experience site allows "Customer Community Plus Login User" under Members
-3. **App tab configuration**: Verify `BTH Volunteer Demo` app contains the tabs listed in the demo script (Application Form, Applicant, Account, Job Position)
+3. **App tab configuration**: Verify `Acme Volunteer Demo` app contains the tabs listed in the demo script (Application Form, Applicant, Account, Job Position)
 
 > Full permission content checks: [references/validation-checks.md](references/validation-checks.md)
 

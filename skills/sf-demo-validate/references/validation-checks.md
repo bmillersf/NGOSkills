@@ -139,7 +139,7 @@ Pass: No stale test data found. Warn: Stale records found — report count and r
 ### Duplicate Assignment Check (Jamie)
 
 ```bash
-sf data query --query "SELECT Id, AssignedContactId, AssignedPositionShiftId, ScheduledStartTime FROM JobPositionAssignment WHERE AssignedContactId IN (SELECT PersonContactId FROM Account WHERE PersonEmail = 'bth.volunteerdemo@example.com')" --target-org [alias] --json
+sf data query --query "SELECT Id, AssignedContactId, AssignedPositionShiftId, ScheduledStartTime FROM JobPositionAssignment WHERE AssignedContactId IN (SELECT PersonContactId FROM Account WHERE PersonEmail = 'acme.volunteerdemo@example.com')" --target-org [alias] --json
 ```
 
 Pass: 0 existing assignments (clean slate for demo). Warn: Existing assignments found — may block duplicate sign-up prevention or confuse the presenter.
@@ -184,7 +184,7 @@ When the demoscript specifies which tabs an app should contain, retrieve the app
 sf project retrieve start --metadata CustomApplication:[AppDevName] --target-org [alias] --output-dir temp-retrieve --json
 ```
 
-Then inspect the retrieved XML for `<tab>` or `<actionOverrides>` entries. For example, if the script says "BTH Volunteer Demo has tabs: Application Form, Applicant, Account, Job Position", verify these tabs appear in the app XML.
+Then inspect the retrieved XML for `<tab>` or `<actionOverrides>` entries. For example, if the script says "Acme Volunteer Demo has tabs: Application Form, Applicant, Account, Job Position", verify these tabs appear in the app XML.
 
 Pass: All expected tabs are present. Fail: Tabs missing — the presenter won't see the expected navigation.
 
@@ -401,12 +401,12 @@ The demo relies on specific Apex classes being accessible through permission set
 sf data query --query "SELECT Id, SetupEntityId, SetupEntityType FROM SetupEntityAccess WHERE ParentId IN (SELECT Id FROM PermissionSet WHERE Name = '[PermSetApiName]') AND SetupEntityType = 'ApexClass'" --target-org [alias] --json
 ```
 
-Cross-reference the returned `SetupEntityId` values against the Apex classes listed in the demoscript. For the BTH demo:
+Cross-reference the returned `SetupEntityId` values against the Apex classes listed in the demoscript. For the Acme demo:
 
 | Permission Set | Required Apex Classes |
 |---|---|
-| `BTH_Volunteer_Guest_Run_Intake_Flow` | `VolunteerExploreGuestController`, `VolunteerIntakeGuestController`, `VolunteerIntakeSubmitInvocable` |
-| `BTH_Volunteer_Member_Demo` | `VolunteerExploreGuestController`, `VolunteerIntakeGuestController`, `VolunteerIntakeSubmitInvocable`, `VolunteerShiftSignupController` |
+| `Acme_Volunteer_Guest_Run_Intake_Flow` | `VolunteerExploreGuestController`, `VolunteerIntakeGuestController`, `VolunteerIntakeSubmitInvocable` |
+| `Acme_Volunteer_Member_Demo` | `VolunteerExploreGuestController`, `VolunteerIntakeGuestController`, `VolunteerIntakeSubmitInvocable`, `VolunteerShiftSignupController` |
 
 To resolve class names from IDs:
 
@@ -640,7 +640,7 @@ Pass: User exists and is active. Fail: User not found or inactive.
 
 ### Demo User TimeZoneSidKey
 
-For the BTH demo, Jamie's timezone should match the club region (Chicago):
+For the Acme demo, Jamie's timezone should match the club region (Chicago):
 
 ```bash
 sf data query --query "SELECT Id, Username, TimeZoneSidKey FROM User WHERE Alias = 'JVolunte' AND IsActive = true" --target-org [alias] --json
@@ -1018,7 +1018,7 @@ To invoke a Screen Flow (or Autolaunched Flow) programmatically and verify its o
 ```apex
 HttpRequest req = new HttpRequest();
 req.setEndpoint(URL.getOrgDomainURL().toExternalForm()
-    + '/services/data/v62.0/actions/custom/flow/BTH_Volunteer_Intake');
+    + '/services/data/v62.0/actions/custom/flow/Acme_Volunteer_Intake');
 req.setMethod('POST');
 req.setHeader('Content-Type', 'application/json');
 req.setHeader('Authorization', 'Bearer ' + UserInfo.getSessionId());
@@ -1095,20 +1095,20 @@ Parse results for pass/fail. This is the most reliable way to test flows but req
 sf data query --query "SELECT Id, Username, Profile.Name, IsActive FROM User WHERE Username = '[coordinatorUsername]' AND IsActive = true" --target-org [alias] --json
 ```
 
-If the demoscript says "your sandbox admin", use the current CLI user. Verify the `BTH Volunteer Coordinator` perm set is assigned.
+If the demoscript says "your sandbox admin", use the current CLI user. Verify the `Acme Volunteer Coordinator` perm set is assigned.
 
 ### App and Tab Accessibility
 
 Verify the coordinator's perm set grants access to the app and its tabs:
 
 ```bash
-sf data query --query "SELECT Id, PermissionSet.Name FROM PermissionSetAssignment WHERE Assignee.Username = '[coordinatorUsername]' AND PermissionSet.Name = 'BTH_Volunteer_Coordinator'" --target-org [alias] --json
+sf data query --query "SELECT Id, PermissionSet.Name FROM PermissionSetAssignment WHERE Assignee.Username = '[coordinatorUsername]' AND PermissionSet.Name = 'Acme_Volunteer_Coordinator'" --target-org [alias] --json
 ```
 
 Then verify the app exists and contains expected tabs:
 
 ```bash
-sf project retrieve start --metadata CustomApplication:BTH_Volunteer_Demo --target-org [alias] --output-dir temp-retrieve --json
+sf project retrieve start --metadata CustomApplication:Acme_Volunteer_Demo --target-org [alias] --output-dir temp-retrieve --json
 ```
 
 ### List View Data Verification
@@ -1243,7 +1243,7 @@ When direct metadata deployment of reports fails (common with NPC/Industry Cloud
 1. **Deploy custom report types via Metadata API** (these DO deploy successfully — use relationship names for lookup fields, e.g., `AssignedContact` not `AssignedContactId`)
 2. **Create reports and dashboards via Analytics REST API** using the deployed report types
 
-**CRITICAL**: Custom report types use a `__c` suffix in the REST API. A report type deployed as `BTH_Volunteer_Assignments` is referenced as `BTH_Volunteer_Assignments__c` in the API.
+**CRITICAL**: Custom report types use a `__c` suffix in the REST API. A report type deployed as `Acme_Volunteer_Assignments` is referenced as `Acme_Volunteer_Assignments__c` in the API.
 
 **CRITICAL**: Lookup column references need the dotted `.Name` format (e.g., `JobPositionAssignment.AssignedContact.Name`). Discover valid columns via the describe endpoint: `GET /services/data/v62.0/analytics/report-types/[TypeName__c]`.
 
@@ -1254,7 +1254,7 @@ req.setEndpoint(URL.getOrgDomainURL().toExternalForm() + '/services/data/v62.0/f
 req.setMethod('POST');
 req.setHeader('Content-Type', 'application/json');
 req.setHeader('Authorization', 'Bearer ' + UserInfo.getSessionId());
-req.setBody('{"label":"BTH Volunteer Reports","name":"BTH_Volunteer_Reports","type":"report"}');
+req.setBody('{"label":"Acme Volunteer Reports","name":"Acme_Volunteer_Reports","type":"report"}');
 Http http = new Http();
 HttpResponse res = http.send(req);
 System.debug('Folder: ' + res.getBody());

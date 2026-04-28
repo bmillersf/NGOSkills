@@ -39,12 +39,12 @@ test.beforeEach(async ({ page }) => {
 ```javascript
 await page.click('.slds-icon-waffle, [title="App Launcher"]');
 await page.fill('.slds-global-search__input, input[placeholder="Search apps and items..."]', 'Volunteer Hub');
-await page.click('.slds-lookup__item-action:has-text("BTH Volunteer Hub")');
+await page.click('.slds-lookup__item-action:has-text("Acme Volunteer Hub")');
 ```
 
 **Direct URL navigation** (fastest, most reliable):
 ```javascript
-await page.goto(`${instanceUrl}/lightning/app/BTH_Volunteer_Hub`);
+await page.goto(`${instanceUrl}/lightning/app/Acme_Volunteer_Hub`);
 await page.waitForSelector('.oneAppLayoutHost, .slds-template__container', { timeout: 15000 });
 ```
 
@@ -145,7 +145,7 @@ await expect(page).not.toHaveTitle(/Error|404|Unavailable/);
 
 **Check a specific component is visible**:
 ```javascript
-await expect(page.locator('c-bth-volunteer-explore, [data-component-id*="bthVolunteer"]')).toBeVisible();
+await expect(page.locator('c-acme-volunteer-explore, [data-component-id*="acmeVolunteer"]')).toBeVisible();
 ```
 
 **Member portal login**:
