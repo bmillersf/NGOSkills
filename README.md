@@ -668,6 +668,45 @@ scripts/sync-skills.sh --quiet     # only show drift/actions, hide ok lines
 
 The script never deletes anything without the explicit `--replace-real` flag, and even then backs up to `/tmp` before touching disk. It also refuses to operate if a canonical source path becomes a symlink itself, preventing accidental self-referencing loops.
 
+### Auto-update from remote (no manual `git pull` needed)
+
+The repo includes hooks that keep your local skill collection up to date automatically:
+
+- **Cursor:** `.cursor/hooks.json` registers `auto-update-skills.sh` as a `beforeSubmitPrompt` hook
+- **Claude Code:** `~/.claude/hooks/ngoskills-auto-update.sh` is registered via `~/.claude/settings.local.json` as a `SessionStart` hook
+
+Both hooks call `scripts/auto-update-skills.sh`, which uses a two-phase design so the user never feels network latency:
+
+1. **Apply phase (synchronous, ~10ms):** if a pending update was fetched in a previous invocation, fast-forward merge it now.
+2. **Fetch phase (asynchronous, backgrounded):** spawn `git fetch` in a non-blocking subprocess, rate-limited to once per 30 minutes by default.
+
+Result: prompts always stay fast. Updates land on the *next* prompt after a successful background fetch — typically within a minute of you pulling work into the public repo.
+
+**Safety guards** (all skip silently and never block the hook):
+
+- Only operates when the working tree is clean (no uncommitted changes)
+- Only operates when on the configured default branch (`main` by default)
+- Only fast-forward merges; refuses to rebase or overwrite
+- All errors logged to `~/.cache/ngoskills/auto-update.log`; never propagated to the calling hook
+
+**Configuration** (environment variables):
+
+```bash
+export NGOSKILLS_REMOTE=public          # which git remote to pull from
+export NGOSKILLS_BRANCH=main            # which branch to auto-update
+export NGOSKILLS_RATE_LIMIT=1800        # seconds between fetches (default 1800 = 30 min)
+```
+
+**Manual operations:**
+
+```bash
+scripts/auto-update-skills.sh --status        # show last fetch, pending update, branch
+scripts/auto-update-skills.sh --force         # ignore rate limit, fetch+apply now
+scripts/auto-update-skills.sh --apply-only    # apply pending without fetching
+```
+
+**To disable auto-update** for a single session, set `NGOSKILLS_RATE_LIMIT=999999999`. To disable permanently, remove the `auto-update-skills.sh` entry from `.cursor/hooks.json` and the `SessionStart` block from `~/.claude/settings.local.json`.
+
 ## Skill Anatomy
 
 Every skill follows the same structure:

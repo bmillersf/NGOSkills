@@ -5,6 +5,10 @@
       {
         "command": ".cursor/hooks/nonprofit-skill-router.sh",
         "timeout": 5
+      },
+      {
+        "command": ".cursor/hooks/auto-update-skills.sh",
+        "timeout": 2
       }
     ]
   }
