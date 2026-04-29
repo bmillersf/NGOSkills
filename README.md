@@ -53,7 +53,20 @@ After a `git pull`, run `scripts/sync-skills.sh --check` to verify nothing has d
 
 Claude Code has a native skill system that reads from `~/.claude/skills/` and a global behavior policy at `~/.claude/CLAUDE.md`. Point both at this repo with two symlinks so every skill becomes available globally, auto-triggered the same way Cursor handles them, and the agent inherits the same autonomy/parallel-delegation policy as Cursor.
 
-**Install (one time)** — from a shell:
+**Install (prompt-driven)** — open Claude Code in any directory and paste:
+
+```
+Clone https://github.com/bmillersf/NGOSkills.git into ~/Cursor/Skills/NGOSkills
+and install all the Claude skills from it. Run scripts/sync-skills.sh --fix
+to wire up the directory-level skills symlink (~/.claude/skills), the per-skill
+symlinks for Cursor, and the global autonomy policy symlink (~/.claude/CLAUDE.md).
+Then run scripts/sync-skills.sh --check and confirm drift is 0. If the repo is
+already cloned, just git pull and re-run --fix.
+```
+
+Claude Code will handle the clone, symlinks, and health check autonomously. Restart Claude Code once it finishes and all 47 skills are available, matched automatically by their `TRIGGER when` descriptions, with the always-apply autonomy and parallel-delegation policy already loaded.
+
+**Install (manual shell alternative)** — if you'd rather run it yourself:
 
 ```bash
 git clone https://github.com/bmillersf/NGOSkills.git ~/Cursor/Skills/NGOSkills
@@ -61,7 +74,7 @@ cd ~/Cursor/Skills/NGOSkills
 scripts/sync-skills.sh --fix
 ```
 
-The script creates the directory-level skills symlink (`~/.claude/skills` → `<repo>/skills`), the per-skill symlinks for Cursor (`~/.cursor/skills/<name>` → `<repo>/skills/<name>`), the per-rule symlinks for Cursor (`~/.cursor/rules/<rule>` → `<repo>/.cursor/rules/<rule>`), and the Claude global policy symlink (`~/.claude/CLAUDE.md` → `<repo>/.cursor/rules/agent-autonomy.mdc`). Restart Claude Code and all 47 skills are available, matched automatically by their `TRIGGER when` descriptions, with the always-apply autonomy and parallel-delegation policy already loaded.
+The script creates the directory-level skills symlink (`~/.claude/skills` → `<repo>/skills`), the per-skill symlinks for Cursor (`~/.cursor/skills/<name>` → `<repo>/skills/<name>`), the per-rule symlinks for Cursor (`~/.cursor/rules/<rule>` → `<repo>/.cursor/rules/<rule>`), and the Claude global policy symlink (`~/.claude/CLAUDE.md` → `<repo>/.cursor/rules/agent-autonomy.mdc`).
 
 **Bidirectional parity** — because both clients read directly from this repo via symlinks, they share one source of truth:
 
@@ -78,7 +91,15 @@ Write an Apex class that handles volunteer intake
 
 The `sf-apex` skill loads automatically and applies its 5-phase workflow and 150-point scoring rubric.
 
-**Update** — `git pull` in the repo, then `scripts/sync-skills.sh --check` to confirm clean state. New skills get linked automatically with `--fix`.
+**Update** — prompt Claude Code:
+
+```
+Pull the latest changes from the NGOSkills repo and update my Claude skills.
+Run scripts/sync-skills.sh --fix to link any new skills and --check to
+confirm drift is 0.
+```
+
+Or run manually: `git pull` in the repo, then `scripts/sync-skills.sh --check` to confirm clean state. New skills get linked automatically with `--fix`.
 
 ---
 
