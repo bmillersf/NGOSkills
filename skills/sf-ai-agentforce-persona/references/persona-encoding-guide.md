@@ -285,7 +285,7 @@ These fields are required to configure an agent but belong to agent design, not 
 | Field | Why It's Not Persona |
 |---|---|
 | **API Name** | System identifier |
-| **Agent Type** | Deployment context (Service Agent, Employee Agent) |
+| **Agent Type** | Deployment context. Current standard types per Salesforce Help "Agent Types and Considerations" (Apr 2026): Agentforce Employee Agent, Agentforce Service Agent, Service Assistant, Lead Nurturing (formerly SDR), Sales Coach, Setup with Agentforce (Beta); plus the sunsetting Agentforce (Default) and Agent for Setup. The metadata `agentType` values include `AgentforceEmployeeAgent` and `EinsteinServiceAgent` in `bot-meta.xml`. |
 | **Description** (1000 chars) | Human-readable summary for admins. Not seen by the agent. |
 | **Topics** | Map to jobs-to-be-done — what the agent *can do*, not *who it is* |
 | **Data Sources** | What data the agent can access |

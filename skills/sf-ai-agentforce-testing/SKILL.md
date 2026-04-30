@@ -20,6 +20,7 @@ metadata:
 <!-- This is the starting document - read this FIRST -->
 <!-- Pattern: Follows sf-testing for agentic test-fix loops -->
 <!-- v2.1.0: Dual-track workflow with multi-turn API testing as primary -->
+<!-- Last validated: 2026-04-30 against forcedotcom/agents@main + salesforcecli/plugin-agent@main -->
 
 # sf-ai-agentforce-testing: Agentforce Test Execution & Coverage Analysis
 

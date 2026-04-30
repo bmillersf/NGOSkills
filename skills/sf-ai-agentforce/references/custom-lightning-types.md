@@ -1,7 +1,7 @@
 <!-- Parent: sf-ai-agentforce/SKILL.md -->
 <!-- TIER: 3 | DETAILED REFERENCE -->
 <!-- Read after: SKILL.md -->
-<!-- Purpose: LightningTypeBundle for custom agent action UIs (API 64.0+) -->
+<!-- Purpose: LightningTypeBundle for custom agent action UIs (API v64.0+, Summer '25) -->
 
 # Custom Lightning Types for Agentforce
 
@@ -63,7 +63,9 @@
 
 ### API Version Requirement
 
-**Minimum API v64.0+ (Fall '25)** for LightningTypeBundle support.
+**Minimum API v64.0+ (Summer '25)** for `LightningTypeBundle` support. Verified against the [LightningTypeBundle Metadata API Developer Guide](https://developer.salesforce.com/docs/atlas.en-us.api_meta.meta/api_meta/meta_lightningtypebundle.htm) — "LightningTypeBundle components are available in API version 64.0 and later."
+
+> **Note:** Summer '25 = API v64.0. (Earlier editions of this file incorrectly labeled v64.0 as "Fall '25", which is not a Salesforce release name.)
 
 ```bash
 # Verify org API version

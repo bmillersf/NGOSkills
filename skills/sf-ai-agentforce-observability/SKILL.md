@@ -106,7 +106,7 @@ See [references/auth-setup.md](references/auth-setup.md) for detailed instructio
 | **RAG Quality** | 3 | Not Found (GenAIRetriever* DMOs don't exist) |
 
 **Key Discoveries:**
-- Field naming: API uses `AiAgent` (lowercase 'i'), not `AIAgent`
+- Field naming is bifurcated: DMO/table names use uppercase `AIAgent` (e.g. `AIAgentSession__dlm`), while field names use lowercase `AiAgent` (e.g. `AiAgentSessionId__c`). Don't rename one to match the other — both are correct in their own scope.
 - Agent name location: Stored on `Moment`, not `Session`
 - Channel types: `E & O`, `Builder`, `SCRT2 - EmbeddedMessaging`, `Voice`, `NGC`
 - Participant roles: `USER`, `AGENT` (not Owner/Observer)

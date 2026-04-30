@@ -1,4 +1,5 @@
 <!-- Parent: sf-ai-agentforce-testing/SKILL.md -->
+<!-- Last validated: 2026-04-30 against forcedotcom/agents@main (SDK behind sf agent test) and salesforcecli/plugin-agent@main commands/agent/test/run.ts -->
 # CLI Commands Reference
 
 Complete reference for SF CLI commands related to Agentforce testing.
@@ -175,6 +176,12 @@ sf agent test run --api-name <name> --target-org <alias> [--wait <minutes>]
 | `-r, --result-format` | Output format: `human` (default), `json`, `junit`, `tap` |
 | `-d, --output-dir` | Directory to save results |
 | `--verbose` | Include detailed action data |
+
+**Complete verified flag set (`sf agent test run`, plugin-agent@main, verified 2026-04-30):** `--target-org`, `--api-version`, `--api-name`, `--wait`, `--result-format`, `--output-dir`, `--verbose`. No other flags exist.
+
+**⛔ Non-existent flags (DO NOT USE / rumored but not implemented):**
+- `--protocol-stage` — does NOT exist on `sf agent test run`. To test specific protocol stages use `conversationHistory` in the YAML spec (see [deep-conversation-history-patterns.md](deep-conversation-history-patterns.md)), not a CLI flag.
+- `--test-type`, `--semantic-similarity`, `--llm-judge`, `--retrieval-aware`, `--plan-aware` — none of these exist as of plugin-agent@main.
 
 **Example:**
 
@@ -435,26 +442,28 @@ testCases:
     expectedOutcome: "Agent should offer troubleshooting assistance"
     metrics:
       - coherence
-      - instruction_following
       - output_latency_milliseconds
     # Skip: conciseness (broken), completeness (misleading for routing agents)
 ```
 
 ### Available Metrics
 
+The SDK-accepted `metric` list (per `@salesforce/agents` `src/utils.ts`, main branch, verified 2026-04-30) is exactly: `completeness`, `coherence`, `conciseness`, `output_latency_milliseconds`.
+
 | Metric | Score Range | Status | Description |
 |--------|-------------|--------|-------------|
 | `coherence` | 1-5 | ✅ Works (caveat) | Response clarity, grammar, and logical flow. Typically scores 4-5 for clear responses. **⚠️ Scores deflection agents poorly** (2-3) because it evaluates whether the response "answers" the user's literal question, not whether the agent behaved correctly. For deflection/guardrail tests, use `expectedOutcome` instead. |
 | `completeness` | 1-5 | ⚠️ Misleading | How fully the response addresses the query. **Penalizes triage/routing agents** for transferring instead of "solving." |
 | `conciseness` | 1-5 | 🔴 Broken | **Returns score=0** with empty `metricExplainability` on most tests. Platform bug. |
-| `instruction_following` | 0-1 | ⚠️ Two bugs | Whether agent follows instructions. **Bug 1:** Labels "FAILURE" even at score=1 — check score value, ignore label. **Bug 2:** Crashes Testing Center UI — `No enum constant AiEvaluationMetricType.INSTRUCTION_FOLLOWING_EVALUATION`. Remove from metrics if users need UI. |
 | `output_latency_milliseconds` | Raw ms | ✅ Works | Raw response latency. No pass/fail grading — useful for performance baselining. |
+
+> **⚠️ Removed metric — `instruction_following`:** This metric was present in prior releases but has been **removed from the `@salesforce/agents` SDK `metric` constant** as of the main branch (verified 2026-04-30 against `src/utils.ts`). Do NOT add `- instruction_following` to new specs — the CLI will reject unknown metrics. Existing specs that still list it will need to be edited before the next `sf agent test create --force-overwrite`. The two previously-documented bugs (PASS/FAILURE label mismatch at score=1, and Testing Center UI `AiEvaluationMetricType.INSTRUCTION_FOLLOWING_EVALUATION` crash) are resolved by this removal.
 
 ### Recommendations
 
 - **Use:** `coherence` + `output_latency_milliseconds` for baseline quality scoring
 - **Skip:** `conciseness` (broken) and `completeness` (misleading for routing agents)
-- **Caution:** `instruction_following` — rely on the numeric score, not the PASS/FAILURE label
+- **Do not use:** `instruction_following` (removed from SDK)
 
 ---
 

@@ -130,6 +130,10 @@ knowledge:     # 5. Optional: Knowledge base config
 language:      # 6. Optional: Locale settings
 start_agent:   # 7. Required: Entry point (exactly one)
 topic:         # 8. Required: Conversation topics (one or more)
+               #    NEW NAME (2026-03-31, agentscript-dialect v2.3.0+): `subagent:` is the
+               #    renamed preferred keyword; `topic:` remains accepted as a legacy alias.
+               #    `topic.actions` => `tool_definitions`, `topic.reasoning.actions` => `tools`.
+               #    Reference prefix `@topic.X` also has `@subagent.X` as the new form.
 # Note: Topics can override agent-level system: with a topic-level system: block
 ```
 

@@ -11,9 +11,9 @@ description: >
   (use sf-ai-agentforce-persona), or user explicitly wants code-first /
   deterministic / .agent DSL agent (use sf-ai-agentscript).
 license: MIT
-compatibility: "Requires API v66.0+ (Spring '26)"
+compatibility: "Per-feature minimum API versions — see 'API Version Matrix' section below"
 metadata:
-  version: "2.1.0"
+  version: "2.1.1"
   author: "Jag Valaiyapathy"
 ---
 
@@ -47,6 +47,29 @@ Salesforce **Agentforce** enables organizations to build autonomous AI agents th
 | **Agent Script DSL** | `sf-ai-agentscript` | Code-first `.agent` files, FSM architecture, version-controlled agents |
 
 Both approaches produce agents that run on the same Agentforce runtime. Choose based on team preference and complexity requirements.
+
+---
+
+## API Version Matrix
+
+Agentforce features were introduced across multiple Salesforce releases. There is NO single "minimum Agentforce version" — each metadata type and API has its own floor. Set your `package.xml` `<version>` (and where applicable your class `@apiVersion`) to the HIGHEST value listed among the features you use.
+
+| Feature / Metadata Type | Minimum API Version | Release | Source |
+|---|---|---|---|
+| `Bot` / `BotVersion` (Einstein Bots container that Agentforce agents inherit from) | v43.0+ | Winter '19 | [meta_bot.htm](https://developer.salesforce.com/docs/atlas.en-us.api_meta.meta/api_meta/meta_bot.htm) — "Bot components are available in API version 43.0 and later" |
+| `GenAiFunction` (agent action) | v60.0+ | Spring '24 | [meta_genaifunction.htm](https://developer.salesforce.com/docs/atlas.en-us.api_meta.meta/api_meta/meta_genaifunction.htm) — "available in API version 60.0 and later" |
+| `GenAiPlugin` (agent topic) | v62.0+ | Winter '25 | [meta_genaiplugin.htm](https://developer.salesforce.com/docs/atlas.en-us.api_meta.meta/api_meta/meta_genaiplugin.htm) — "available in API version 62.0 and later" |
+| `GenAiPlanner` (legacy planner — DEPRECATED) | v60.0–63.0 only | Spring '24–Spring '25 | [meta_genaiplannerbundle.htm](https://developer.salesforce.com/docs/atlas.en-us.api_meta.meta/api_meta/meta_genaiplannerbundle.htm) — "GenAiPlanner ... available in API version 63.0 and earlier" |
+| `GenAiPlannerBundle` (replaces GenAiPlanner) | v64.0+ | Summer '25 | [meta_genaiplannerbundle.htm](https://developer.salesforce.com/docs/atlas.en-us.api_meta.meta/api_meta/meta_genaiplannerbundle.htm) — "available in API version 64.0 and later" |
+| `LightningTypeBundle` (custom Lightning types for agent action I/O) | v64.0+ | Summer '25 | [meta_lightningtypebundle.htm](https://developer.salesforce.com/docs/atlas.en-us.api_meta.meta/api_meta/meta_lightningtypebundle.htm) — "available in API version 64.0 and later" |
+| Einstein Models API (`aiplatform.ModelsAPI` Apex + `/einstein/platform/v1/models` REST) | v61.0+ (reasonable floor; explicit minimum not documented in current Agentforce Developer Guide) | Summer '24 | [Models API Developer Guide](https://developer.salesforce.com/docs/ai/agentforce/guide/models-api.html) — no version floor stated; v61.0 retained as conservative floor pending verification |
+| `PromptTemplate` (`genAiPromptTemplate`) | v60.0+ | Spring '24 | Metadata API Developer Guide |
+
+### Practical guidance
+
+- Targeting **Agent Script (Spring '26)** or **GenAiPlannerBundle** deployments → use **v64.0+** in `package.xml`.
+- Targeting **legacy GenAiPlanner** agents retrieved from Winter '25 / Spring '25 orgs → keep `package.xml` at **v60.0–v63.0** (a v64.0+ comparison returns `Not available for deploy for this API version` — see [Gearset note](https://docs.gearset.com/en/articles/11728020-resolving-validation-errors-not-available-for-deploy-for-this-api-version-on-genaiplanner-metadata-type)).
+- Custom Lightning Types require **Enhanced Chat V2** in Service Cloud regardless of API version.
 
 ---
 
@@ -292,18 +315,25 @@ sf agent publish authoring-bundle --api-name MyAgent --target-org MyOrg
 
 The **Einstein Models API** (`aiplatform.ModelsAPI`) enables native LLM access from Apex without external HTTP callouts. Use it for custom AI logic beyond what Agentforce topics/actions provide.
 
-**Available Models:**
-- `sfdc_ai__DefaultOpenAIGPT4OmniMini` — Cost-effective general tasks
-- `sfdc_ai__DefaultOpenAIGPT4Omni` — Complex reasoning
-- `sfdc_ai__DefaultAnthropic` — Nuanced understanding
-- `sfdc_ai__DefaultGoogleGemini` — Multimodal tasks
+**Representative Models (API names)** — the Agentforce model roster is updated in the Einstein Platform release notes monthly; always confirm against the live [Supported Models](https://developer.salesforce.com/docs/ai/agentforce/guide/supported-models.html) doc before pinning a model name:
+
+- `sfdc_ai__DefaultOpenAIGPT4OmniMini` / `sfdc_ai__DefaultGPT4OmniMini` — Cost-effective general tasks (geo-aware variant available)
+- `sfdc_ai__DefaultGPT4Omni` — Complex reasoning (geo-aware)
+- `sfdc_ai__DefaultGPT41` / `sfdc_ai__DefaultGPT5` / `sfdc_ai__DefaultGPT51` — Newer OpenAI/Azure OpenAI geo-aware models
+- `sfdc_ai__DefaultBedrockAnthropicClaude45Sonnet` / `...Claude45Haiku` / `...Claude45Opus` — Claude 4.5 family on Amazon Bedrock (inside Salesforce Trust Boundary)
+- `sfdc_ai__DefaultBedrockAnthropicClaude4Sonnet` — Claude Sonnet 4 on Bedrock (default AWS-Hosted option for Agentforce)
+- `sfdc_ai__DefaultVertexAIGemini25Flash001` / `...Gemini25FlashLite001` / `...GeminiPro25` / `...Gemini30Flash` — Gemini 2.5 / 3 family via Vertex AI
+- `sfdc_ai__DefaultBedrockAmazonNovaLite` / `...AmazonNovaPro` — Amazon Nova
+- `sfdc_ai__DefaultOpenAITextEmbeddingAda_002` / `...AzureOpenAITextEmbeddingAda_002` — embeddings models
+
+> **DEPRECATED / rerouted**: The generic names `sfdc_ai__DefaultAnthropic` and `sfdc_ai__DefaultGoogleGemini` used in older docs are not in the current Einstein Studio roster. Older aliases like `DefaultOpenAIGPT35Turbo`, `DefaultOpenAIGPT4Turbo`, `DefaultBedrockAnthropicClaude3Haiku`, `DefaultBedrockAnthropicClaude37Sonnet`, and `DefaultVertexAIGemini20Flash001` are rerouted to newer models — see the "rerouted" table in the Supported Models doc.
 
 **Key Patterns:**
 - **Queueable** for single-record async AI processing
 - **Batch** for bulk processing (scope size 10–20)
 - **Platform Events** for notifying completion to LWC/Flow
 
-**Prerequisites:** Einstein Generative AI enabled, API v61.0+, Einstein Generative AI User permission set assigned.
+**Prerequisites:** Einstein Generative AI enabled, Einstein Generative AI User permission set assigned. See API Version Matrix above for the minimum `package.xml` / class API version to target for `aiplatform.ModelsAPI`.
 
 > **Full reference**: See [references/models-api.md](references/models-api.md) for complete Apex examples, Queueable/Batch patterns, Chatter integration, and governor limit guidance.
 
@@ -317,7 +347,7 @@ The **Einstein Models API** (`aiplatform.ModelsAPI`) enables native LLM access f
 - **editor.json** — Custom input collection UI (lightning components)
 - **renderer.json** — Custom output display UI (lightning components)
 
-**Requirements:** API v64.0+ (Fall '25), Enhanced Chat V2 enabled in Service Cloud.
+**Requirements:** API v64.0+ (Summer '25) per the [LightningTypeBundle Metadata API doc](https://developer.salesforce.com/docs/atlas.en-us.api_meta.meta/api_meta/meta_lightningtypebundle.htm), Enhanced Chat V2 enabled in Service Cloud.
 
 **File Structure:**
 ```
@@ -470,6 +500,7 @@ Issues:
 | Version | Date | Changes |
 |---------|------|---------|
 | **2.0.0** | 2026-02-07 | Complete rewrite. Skill refocused on standard Agentforce platform (Setup UI, GenAiFunction/GenAiPlugin, PromptTemplate, Models API, Custom Lightning Types). Agent Script DSL content moved to `sf-ai-agentscript`. |
+| **2.1.1** | 2026-04-30 | Replaced single "v66.0+" compatibility claim with per-feature API Version Matrix (verified against official Metadata API Developer Guide pages for Bot v43.0, GenAiFunction v60.0, GenAiPlugin v62.0, GenAiPlanner v60.0–63.0 deprecated, GenAiPlannerBundle v64.0+, LightningTypeBundle v64.0+). Refreshed Models API model roster against current Agentforce Supported Models doc; flagged `DefaultAnthropic` / `DefaultGoogleGemini` aliases as not in current Einstein Studio roster. |
 
 ---
 
