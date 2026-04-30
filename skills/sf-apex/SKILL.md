@@ -3,9 +3,12 @@ name: sf-apex
 description: >
   Generates and reviews Salesforce Apex code with 150-point scoring.
   TRIGGER when: user writes, reviews, or fixes Apex classes, triggers, test classes,
-  batch/queueable/schedulable jobs, or touches .cls/.trigger files.
+  batch/queueable/schedulable jobs, or touches .cls/.trigger files; also phrases like
+  "write some Apex", "add a trigger to [object]", "my Apex broke — fix it",
+  "refactor this class".
   DO NOT TRIGGER when: LWC JavaScript (use sf-lwc), Flow XML (use sf-flow),
-  SOQL-only queries (use sf-soql), or non-Salesforce code.
+  SOQL-only queries (use sf-soql), analyzing debug logs (use sf-debug),
+  or non-Salesforce code.
 license: MIT
 metadata:
   version: "1.1.0"

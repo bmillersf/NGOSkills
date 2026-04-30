@@ -5,6 +5,8 @@ description: >
   scoring. TRIGGER when: user designs program enrollment, benefit delivery,
   case management, intake processes, outcome tracking, referral management, or
   wraparound services on Nonprofit Cloud using native Program/Enrollment/Benefit objects.
+  Also triggers when user asks about "intake form for clients", "case load
+  management", "client tracking", or "track program participants".
   DO NOT TRIGGER when: NPSP orgs without NPC program objects (use sf-nonprofit-npsp
   for constituent model, custom-build program tracking), fundraising
   (use sf-nonprofit-fundraising), grant management (use sf-nonprofit-grants),

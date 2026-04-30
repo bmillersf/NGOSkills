@@ -3,9 +3,11 @@ name: sf-soql
 description: >
   SOQL query generation, optimization, and analysis with 100-point scoring.
   TRIGGER when: user writes, optimizes, or debugs SOQL/SOSL queries, touches .soql
-  files, or asks about relationship queries, aggregates, or query performance.
-  DO NOT TRIGGER when: bulk data operations (use sf-data), Apex DML logic
-  (use sf-apex), or report/dashboard queries.
+  files, or asks about relationship queries, aggregates, or query performance;
+  also phrases like "get me all [records]", "find records where",
+  "query accounts and their contacts", "how many [records] match".
+  DO NOT TRIGGER when: bulk data operations (use sf-data), inserting/updating records
+  (use sf-data or sf-apex), Apex DML logic (use sf-apex), or report/dashboard queries.
 license: MIT
 metadata:
   version: "1.1.0"

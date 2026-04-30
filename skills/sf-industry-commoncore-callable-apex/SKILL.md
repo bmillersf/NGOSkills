@@ -5,11 +5,13 @@ description: >
   120-point scoring.
   TRIGGER when: user creates or reviews System.Callable classes, migrates
   `VlocityOpenInterface` / `VlocityOpenInterface2`, or builds Industries callable extensions used by
-  OmniStudio, Integration Procedures, or DataRaptors.
-  DO NOT TRIGGER when: generic Apex classes/triggers (use sf-apex), building Integration Procedures
-  (use sf-industry-commoncore-integration-procedure), authoring OmniScripts (use sf-industry-commoncore-omniscript),
-  configuring Data Mappers (use sf-industry-commoncore-datamapper), or analyzing namespace/dependency
-  issues (use sf-industry-commoncore-omnistudio-analyze).
+  OmniStudio, Integration Procedures, or DataRaptors; user asks for "Industries extension Apex",
+  "custom callable for OmniStudio", or "build a System.Callable class for an IP/OmniScript".
+  DO NOT TRIGGER when: generic non-Industries Apex (use sf-apex), generic Apex classes/triggers
+  (use sf-apex), building Integration Procedures (use sf-industry-commoncore-integration-procedure),
+  authoring OmniScripts (use sf-industry-commoncore-omniscript), configuring Data Mappers
+  (use sf-industry-commoncore-datamapper), or analyzing namespace/dependency issues
+  (use sf-industry-commoncore-omnistudio-analyze).
 license: MIT
 metadata:
   version: "1.0.0"

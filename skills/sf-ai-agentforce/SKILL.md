@@ -4,10 +4,12 @@ description: >
   Agentforce platform agent building via Setup UI.
   TRIGGER when: user configures agents in Agent Builder, creates topics/actions,
   writes PromptTemplates, or touches .genAiFunction/.genAiPlugin/.promptTemplate
-  metadata XML files.
+  metadata XML files; or says "build me an agent", "create a new agent",
+  "set up an Agentforce agent", "add a topic/action to an agent".
   DO NOT TRIGGER when: Agent Script DSL .agent files (use sf-ai-agentscript),
-  agent testing (use sf-ai-agentforce-testing), or persona design
-  (use sf-ai-agentforce-persona).
+  agent testing (use sf-ai-agentforce-testing), persona design
+  (use sf-ai-agentforce-persona), or user explicitly wants code-first /
+  deterministic / .agent DSL agent (use sf-ai-agentscript).
 license: MIT
 compatibility: "Requires API v66.0+ (Spring '26)"
 metadata:

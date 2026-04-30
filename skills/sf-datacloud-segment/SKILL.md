@@ -3,7 +3,9 @@ name: sf-datacloud-segment
 description: >
   Salesforce Data Cloud Segment phase.
   TRIGGER when: user creates or publishes segments, manages calculated insights,
-  inspects segment counts or membership, or troubleshoots audience SQL in Data Cloud.
+  inspects segment counts or membership, or troubleshoots audience SQL in Data Cloud;
+  or says "segment for donors / lapsed donors / email campaign", "audience rule for [behavior]",
+  "build a segment".
   DO NOT TRIGGER when: the task is DMO/mapping/identity-resolution work (use sf-datacloud-harmonize),
   activation work (use sf-datacloud-act), query/search-index work (use sf-datacloud-retrieve),
   or STDM/session tracing (use sf-ai-agentforce-observability).

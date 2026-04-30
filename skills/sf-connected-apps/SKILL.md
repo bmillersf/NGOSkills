@@ -3,9 +3,15 @@ name: sf-connected-apps
 description: >
   Salesforce Connected Apps and OAuth configuration with 120-point scoring.
   TRIGGER when: user configures OAuth flows, JWT bearer auth, Connected Apps,
-  or touches .connectedApp-meta.xml / .eca-meta.xml files.
-  DO NOT TRIGGER when: Named Credentials for callouts (use sf-integration),
-  permission policies (use sf-permissions), or API endpoint code (use sf-apex).
+  or touches .connectedApp-meta.xml / .eca-meta.xml files; also phrases like
+  "set up OAuth for [app]", "create a connected app", "configure JWT bearer flow".
+  Note: a Connected App is typically a prerequisite for Named Credentials —
+  handle Connected App / OAuth configuration here first, then route Named
+  Credential / callout work to sf-integration.
+  DO NOT TRIGGER when: Named Credentials / External Credentials / callout wiring
+  (use sf-integration) — but only after the Connected App / OAuth configuration
+  covered here is in place; permission policies (use sf-permissions); or API
+  endpoint code (use sf-apex).
 license: MIT
 allowed-tools: Bash Read Write Edit Glob Grep WebFetch AskUserQuestion TodoWrite
 metadata:

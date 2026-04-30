@@ -4,7 +4,9 @@ description: >
   Nonprofit Experience Cloud UX/UI design with 100-point scoring. TRIGGER when:
   user designs portal branding, page layouts, navigation flows, content strategy,
   responsive design, accessibility, user journeys, wireframes, or visual design
-  for nonprofit Experience Cloud sites. DO NOT TRIGGER when: portal architecture
+  for nonprofit Experience Cloud sites. Also triggers when user asks about
+  "donor journey", "volunteer onboarding experience", "portal usability", or
+  "portal look and feel". DO NOT TRIGGER when: portal architecture
   and sharing (use sf-nonprofit-experience-cloud), LWC component code (use sf-lwc),
   or non-nonprofit portal design.
 license: MIT

@@ -3,7 +3,9 @@ name: sf-datacloud-act
 description: >
   Salesforce Data Cloud Act phase.
   TRIGGER when: user manages activations, activation targets, data actions,
-  or downstream delivery of Data Cloud audiences and data.
+  or downstream delivery of Data Cloud audiences and data; or says
+  "activate this segment", "push audience to [destination]",
+  "send segment to Marketing Cloud / Slack / etc.".
   DO NOT TRIGGER when: the task is segment creation (use sf-datacloud-segment),
   data retrieval/search work (use sf-datacloud-retrieve), or STDM/session tracing
   (use sf-ai-agentforce-observability).

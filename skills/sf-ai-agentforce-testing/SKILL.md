@@ -3,7 +3,9 @@ name: sf-ai-agentforce-testing
 description: >
   Agentforce agent testing with dual-track workflow and 100-point scoring.
   TRIGGER when: user tests Agentforce agents, runs sf agent test commands, creates
-  test specs, validates topic routing, or analyzes agent test coverage.
+  test specs, validates topic routing, or analyzes agent test coverage; or says
+  "agent routing fails", "agent picks the wrong topic", "wrong action invoked",
+  "test whether the agent handles [scenario]".
   DO NOT TRIGGER when: Apex unit tests (use sf-testing), building agents
   (use sf-ai-agentforce), or Agent Script DSL (use sf-ai-agentscript).
 license: MIT

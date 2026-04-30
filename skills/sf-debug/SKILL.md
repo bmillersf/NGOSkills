@@ -3,9 +3,12 @@ name: sf-debug
 description: >
   Salesforce debug log analysis and troubleshooting with 100-point scoring.
   TRIGGER when: user analyzes debug logs, hits governor limits, reads stack traces,
-  or touches .log files from Salesforce orgs.
+  or touches .log files from Salesforce orgs; also phrases like
+  "governor limit exceeded", "why is this slow", "analyze this debug log".
   DO NOT TRIGGER when: running Apex tests (use sf-testing), fixing Apex code
-  (use sf-apex), or Agentforce session tracing (use sf-ai-agentforce-observability).
+  (use sf-apex), Apex test failures — use sf-testing first; only come here if the
+  failure requires reading a debug log, or Agentforce session tracing
+  (use sf-ai-agentforce-observability).
 license: MIT
 metadata:
   version: "1.1.0"

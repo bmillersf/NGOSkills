@@ -8,7 +8,8 @@ description: >
   Tableau/CRM Analytics, and OmniStudio.
   TRIGGER when: user says "validate demo", "check demo script", "demo not working",
   "fix demo", "run demoscript", or references a demoscript.md / demo-script file,
-  or asks to verify a Salesforce demo environment is ready.
+  or asks to verify a Salesforce demo environment is ready. Also triggers when
+  user says "is the demo ready", "does this demo still work", or "verify the demo".
   DO NOT TRIGGER when: writing Apex code (use sf-apex), deploying metadata only
   (use sf-deploy), running Apex tests only (use sf-testing), or building demo
   data without a script (use sf-data).

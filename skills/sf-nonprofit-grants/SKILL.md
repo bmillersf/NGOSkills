@@ -4,7 +4,9 @@ description: >
   Nonprofit Cloud (NPC) grant management architecture with 110-point scoring.
   TRIGGER when: user designs grant applications, review workflows, funding
   awards, disbursements, budgets, compliance tracking, or grantmaking pipelines
-  on Nonprofit Cloud using native Application/Funding Award objects. DO NOT TRIGGER
+  on Nonprofit Cloud using native Application/Funding Award objects. Also
+  triggers when user asks about "grants pipeline", "grant application workflow",
+  "track a funding award", or "grant decision process". DO NOT TRIGGER
   when: NPSP + Outbound Funds Module (use sf-nonprofit-npsp OFM section),
   fundraising/donations (use sf-nonprofit-fundraising), program management
   (use sf-nonprofit-program-case), generic Apex/LWC (use sf-apex, sf-lwc),

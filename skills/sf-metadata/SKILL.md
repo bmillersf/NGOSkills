@@ -3,8 +3,10 @@ name: sf-metadata
 description: >
   Salesforce metadata generation and querying with 120-point scoring.
   TRIGGER when: user creates custom objects, fields, validation rules, or touches
-  .object-meta.xml, .field-meta.xml, .profile-meta.xml files.
-  DO NOT TRIGGER when: permission set analysis (use sf-permissions), deploying
+  .object-meta.xml, .field-meta.xml, .profile-meta.xml files; also phrases like
+  "add a custom field", "create a new object", "define a validation rule".
+  DO NOT TRIGGER when: permission set analysis (use sf-permissions),
+  field-level security / user access questions (use sf-permissions), deploying
   metadata (use sf-deploy), or Flow XML (use sf-flow).
 license: MIT
 metadata:

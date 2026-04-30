@@ -6,7 +6,9 @@ description: >
   Data Mappers, mapping Salesforce object fields, or reviewing existing Data Mapper
   configurations.
   TRIGGER when: user creates Data Mappers, configures field mappings, works with
-  OmniDataTransform metadata, or asks about DataRaptor/Data Mapper patterns.
+  OmniDataTransform metadata, or asks about DataRaptor/Data Mapper patterns; user says
+  "DataRaptor" (old name users still say), "extract, transform, load from Salesforce",
+  "map fields between objects and JSON", "ETL within OmniStudio", or "build a Data Mapper".
   DO NOT TRIGGER when: building Integration Procedures (use sf-industry-commoncore-integration-procedure),
   authoring OmniScripts (use sf-industry-commoncore-omniscript), or analyzing cross-component dependencies
   (use sf-industry-commoncore-omnistudio-analyze).

@@ -5,10 +5,13 @@ description: >
   building guided digital experiences, multi-step forms, or interactive processes
   that orchestrate Integration Procedures and Data Mappers.
   TRIGGER when: user creates OmniScripts, designs step flows, configures element
-  types, or reviews existing OmniScript configurations.
+  types, or reviews existing OmniScript configurations; user says "build a guided flow"
+  (clarify this is OmniStudio, not sf-flow), "multi-step form", "wizard for users to
+  fill out", "step-by-step intake in OmniStudio", or "OmniStudio digital experience".
   DO NOT TRIGGER when: building FlexCards (use sf-industry-commoncore-flexcard), creating Integration
-  Procedures directly (use sf-industry-commoncore-integration-procedure), or analyzing dependencies
-  (use sf-industry-commoncore-omnistudio-analyze).
+  Procedures directly (use sf-industry-commoncore-integration-procedure), analyzing dependencies
+  (use sf-industry-commoncore-omnistudio-analyze), or standard Salesforce Flow (use sf-flow) —
+  OmniScript is OmniStudio-specific.
 license: MIT
 metadata:
   version: "1.0.0"

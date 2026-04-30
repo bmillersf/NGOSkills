@@ -4,7 +4,9 @@ description: >
   Agent Script DSL for deterministic Agentforce agents.
   TRIGGER when: user writes or edits .agent files, builds FSM-based agents,
   uses Agent Script CLI (sf agent generate/publish), or asks about deterministic
-  agent patterns, slot filling, or instruction resolution.
+  agent patterns, slot filling, or instruction resolution; or says
+  "deterministic agent", "code-first agent", "FSM-based agent", "I want the
+  agent's behavior to be predictable".
   DO NOT TRIGGER when: Setup UI agent building (use sf-ai-agentforce), agent
   testing (use sf-ai-agentforce-testing), or persona design
   (use sf-ai-agentforce-persona).

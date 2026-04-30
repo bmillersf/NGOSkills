@@ -3,7 +3,8 @@ name: sf-datacloud-prepare
 description: >
   Salesforce Data Cloud Prepare phase.
   TRIGGER when: user creates or manages Data Cloud data streams, DLOs, transforms,
-  or Document AI configurations, or asks about ingestion into Data Cloud.
+  or Document AI configurations, or asks about ingestion into Data Cloud; or says
+  "get data into Data Cloud", "upload a CSV to Data Cloud", "create a data stream for [source]".
   DO NOT TRIGGER when: the task is connection setup only (use sf-datacloud-connect),
   DMOs and identity resolution (use sf-datacloud-harmonize), or query/search work (use sf-datacloud-retrieve).
 license: MIT

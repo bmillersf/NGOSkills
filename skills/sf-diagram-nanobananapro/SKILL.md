@@ -5,7 +5,9 @@ description: >
   TRIGGER when: user asks for PNG/SVG output, UI mockups, wireframes, visual ERDs,
   says "generate image" / "create mockup", OR when sf-diagram-mermaid delegates
   visual rendering (Pattern E — Mermaid-to-Visual, the default rendering path
-  for all Mermaid diagram output).
+  for all Mermaid diagram output); user says "PNG/SVG output", "generate an image
+  mockup", "render this as a visual", "UI wireframe as an image", or "when
+  sf-diagram-mermaid delegates rendering".
   DO NOT TRIGGER when: user explicitly requests text-only Mermaid output
   ("Mermaid only", "no image"), or non-visual documentation tasks.
 license: MIT

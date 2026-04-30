@@ -12,7 +12,9 @@ description: >
   during a demo.
   TRIGGER when: user asks to seed demo data for a nonprofit demo, generate
   nonprofit demo records, create test data from a demoscript, populate the
-  org with demo data, or asks for NPC/NPSP data that matches personas.
+  org with demo data, or asks for NPC/NPSP data that matches personas. Also
+  triggers when user asks for "realistic test records", "populate my demo
+  org", "fake donors for the demo", or "seed data for [persona]".
   DO NOT TRIGGER when: generic non-nonprofit data operations (use sf-data),
   metadata deployment (use sf-deploy), SOQL queries only (use sf-soql), or
   demo validation (use sf-demo-validate).
