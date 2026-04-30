@@ -6,7 +6,9 @@ description: >
   Procedures, and Data Mappers.
   TRIGGER when: user asks about OmniStudio dependencies, wants namespace detection
   (Core vs vlocity_cmt vs vlocity_ins), needs impact analysis, or requests
-  dependency diagrams.
+  dependency diagrams; user says "dependency graph for OmniStudio", "what IPs/DMs does
+  this OmniScript use", "impact analysis before editing an OmniStudio component",
+  "namespace detection (Core vs vlocity_cmt vs vlocity_ins)", or "component inventory".
   DO NOT TRIGGER when: authoring OmniScripts (use sf-industry-commoncore-omniscript), building FlexCards
   (use sf-industry-commoncore-flexcard), creating Integration Procedures (use sf-industry-commoncore-integration-procedure),
   or configuring Data Mappers (use sf-industry-commoncore-datamapper).

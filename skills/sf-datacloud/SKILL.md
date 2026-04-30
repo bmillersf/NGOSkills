@@ -4,10 +4,12 @@ description: >
   Salesforce Data Cloud product orchestrator for connect→prepare→harmonize→segment→act workflows.
   TRIGGER when: user needs a multi-step Data Cloud pipeline, asks to set up or troubleshoot
   Data Cloud across phases, manages data spaces or data kits, or wants a cross-phase `sf data360`
-  workflow.
-  DO NOT TRIGGER when: work is isolated to a single phase (use the matching sf-datacloud-* skill),
-  the task is STDM/session tracing/parquet telemetry (use sf-ai-agentforce-observability),
-  standard CRM SOQL (use sf-soql), or Apex implementation (use sf-apex).
+  workflow; or says "ingest this CSV into Data Cloud", "load data into Data Cloud end-to-end",
+  "build and activate a segment", "set up Data Cloud for [use case]".
+  DO NOT TRIGGER when: if the task is clearly one phase only, use the matching sf-datacloud-<phase>
+  skill — this orchestrator is for multi-phase asks; the task is STDM/session tracing/parquet
+  telemetry (use sf-ai-agentforce-observability), standard CRM SOQL (use sf-soql), or Apex
+  implementation (use sf-apex).
 license: MIT
 compatibility: "Requires an external community sf data360 CLI plugin and a Data Cloud-enabled org"
 metadata:

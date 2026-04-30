@@ -3,7 +3,8 @@ name: sf-datacloud-retrieve
 description: >
   Salesforce Data Cloud Retrieve phase.
   TRIGGER when: user runs Data Cloud SQL, describe, async queries, vector search,
-  search-index workflows, or metadata introspection for Data Cloud objects.
+  search-index workflows, or metadata introspection for Data Cloud objects; or says
+  "query Data Cloud", "Data Cloud SQL", "search Data Cloud vectors", "run a DC async query".
   DO NOT TRIGGER when: the task is standard CRM SOQL (use sf-soql), segment creation
   or calculated insight design (use sf-datacloud-segment), or STDM/session tracing/parquet
   analysis (use sf-ai-agentforce-observability).

@@ -3,7 +3,9 @@ name: sf-diagram-mermaid
 description: >
   Salesforce architecture diagrams using Mermaid with ASCII fallback.
   TRIGGER when: user says "diagram", "visualize", "ERD", or asks for sequence
-  diagrams, flowcharts, class diagrams, or architecture visualizations in Mermaid.
+  diagrams, flowcharts, class diagrams, or architecture visualizations in Mermaid;
+  user says "draw an ERD", "flowchart of this process", "sequence diagram for
+  [integration]", "architecture diagram", or "make a diagram of this".
   Also triggers in demo environments when user asks how an integration would work,
   wants to explain a data flow, or needs a talking track alongside a diagram.
   DO NOT TRIGGER when: user wants PNG/SVG image output (use sf-diagram-nanobananapro),

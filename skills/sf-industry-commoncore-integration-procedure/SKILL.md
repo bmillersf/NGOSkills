@@ -5,7 +5,9 @@ description: >
   Use when building server-side process orchestrations that combine Data Mapper
   actions, Apex Remote Actions, HTTP callouts, and conditional logic.
   TRIGGER when: user creates Integration Procedures, adds Data Mapper steps,
-  configures Remote Actions, or reviews existing IP configurations.
+  configures Remote Actions, or reviews existing IP configurations; user says
+  "orchestrate multiple APIs", "chain callouts server-side", "multi-step backend procedure",
+  "build an Integration Procedure", or "IP with Data Mapper + Remote Action".
   DO NOT TRIGGER when: building OmniScripts (use sf-industry-commoncore-omniscript), creating Data Mappers
   directly (use sf-industry-commoncore-datamapper), or analyzing cross-component dependencies
   (use sf-industry-commoncore-omnistudio-analyze).

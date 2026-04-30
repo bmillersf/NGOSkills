@@ -5,7 +5,10 @@ description: >
   user builds donor portals, volunteer portals, client portals, grantee portals,
   community sites, self-service portals, or configures sharing rules, guest
   access, LWR sites, or Aura sites for nonprofit constituents on Experience
-  Cloud. DO NOT TRIGGER when: portal UX/UI design (use sf-nonprofit-experience-cloud-ux),
+  Cloud. Also triggers when user asks about "portal strategy", "portal
+  architecture", or "portal sharing model". DO NOT TRIGGER when: portal
+  UX/UI design (use sf-nonprofit-experience-cloud-ux), if user wants to
+  hands-on build LWCs/pages inside the portal (use sf-nonprofit-experience-cloud-build),
   generic LWC components (use sf-lwc), or non-nonprofit Experience Cloud work.
 license: MIT
 metadata:

@@ -3,9 +3,12 @@ name: sf-data
 description: >
   Salesforce data operations with 130-point scoring.
   TRIGGER when: user creates test data, performs bulk import/export, uses sf data CLI
-  commands, or needs data factory patterns for Apex tests.
-  DO NOT TRIGGER when: SOQL query writing only (use sf-soql), Apex test execution
-  (use sf-testing), or metadata deployment (use sf-deploy).
+  commands, or needs data factory patterns for Apex tests; also phrases like
+  "create 250+ test records", "populate the sandbox", "bulk load accounts",
+  "generate test data".
+  DO NOT TRIGGER when: SOQL query writing only (use sf-soql), writing a SOQL query
+  without bulk DML (use sf-soql), Apex test execution (use sf-testing), or metadata
+  deployment (use sf-deploy).
 license: MIT
 metadata:
   version: "1.1.0"

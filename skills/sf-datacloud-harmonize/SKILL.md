@@ -3,7 +3,8 @@ name: sf-datacloud-harmonize
 description: >
   Salesforce Data Cloud Harmonize phase.
   TRIGGER when: user works with DMOs, mappings, relationships, identity resolution,
-  unified profiles, data graphs, or universal IDs.
+  unified profiles, data graphs, or universal IDs; or says "build a unified profile",
+  "set up identity resolution", "map DMO fields".
   DO NOT TRIGGER when: the task is only about streams/DLOs (use sf-datacloud-prepare),
   segments/insights (use sf-datacloud-segment), retrieval/search (use sf-datacloud-retrieve),
   or STDM/session tracing (use sf-ai-agentforce-observability).

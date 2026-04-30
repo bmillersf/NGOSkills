@@ -4,7 +4,9 @@ description: >
   Nonprofit Cloud (NPC) fundraising architecture with 120-point scoring.
   TRIGGER when: user designs donor management, gift entry, campaigns, soft
   credits, Gift Designation allocations, recurring giving, or payment processing
-  on Nonprofit Cloud using Gift Transaction/Person Account model. DO NOT TRIGGER
+  on Nonprofit Cloud using Gift Transaction/Person Account model. Also triggers
+  when user asks to "set up recurring gifts", "monthly giving program",
+  "track donations", or "enter a gift". DO NOT TRIGGER
   when: NPSP Opportunity-based donations (use sf-nonprofit-npsp), generic
   Apex/LWC (use sf-apex, sf-lwc), grant management (use sf-nonprofit-grants),
   program management (use sf-nonprofit-program-case), or non-nonprofit

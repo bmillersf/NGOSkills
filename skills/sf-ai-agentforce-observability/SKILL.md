@@ -4,7 +4,8 @@ description: >
   Agentforce session tracing extraction and analysis.
   TRIGGER when: user extracts STDM data from Data Cloud, analyzes agent session
   traces, debugs agent conversations via telemetry, or works with .parquet files
-  from Agentforce.
+  from Agentforce; or asks "why did my agent do that", says "agent is acting weird",
+  "trace this agent session", "debug agent conversation".
   DO NOT TRIGGER when: testing agents (use sf-ai-agentforce-testing), Apex debug
   logs (use sf-debug), or building agents (use sf-ai-agentforce).
 license: MIT

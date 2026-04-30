@@ -7,10 +7,14 @@ description: >
   when: user builds, beautifies, or redesigns a nonprofit Experience Cloud site,
   models a community after an existing organization website, creates donor /
   giving / volunteer / member portals, or wires up public-facing donation,
-  signup, or self-service flows inside a community. DO NOT TRIGGER when: portal
+  signup, or self-service flows inside a community. Also triggers when user
+  asks to "build an LWC for a portal / community site", "create a donor giving
+  page", "volunteer signup page", "portal component", "portal form", or "wire
+  up a portal page". DO NOT TRIGGER when: portal
   strategy and sharing architecture (use sf-nonprofit-experience-cloud), portal
   UX/UI design principles and journeys (use sf-nonprofit-experience-cloud-ux),
-  or generic LWC component authoring (use sf-lwc).
+  generic LWC unrelated to a portal (use sf-lwc), or generic LWC component
+  authoring (use sf-lwc).
 license: MIT
 metadata:
   version: "1.0.0"

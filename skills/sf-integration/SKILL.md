@@ -3,9 +3,15 @@ name: sf-integration
 description: >
   Salesforce integration architecture with 120-point scoring.
   TRIGGER when: user sets up Named Credentials, External Services, REST/SOAP
-  callouts, Platform Events, CDC, or touches .namedCredential-meta.xml files.
-  DO NOT TRIGGER when: Connected App/OAuth config (use sf-connected-apps),
-  Apex-only logic (use sf-apex), or data import/export (use sf-data).
+  callouts, Platform Events, CDC, or touches .namedCredential-meta.xml files;
+  also phrases like "integrate with [external system]", "REST callout to [API]",
+  "set up a platform event", "send data to [external system]".
+  This skill owns Named Credentials, External Credentials, External Services,
+  callouts, and async/event integration patterns.
+  DO NOT TRIGGER when: pure OAuth / Connected App configuration happens first
+  (use sf-connected-apps) — that is usually a prerequisite before Named Credentials
+  are wired up here; Apex-only logic with no external callout (use sf-apex); or
+  data import/export (use sf-data).
 license: MIT
 metadata:
   version: "1.2.0"

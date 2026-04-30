@@ -5,8 +5,11 @@ description: >
   Nonprofit Success Pack (NPSP) skill tracks based on org context.
   TRIGGER when: user designs nonprofit Salesforce solutions, asks about
   NPC vs NPSP, migrates between platforms, or touches nonprofit-specific
-  objects. DO NOT TRIGGER when: generic Apex/LWC code (use sf-apex, sf-lwc),
-  Flow XML (use sf-flow), or non-nonprofit Salesforce work.
+  objects. Also triggers when user asks "should we use NPC or NPSP",
+  "which nonprofit platform", "migrate from NPSP to NPC", or "comparing
+  Nonprofit Cloud and NPSP". DO NOT TRIGGER when: generic Apex/LWC code
+  (use sf-apex, sf-lwc), Flow XML (use sf-flow), or non-nonprofit
+  Salesforce work.
 license: MIT
 metadata:
   version: "2.0.0"

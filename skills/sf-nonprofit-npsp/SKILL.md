@@ -8,7 +8,8 @@ description: >
   management, Outbound Funds Module (OFM), Volunteers for Salesforce (V4S),
   Program Management Module (PMM), or touches objects with
   npsp__/npe01__/npo02__/npe03__/npe4__/npe5__/outfunds__/GW_Volunteers__/pmdm__
-  namespaces. DO NOT TRIGGER when: Nonprofit Cloud (NPC) orgs using Person
+  namespaces. Also triggers when user says "I'm on NPSP", "we use NPSP", or
+  "our org is NPSP-based". DO NOT TRIGGER when: Nonprofit Cloud (NPC) orgs using Person
   Account/Gift model (use sf-nonprofit-fundraising, sf-nonprofit-grants,
   sf-nonprofit-program-case), generic Apex/LWC (use sf-apex, sf-lwc), or
   non-nonprofit Salesforce work.

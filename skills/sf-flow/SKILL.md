@@ -3,9 +3,13 @@ name: sf-flow
 description: >
   Creates and validates Salesforce Flows with 110-point scoring.
   TRIGGER when: user builds or edits record-triggered, screen, autolaunched, or
-  scheduled flows, or touches .flow-meta.xml files.
-  DO NOT TRIGGER when: Apex automation (use sf-apex), process builder migration
-  questions only, or non-Flow declarative config (use sf-metadata).
+  scheduled flows, or touches .flow-meta.xml files; also phrases like "fix this flow",
+  "build an automation", "record-triggered automation", "automate when [X] happens",
+  "my flow isn't running", "why did the flow fail", "screen flow for users to fill out".
+  DO NOT TRIGGER when: Apex-based automation (use sf-apex), process builder migration
+  questions only, non-Flow declarative config (use sf-metadata), or guided multi-step
+  user experiences on OmniStudio (use sf-industry-commoncore-omniscript) — OmniScript
+  is sometimes called a "guided flow" but is not a Salesforce Flow.
 license: MIT
 metadata:
   version: "2.1.0"

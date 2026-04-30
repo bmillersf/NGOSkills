@@ -6,7 +6,9 @@ description: >
   Procedures, or reviewing existing FlexCard definitions for accessibility and
   performance.
   TRIGGER when: user creates FlexCards, configures data sources, designs card
-  layouts, or asks about OmniUiCard metadata.
+  layouts, or asks about OmniUiCard metadata; user says "build a card", "summary card",
+  "at-a-glance dashboard tile", "account-360 card", "data display card bound to an IP",
+  or "wire a card to [service]".
   DO NOT TRIGGER when: building OmniScripts (use sf-industry-commoncore-omniscript), creating Integration
   Procedures (use sf-industry-commoncore-integration-procedure), or analyzing dependencies
   (use sf-industry-commoncore-omnistudio-analyze).

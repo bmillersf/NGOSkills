@@ -8,7 +8,7 @@ description: >
   TRIGGER when: user provides notes, a meeting transcript, or requirements
   and asks to generate a demo script, demo story, demo narrative, click path,
   or demoscript.md. Also triggers when user says "write a demo from these notes",
-  "create a demo script", or "author the demo".
+  "create a demo script", "author the demo", "I want to demo [feature]", "demo this for [audience]", "demo narrative", "demo story arc", or "turn these notes into a demo".
   DO NOT TRIGGER when: validating an existing demoscript (use sf-demo-validate),
   seeding demo data (use sf-nonprofit-demo-data), generating Playwright tests
   (use sf-demo-playwright), or writing Apex/LWC code (use sf-apex, sf-lwc).
