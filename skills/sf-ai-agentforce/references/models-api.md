@@ -36,7 +36,9 @@ The **Agentforce Models API** enables native LLM access directly from Apex code 
 
 ### API Version Requirement
 
-**Minimum API v61.0+ (Spring '24)** for Models API support.
+**Minimum API v61.0+ (Summer '24)** recommended for Apex `aiplatform.ModelsAPI` support. The current Agentforce Developer Guide's [Access Models API with Apex](https://developer.salesforce.com/docs/ai/agentforce/guide/access-models-api-with-apex.html) page does not state an explicit floor, so v61.0 is a conservative minimum pending further verification. The REST endpoint (`/einstein/platform/v1/models/{modelName}/generations`) is GA as of Summer '24.
+
+> **Note:** Salesforce release-to-API-version mapping: Spring '24 = v60.0, Summer '24 = v61.0. (Earlier editions of this file incorrectly labeled v61.0 as Spring '24.)
 
 ```bash
 # Verify org API version
@@ -58,14 +60,38 @@ Setup → Permission Sets → Einstein Generative AI User → Assign to users
 
 ## Available Models
 
-| Model Name | Description | Use Case |
-|------------|-------------|----------|
-| `sfdc_ai__DefaultOpenAIGPT4OmniMini` | GPT-4o Mini | Cost-effective general tasks |
-| `sfdc_ai__DefaultOpenAIGPT4Omni` | GPT-4o | Complex reasoning tasks |
-| `sfdc_ai__DefaultAnthropic` | Claude (Anthropic) | Nuanced understanding |
-| `sfdc_ai__DefaultGoogleGemini` | Google Gemini | Multimodal tasks |
+The Agentforce model roster is refreshed monthly in the [Einstein Platform release notes](https://help.salesforce.com/s/articleView?id=release-notes.rn_einstein_platform.htm). Always verify the current list in the official [Supported Models](https://developer.salesforce.com/docs/ai/agentforce/guide/supported-models.html) doc before pinning an API name.
 
-> **Note**: Available models depend on your Salesforce edition and Einstein entitlements.
+Representative entries from the current (Apr 2026) standard-configuration roster:
+
+| Model Family | API Name | Notes |
+|---|---|---|
+| OpenAI GPT-4o Mini (direct) | `sfdc_ai__DefaultOpenAIGPT4OmniMini` | Cost-effective |
+| OpenAI / Azure OpenAI GPT-4o Mini (geo-aware) | `sfdc_ai__DefaultGPT4OmniMini` | Latency-optimized |
+| OpenAI / Azure OpenAI GPT-4o (geo-aware) | `sfdc_ai__DefaultGPT4Omni` | Complex reasoning |
+| OpenAI / Azure OpenAI GPT-4.1 / 4.1 Mini | `sfdc_ai__DefaultGPT41` / `sfdc_ai__DefaultGPT41Mini` | Geo-aware |
+| OpenAI / Azure OpenAI GPT-5 / 5 Mini / 5.1 / 5.2 / 5.4 | `sfdc_ai__DefaultGPT5`, `...Mini`, `...DefaultGPT51`, etc. | Geo-aware |
+| OpenAI / Azure OpenAI O3 / O4 Mini | `sfdc_ai__DefaultO3` / `sfdc_ai__DefaultO4Mini` | Geo-aware reasoning models |
+| Anthropic Claude Sonnet 4 on Bedrock | `sfdc_ai__DefaultBedrockAnthropicClaude4Sonnet` | Default AWS-Hosted Agentforce option; inside Salesforce Trust Boundary |
+| Anthropic Claude Sonnet 4.5 / 4.6 on Bedrock | `sfdc_ai__DefaultBedrockAnthropicClaude45Sonnet` / `...Claude46Sonnet` | Trust Boundary |
+| Anthropic Claude Haiku 4.5 on Bedrock | `sfdc_ai__DefaultBedrockAnthropicClaude45Haiku` | Trust Boundary |
+| Anthropic Claude Opus 4.5 / 4.6 (Beta) / 4.7 (Beta) on Bedrock | `sfdc_ai__DefaultBedrockAnthropicClaude45Opus`, `...Claude46Opus`, `...Claude47Opus` | Trust Boundary |
+| Amazon Nova Lite / Pro on Bedrock | `sfdc_ai__DefaultBedrockAmazonNovaLite` / `...NovaPro` | Trust Boundary |
+| Google Gemini 2.5 Flash / Flash Lite / Pro | `sfdc_ai__DefaultVertexAIGemini25Flash001`, `...Gemini25FlashLite001`, `...GeminiPro25` | Vertex AI |
+| Google Gemini 3 Flash / Pro (Beta) | `sfdc_ai__DefaultVertexAIGemini30Flash` / `...GeminiPro30` | Vertex AI |
+| OpenAI / Azure OpenAI Ada 002 (embeddings) | `sfdc_ai__DefaultOpenAITextEmbeddingAda_002` / `...AzureOpenAITextEmbeddingAda_002` | Embeddings only |
+
+> **Deprecated / rerouted aliases** (do not use):
+> - `sfdc_ai__DefaultAnthropic`, `sfdc_ai__DefaultGoogleGemini` — these generic aliases do NOT appear in the current Einstein Studio roster.
+> - `sfdc_ai__DefaultOpenAIGPT35Turbo` / `...GPT35Turbo_16k` — rerouted to GPT-4o Mini.
+> - `sfdc_ai__DefaultOpenAIGPT4` / `...GPT4_32k` / `...GPT4Turbo` — rerouted to GPT-4o.
+> - `sfdc_ai__DefaultBedrockAnthropicClaude3Haiku` — rerouted to Claude Haiku 4.5.
+> - `sfdc_ai__DefaultBedrockAnthropicClaude37Sonnet` — rerouted to Claude Sonnet 4.5.
+> - `sfdc_ai__DefaultVertexAIGemini20Flash001` — rerouted to Gemini 2.5 Flash.
+>
+> See the full rerouting table in the [Supported Models doc](https://developer.salesforce.com/docs/ai/agentforce/guide/supported-models.html).
+
+> **Note**: Available models depend on your Salesforce edition, Einstein entitlements, region, and Agentforce Model Option (Salesforce Default vs AWS-Hosted). BYOLLM is supported via Einstein Studio for Amazon Bedrock, Azure OpenAI, OpenAI, and Vertex AI.
 
 ---
 

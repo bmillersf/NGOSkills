@@ -149,18 +149,20 @@ customEvaluations:
 
 Metrics add platform quality scoring to test cases. Specify as a flat list of metric names.
 
+> **⚠️ SDK-accepted metric list (verified 2026-04-30 against `@salesforce/agents` `src/utils.ts`):** `completeness`, `coherence`, `conciseness`, `output_latency_milliseconds` — exactly four. **`instruction_following` has been removed from the SDK** and is no longer accepted; the rows below are retained as a historical record of existing test specs but MUST be stripped from any new or updated spec before `sf agent test create --force-overwrite`.
+
 | Metric | Score Range | Description |
 |--------|-------------|-------------|
 | `coherence` | 1-5 | Response clarity, grammar, and logical flow. Works well — typically scores 4-5 for clear responses. **⚠️ Scores deflection agents poorly** (2-3) because it evaluates whether the response "answers" the user's question, not whether the agent behaved correctly. For deflection/guardrail tests, use `expectedOutcome` instead. |
 | `completeness` | 1-5 | How fully the response addresses the query. **⚠️ Penalizes triage/routing agents** that transfer instead of "solving" the problem — unsuitable for routing agents. |
 | `conciseness` | 1-5 | **⚠️ BROKEN** — Returns score=0 with empty `metricExplainability` on most tests. Platform bug. |
-| `instruction_following` | 0-1 | Whether the agent follows its instructions. **⚠️ Two bugs:** (1) Labels "FAILURE" even at score=1 — threshold mismatch. (2) **Crashes Testing Center UI** with `No enum constant AiEvaluationMetricType.INSTRUCTION_FOLLOWING_EVALUATION` — remove from YAML if users need UI access. |
+| `instruction_following` (REMOVED) | 0-1 | **Removed from SDK.** Historical: Whether the agent follows its instructions. Two bugs — (1) Labels "FAILURE" even at score=1, (2) Crashed Testing Center UI with `AiEvaluationMetricType.INSTRUCTION_FOLLOWING_EVALUATION` — both resolved by the removal. |
 | `output_latency_milliseconds` | Raw ms | Reports raw latency in milliseconds. No pass/fail grading — useful for performance baselining only. |
 
 **Recommended Metrics:**
 - Use `coherence` + `output_latency_milliseconds` for baseline quality scoring
 - Skip `conciseness` (broken) and `completeness` (misleading for routing agents)
-- Use `instruction_following` with caution — check the score value, ignore the PASS/FAILURE label
+- Do NOT use `instruction_following` — removed from SDK
 
 **Example:**
 ```yaml
@@ -170,7 +172,6 @@ testCases:
     expectedOutcome: "Agent should offer troubleshooting assistance"
     metrics:
       - coherence
-      - instruction_following
       - output_latency_milliseconds
     # NOTE: Skip 'conciseness' — returns score=0 (Spring '26 bug)
     # NOTE: Skip 'completeness' — penalizes routing/triage agents
@@ -376,8 +377,13 @@ The CLI evaluates assertions per test case based on which fields are specified:
 | Assertion | YAML Field | Logic |
 |-----------|------------|-------|
 | `topic_assertion` | `expectedTopic` | Exact match (with resolution for standard topics) |
+| `topic_sequence_match` | `expectedTopic` (sequence form) | Sequence match on ordered topic list across turns |
 | `actions_assertion` | `expectedActions` | Superset — passes if actual contains all expected |
+| `action_sequence_match` | `expectedActions` (sequence form) | Sequence match on ordered action list |
 | `output_validation` | `expectedOutcome` | LLM-as-judge semantic evaluation |
+| `bot_response_rating` | (server-generated) | Server-assigned bot response rating — surfaced in `testResults` when present |
+
+> **Expectation name enum (verified 2026-04-30 against `@salesforce/agents` `src/types.ts` `MetadataExpectation.name`):** `topic_sequence_match`, `topic_assertion`, `action_sequence_match`, `actions_assertion`, `bot_response_rating`, `output_validation`. Any other value will be rejected by the CLI's YAML parser. `bot_response_rating` is a newer addition to the enum — it is not user-supplied via YAML fields; it appears in `testResults` output when the server evaluates it.
 
 ### Custom Evaluations (via `customEvaluations`)
 

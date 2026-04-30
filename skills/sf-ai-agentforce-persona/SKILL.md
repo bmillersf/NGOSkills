@@ -110,7 +110,7 @@ Present the extracted context as a summary table and ask the user to confirm. If
 1. **Agent name** — What is this agent called?
 2. **Role** — What does it do? (e.g., "helps TSEs manage support cases", "guides customers through onboarding")
 3. **Audience** — Internal employees or external customers?
-4. **Agent Type** — The Agentforce deployment type (e.g., Employee Agent, Customer Agent, Service Agent, Sales Agent, Custom Agent). Agent Type and Audience are related but distinct — Agent Type is the deployment category, Audience is who the human users are.
+4. **Agent Type** — The Agentforce deployment type. Current standard types (per Salesforce Help "Agent Types and Considerations", as of Apr 2026): **Agentforce Employee Agent**, **Agentforce Service Agent**, **Service Assistant**, **Lead Nurturing** (formerly SDR Agent), **Sales Coach**, **Setup with Agentforce (Beta)**, and the sunsetting **Agentforce (Default)** and **Agent for Setup** (no new orgs from April 2026). Custom templates are also possible. Agent Type and Audience are related but distinct — Agent Type is the deployment category, Audience is who the human users are.
 5. **Surface** — Where the agent appears, expressed as **Platform/Environment > Surface**. A surface is a distinct UI interaction context where a user can access or encounter agent capabilities — it feels like a different "place" or experience to the user. Two surfaces on the same platform (e.g., Copilot panel vs. Lightning record page) may need different persona tuning because they feel like different places.
 
    | Platform / Environment | Surfaces |
