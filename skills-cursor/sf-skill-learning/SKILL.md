@@ -6,9 +6,12 @@ description: >-
   failure modes, cheat sheets only), what must never be auto-edited
   (methodology, routing, metadata), redaction rules, and the learn(...) commit
   convention. Read before authoring or reviewing any auto-generated learning.
-  TRIGGER when: user asks how skill self-learning works, how to review
-  captured learnings, how to push local learnings to the repo, or when the
-  agent is about to record a learning from a completed skill invocation.
+  TRIGGER when: user asks "how does skill self-learning work", "show me
+  captured learnings", "push local learnings to the repo", "what did the
+  skills learn this week", "list learn( commits", "review learning
+  commits", "run push-learnings.sh", "revert a bad learning", or when the
+  agent is about to record a learning from a completed skill invocation
+  (auto-triggered per agent-autonomy.mdc Section 4).
   DO NOT TRIGGER when: authoring a brand-new skill (use sf-skill-maintenance),
   running the weekly upstream-refs auto-refresh (use refresh-skills.sh), or
   making a methodology change (human-authored, not auto-learning).

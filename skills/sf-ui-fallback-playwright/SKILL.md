@@ -6,15 +6,22 @@ description: >
   token, generates a Playwright script on the fly, executes it, saves it to
   a library for replay, and self-heals selectors when Salesforce UI changes.
   TRIGGER when: agent determines a task requires UI interaction that sf CLI /
-  Metadata API / Tooling API cannot perform — Agent Builder topic/action
-  publish steps, Prompt Builder activation, Experience Builder drag-drop,
-  certain Setup toggles (Einstein activation, feature turn-on), Data Cloud
-  home-page admin settings, licensing activation that has no API; or when
-  a skill hits a "no CLI for this" wall.
+  Metadata API / Tooling API cannot perform; user says "there's no CLI for
+  this", "we have to click through Setup", "publish the agent in Agent
+  Builder", "activate the PromptTemplate in Prompt Builder", "drag this
+  component in Experience Builder", "toggle this Setup switch", "flip the
+  Einstein activation toggle", "enable this feature in Setup", "adjust the
+  Data Cloud home-page admin settings", or "activate the license in the UI";
+  also triggers when another skill surfaces "no CLI path exists — need
+  Playwright fallback".
   DO NOT TRIGGER when: sf CLI / Metadata API / Tooling API can do the job
-  (route to sf-deploy, sf-metadata, sf-apex), OR when authoring pre-flight
-  demo test suite (use sf-demo-playwright instead — that is proactive, this
-  is reactive).
+  (route to sf-deploy for deploy commands, sf-metadata for metadata XML,
+  sf-apex for Apex, sf-data for data operations), OR when authoring a
+  proactive pre-flight demo test suite from a demoscript (use
+  sf-demo-playwright — that is proactive suite authoring; this is reactive
+  on-demand single-task fallback), OR when running the full demo pipeline
+  (use sf-demo-orchestrate which invokes this skill only on CLI dead-ends),
+  OR when validating the demo end-to-end (use sf-demo-validate).
 license: MIT
 compatibility: "Requires Playwright (npm install playwright), sf CLI authenticated to target org"
 metadata:
@@ -68,9 +75,10 @@ This skill owns the task **only** when all of the following are true:
 | Run Apex tests | `sf-testing` | `sf apex run test` works |
 | Build an agent topic/action file | `sf-ai-agentforce` | Metadata: `.genAiPlugin`, `.genAiFunction` |
 | Query Data Cloud | `sf-datacloud-retrieve` | Data Cloud SQL API |
+| **Configure Experience Cloud site pages, branding, routes, guest profile, nav menu** | `sf-nonprofit-experience-cloud-build` (or `sf-experience-cloud`) | **ExperienceBundle / Network / NavigationMenu / Profile / BrandingSet all have full Metadata API coverage.** Edit the JSON/XML and `sf project deploy start` + `sf community publish`. Builder UI drag-drop is iframe-wrapped, shadow-DOM heavy, and fragile — authoring via metadata is both faster and reliable. |
+| Publish a community / site | `sf-experience-cloud` | `sf community publish --name "<Site Name>"` works |
 | **Publish** an agent (Setup toggle) | **This skill** | No CLI / API for publish click |
 | **Activate** a Prompt Template | **This skill** | Activation is UI-only |
-| Drag-drop in Experience Builder | **This skill** | Builder UI has no API |
 | Toggle Einstein Activation | **This skill** | Setup toggle, no API |
 | Data Cloud home-page admin settings | **This skill** | Some settings are UI-only |
 | Licensing activation without API | **This skill** | Org-level UI action |
@@ -285,6 +293,7 @@ After a successful run:
 3. **Destructive writes in prod without confirmation.** Prod + write must require `--write` flag AND typed confirmation. Defaulting to "just run it" on prod is the single fastest way to lose customer data.
 4. **Not regenerating on selector break.** If a step fails with a timeout on `locator.waitFor`, don't silently pass — re-generate the selector (self-heal) and log it. Silent skips mask Salesforce UI changes and hide drift.
 5. **Running this skill when CLI would work.** Every invocation must document Phase 1 CLI checks in the script header. If the CLI can do it, use the CLI skill; this skill is strictly the fallback.
+5a. **Automating Experience Builder (Aura or LWR Community Builder).** Do NOT use this skill to drag-drop components onto site pages, edit branding panels, configure theme colors, create new pages in Builder, or wire up nav menus via the Builder UI. Every one of those is expressible as ExperienceBundle / Network / NavigationMenu / Profile / BrandingSet metadata — see `sf-nonprofit-experience-cloud-build`. Builder UI is iframe-wrapped and shadow-DOM heavy; each interaction takes 5-15 nested selector lookups and nothing survives a release. Metadata API achieves the same state in ~10 minutes of JSON editing. If you find yourself writing Playwright selectors for Builder, stop and author the ExperienceBundle instead.
 6. **Ignoring the USAGE log.** USAGE.md is the data source for CLI feature requests. Every successful / healed / failed run gets a row. Skipping entries hides recurring patterns.
 7. **Single-shot non-reusable scripts.** Scripts must be saved to the library so the next session replays instead of regenerating. Throwaway one-offs defeat the self-heal loop.
 8. **Missing screenshots on failure.** `screenshot: 'on'` at the config level, not `'only-on-failure'` — we want the full sequence so the human can see where the UI diverged, not just the crash frame.

@@ -51,8 +51,11 @@ extract_triggers() {
       next
     }
     !fm { next }
-    capture && /DO NOT TRIGGER when:/ {
-      sub(/DO NOT TRIGGER when:.*/, "")
+    capture && (/DO NOT TRIGGER when:/ || /DO NOT[ \t]*$/ || /^[ \t]*TRIGGER when:/) {
+      # Handles DO NOT TRIGGER split across two lines (DO NOT\nTRIGGER when:
+      # OR DO NOT TRIGGER\nwhen:)
+      sub(/DO NOT.*/, "")
+      sub(/TRIGGER when:.*/, "")
       if (length($0) > 0) print name "\t" $0
       capture = 0
       exit
