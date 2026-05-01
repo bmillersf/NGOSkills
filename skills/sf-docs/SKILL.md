@@ -1,10 +1,21 @@
 ---
 name: sf-docs
 description: >
-  Official Salesforce documentation retrieval guidance. Use when you need
-  authoritative Salesforce docs from developer.salesforce.com or
-  help.salesforce.com, especially when pages are JS-heavy, shell-rendered, or
-  hard to extract with naive fetching.
+  Official Salesforce documentation retrieval guidance.
+  TRIGGER when: user needs authoritative Salesforce docs from
+  developer.salesforce.com or help.salesforce.com, especially when pages
+  are JS-heavy, shell-rendered, or hard to extract with naive fetching; user
+  says "find official Salesforce docs for X", "pull the help.salesforce.com
+  page on Y", "get the developer doc for this API", "the Salesforce docs
+  page isn't rendering — extract it", "what does the Spring '26 release note
+  say about Z", or "link me to the canonical Salesforce reference for
+  [feature]".
+  DO NOT TRIGGER when: user wants implementation guidance for a specific
+  domain (route to sf-apex, sf-lwc, sf-flow, sf-metadata, etc. — each
+  carries its own authoritative doc references), user is doing
+  skill-maintenance or auto-refresh work (use sf-skill-maintenance), or the
+  user just needs inline cheat-sheet content already embedded in the
+  domain-specific skill they're using.
 license: MIT
 metadata:
   version: "0.4.0"

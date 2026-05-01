@@ -7,13 +7,21 @@ description: >
   step, and (3) an annotated presenter guide with embedded screenshots
   and talking points. The test suite runs as a pre-flight check before
   every demo session to confirm nothing has broken.
-  TRIGGER when: user asks to generate Playwright tests from a demoscript,
-  create a demo test suite, build a presenter guide, automate screenshot
-  validation, or run pre-flight demo checks.
-  DO NOT TRIGGER when: one-off validation (use sf-demo-validate),
-  authoring a new demoscript (use sf-demo-author), seeding data
-  (use sf-nonprofit-demo-data), or writing production Apex/LWC tests
-  (use sf-apex, sf-lwc).
+  TRIGGER when: user asks to "generate Playwright tests from a demoscript",
+  "create a demo test suite", "build a presenter guide", "automate
+  screenshot validation", "run pre-flight demo checks", "make a demo
+  preflight spec", "generate demo-preflight.spec.js", "build a presenter
+  walkthrough with screenshots", or "validate the demo script end-to-end
+  with Playwright"; or references a `demoscript.md` and wants an
+  automated click-path test suite.
+  DO NOT TRIGGER when: reactive UI fallback for a CLI dead-end mid-task
+  (use sf-ui-fallback-playwright — that is self-healing on-demand Playwright,
+  this is proactive pre-flight suite authoring), one-off demo validation
+  without generating a test suite (use sf-demo-validate), authoring a new
+  demoscript from notes (use sf-demo-author), seeding demo data (use
+  sf-nonprofit-demo-data or sf-demo-data), orchestrating the full
+  notes-to-presenter pipeline (use sf-demo-orchestrate), or writing
+  production Apex/LWC Jest tests (use sf-apex, sf-lwc).
 license: MIT
 metadata:
   version: "1.0.0"

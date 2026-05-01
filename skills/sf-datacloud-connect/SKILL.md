@@ -2,9 +2,14 @@
 name: sf-datacloud-connect
 description: >
   Salesforce Data Cloud Connect phase.
-  TRIGGER when: user manages Data Cloud connections, connectors, connector metadata,
-  tests a connection, browses source objects or databases, or sets up a new source system;
-  or says "connect [source] to Data Cloud", "set up a Data Cloud connector".
+  TRIGGER when: user manages Data Cloud connections, connectors, connector
+  metadata, tests a connection, browses source objects or databases, or sets
+  up a new source system; or says "connect [source] to Data Cloud", "set up
+  a Data Cloud connector", "create a new connector in Data Cloud", "test
+  connector authentication", "browse source tables for Data Cloud", "wire
+  S3 / Snowflake / BigQuery / Azure to Data Cloud", "configure a
+  connection from [external system]", "validate the connection metadata",
+  or "troubleshoot a connector that can't reach the source".
   DO NOT TRIGGER when: the task is about data streams or DLOs (use sf-datacloud-prepare),
   DMOs or identity resolution (use sf-datacloud-harmonize), retrieval/search (use sf-datacloud-retrieve),
   or STDM telemetry (use sf-ai-agentforce-observability).
