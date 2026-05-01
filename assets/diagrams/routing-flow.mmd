@@ -1,0 +1,32 @@
+flowchart TD
+
+    U([User request])
+    R{skill matcher<br/>evaluates TRIGGER<br/>clauses}
+    C{Industry package<br/>installed<br/>AND<br/>request touches<br/>industry object?}
+    I["INDUSTRY SKILL WINS<br/>sf-industry-fsc<br/>sf-industry-health<br/>sf-nonprofit-fundraising<br/>sf-field-service<br/>etc."]
+    G["Generic cloud skill<br/>sf-sales-cloud<br/>sf-service-case<br/>sf-marketing-cloud-growth<br/>sf-revenue-cloud<br/>etc."]
+    CORE["Core Platform<br/>Apex | LWC | Flow | Metadata<br/>SOQL | Data | Testing | Deploy<br/>Debug | Permissions"]
+    OUT([Scored output])
+
+    U --> R
+    R --> C
+    C -->|YES| I
+    C -->|NO| G
+    I --> CORE
+    G --> CORE
+    CORE --> OUT
+
+    classDef user fill:#F3F4F6,stroke:#4B5563,stroke-width:2px,color:#1F2937,font-weight:bold
+    classDef decision fill:#FEF3C7,stroke:#B45309,stroke-width:2px,color:#1F2937
+    classDef industry fill:#FB923C,stroke:#9A3412,stroke-width:4px,color:#FFFFFF,font-weight:bold
+    classDef generic fill:#60A5FA,stroke:#1E40AF,stroke-width:2px,color:#FFFFFF
+    classDef core fill:#34D399,stroke:#065F46,stroke-width:3px,color:#FFFFFF,font-weight:bold
+    classDef output fill:#F3F4F6,stroke:#4B5563,stroke-width:2px,color:#1F2937
+
+    class U user
+    class R decision
+    class C decision
+    class I industry
+    class G generic
+    class CORE core
+    class OUT output

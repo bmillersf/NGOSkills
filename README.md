@@ -250,32 +250,33 @@ The skills are organized into layered domains that mirror the Salesforce platfor
 
 The pre-check uses three detection signals in order: (1) license / feature flag from `sf org display --json`, (2) namespace scan (`FSC__`, `HealthCloudGA__`, `hed__`, `npsp__`, `vlocity_cmt__`, `vlocity_ins__`, …), (3) `EntityDefinition` object-existence query. Industry skills (`sf-industry-*`, `sf-nonprofit-*`, `sf-field-service`, and `sf-revenue-cloud` when CPQ/RCA is installed) are the destinations of this pre-check — they do not run it themselves.
 
-### Domain overview
+### How routing works (quick visual)
+
+![Routing decision flow](assets/images/routing-flow.png)
+
+Every user request flows through the **Phase 0 industry pre-check** before any skill produces output. If an industry package is installed AND the request touches an industry-owned object (e.g., `FSC__Household`, `HealthCloudGA__EhrEncounter__c`, `npsp__Recurring_Donation__c`), the matching industry skill wins. Otherwise the request routes to the matching generic cloud skill. Both paths rest on the Core Platform foundation. Source: [`assets/diagrams/routing-flow.mmd`](assets/diagrams/routing-flow.mmd).
+
+### Domain overview (5-tier map)
 
 ![NGO Salesforce Skills — Domain Architecture](assets/images/domain-architecture.png)
 
-> The diagram source lives at [`assets/diagrams/domain-architecture.mmd`](assets/diagrams/domain-architecture.mmd). Regenerate the PNG after edits with `npx -p @mermaid-js/mermaid-cli mmdc -i assets/diagrams/domain-architecture.mmd -o assets/images/domain-architecture.png -w 2400 -H 1600 -b white`.
+The 88 skills organize into five tiers that mirror the routing decision above:
 
-> **Core Platform** (Apex, LWC, Flow, Metadata, SOQL, Data, Testing, Deploy, Debug, Permissions) is the foundation — every other Salesforce domain depends on it. **Industry Clouds** (FSC, Health, Education, Public Sector, Field Service + OmniStudio industry stubs for Manufacturing / CG / Comms / Media / Energy) are the *first* line of defense whenever a domain-specific package is detected, winning precedence over generic cloud skills. **Sales Cloud / Service Cloud / Marketing / Revenue Cloud** are the generic commercial surfaces that run the Phase 0 industry pre-check before emitting any output. **Agentforce**, **Data Cloud**, and **OmniStudio** each extend Core with domain-specific capabilities; Data Cloud feeds telemetry into Agentforce observability. **AI Primitives** (Prompt Builder, Trust Layer + Model Builder) provide reusable generative components that plug into any cloud. **Platform Builder** (Flow Orchestration, Reports/Dashboards, Lightning App Builder, general Experience Cloud) covers cross-cutting app-composition surfaces. **Nonprofit Cloud** is a full vertical stack (fundraising, grants, program/case, Experience Cloud trio). **Trust, Governance & Ops** (Shield/Event Monitoring, Backup/Data Mask, DevOps Center, Identity/SSO) handles cross-cloud compliance and lifecycle. **Tableau**, **MuleSoft**, **Slack** are the platform-adjacent surfaces that integrate with everything above. The **Demo Workflow** pipeline takes raw discovery notes to presenter-ready output: `sf-demo-orchestrate` (end-to-end driver with cross-cloud product detection) → `sf-demo-author` (demoscript authoring) → `sf-nonprofit-demo-data` / `sf-demo-data` (nonprofit vs cross-cloud seeding peers) → `sf-demo-validate` (cross-cloud repair loop) → `sf-demo-playwright` (pre-flight test suite + presenter guide). **sf-ui-fallback-playwright** is invoked reactively whenever any skill hits a CLI dead-end (Agent Builder publish, Prompt Builder activation, Setup toggles). **Visualization & Docs** (`sf-diagram-mermaid`, `sf-diagram-nanobananapro`, `sf-docs`) is a cross-cutting utility layer.
+- **Tier 1 — Vertical / Industry (11)** — FSC, Health, Education, Public Sector, Field Service, Manufacturing, Consumer Goods, Communications, Media, Energy, Nonprofit NPC/NPSP. *First line of defense; wins over generic clouds when detected.*
+- **Tier 2 — Horizontal / Generic clouds (14)** — Sales (×4), Service (×4), Marketing (×2), Revenue, Experience, Reports/Dashboards. *Runs Phase 0 industry pre-check before emitting output; halts and forwards to Tier 1 on detection.*
+- **Tier 3 — Shared capabilities (28)** — AI (7), Data Cloud (7 phases), OmniStudio (6 components), Integration (3), Platform Builder (2), Analytics (Tableau), Slack, Trust + Ops (4). *Consumed by both vertical and horizontal tracks.*
+- **Tier 4 — Core Platform (10)** — Apex, LWC, Flow, Metadata, SOQL, Data, Testing, Deploy, Debug, Permissions. *Foundation; every other skill depends on one or more of these.*
+- **Tier 5 — Demo lifecycle + Meta (13)** — End-to-end demo pipeline (orchestrate/author/validate/playwright + demo-data × 2 + ui-fallback-playwright), plus meta skills that maintain the routing contract (`sf-skill-maintenance`, `sf-subagent-orchestration`, and the three Visualization + Docs skills).
 
-### Layer map
+Diagram sources: [`assets/diagrams/domain-architecture.mmd`](assets/diagrams/domain-architecture.mmd) and [`assets/diagrams/routing-flow.mmd`](assets/diagrams/routing-flow.mmd). Regenerate PNGs after edits with:
 
-| Layer | Skills | Role |
-|---|---|---|
-| **Industry (first line of defense)** | `sf-industry-fsc`, `sf-industry-health`, `sf-industry-education`, `sf-industry-public-sector`, `sf-field-service`, `sf-industry-manufacturing`, `sf-industry-consumer-goods`, `sf-industry-communications`, `sf-industry-media`, `sf-industry-energy`, `sf-nonprofit-*` | Own industry data models + processes. Win precedence over generic clouds when detected. |
-| **Generic clouds** (industry-deferring) | `sf-sales-*`, `sf-service-*`, `sf-marketing-cloud-growth`, `sf-marketing-account-engagement`, `sf-revenue-cloud`, `sf-experience-cloud`, `sf-reports-dashboards` | Run Phase 0 industry pre-check before acting. |
-| **Core platform** | `sf-apex`, `sf-lwc`, `sf-flow`, `sf-metadata`, `sf-soql`, `sf-data`, `sf-testing`, `sf-deploy`, `sf-debug`, `sf-permissions` | Foundation; every other skill depends on one or more of these. |
-| **AI** | `sf-ai-agentforce`, `sf-ai-agentscript`, `sf-ai-agentforce-persona`, `sf-ai-agentforce-testing`, `sf-ai-agentforce-observability`, `sf-ai-prompt-builder`, `sf-ai-model-builder-trust-layer` | Agent build, test, observe + reusable prompt/model/trust primitives. |
-| **Data Cloud** | `sf-datacloud` orchestrator + 6 phase skills (Connect, Prepare, Harmonize, Segment, Act, Retrieve) | Unified profile / segment / activate pipeline. |
-| **OmniStudio** | `sf-industry-commoncore-{omniscript,integration-procedure,datamapper,flexcard,callable-apex,omnistudio-analyze}` | Component execution stack. Industry verticals delegate implementation here. |
-| **Integration** | `sf-integration`, `sf-connected-apps`, `sf-mulesoft` | Callouts / OAuth / Anypoint with explicit boundaries between SF-side and MuleSoft-side work. |
-| **Platform builder** | `sf-flow-orchestration`, `sf-lightning-app-builder`, `sf-experience-cloud` | Cross-cutting app composition and orchestrated multi-user flows. |
-| **Analytics** | `sf-tableau`, `sf-reports-dashboards` | Native reports vs Tableau / CRM Analytics boundary. |
-| **Trust, Governance & Ops** | `sf-shield-event-monitoring`, `sf-backup-datamask`, `sf-devops-center`, `sf-identity-sso` | Compliance, backup, DevOps, identity — cross-cloud. |
-| **Slack** | `sf-slack` | Slack-First workflows, Canvases, Slack AI, Bolt SDK. |
-| **Demo lifecycle** | `sf-demo-orchestrate`, `sf-demo-author`, `sf-demo-validate`, `sf-demo-playwright`, `sf-nonprofit-demo-data`, `sf-demo-data`, `sf-ui-fallback-playwright` | Notes-to-presenter pipeline + reactive UI fallback. |
-| **Visualization & docs** | `sf-diagram-mermaid`, `sf-diagram-nanobananapro`, `sf-docs` | Cross-cutting utility layer. |
-| **Meta** | `sf-subagent-orchestration`, `sf-skill-maintenance` | Delegation policy + the refresh/authoring contract. |
+```bash
+npx -p @mermaid-js/mermaid-cli mmdc -i assets/diagrams/routing-flow.mmd \
+  -o assets/images/routing-flow.png -w 1200 -H 1600 -b white --scale 2
+npx -p @mermaid-js/mermaid-cli mmdc -i assets/diagrams/domain-architecture.mmd \
+  -o assets/images/domain-architecture.png -w 1800 -H 1400 -b white --scale 2
+```
+
 
 ### Demo Validation in the architecture
 
