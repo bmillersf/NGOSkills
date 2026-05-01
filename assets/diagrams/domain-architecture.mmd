@@ -1,0 +1,173 @@
+flowchart TB
+
+    subgraph Industry["INDUSTRY CLOUDS - first line of defense"]
+        direction LR
+        IND_FSC[sf-industry-fsc]
+        IND_HLTH[sf-industry-health]
+        IND_EDU[sf-industry-education]
+        IND_PSS[sf-industry-public-sector]
+        IND_FS[sf-field-service]
+        IND_OS[Manufacturing CG Comms Media Energy stubs]
+        IND_NP[Nonprofit Cloud stack]
+    end
+
+    subgraph Generic["GENERIC CLOUDS - defer to industry via Phase 0"]
+        direction LR
+        GEN_SALES[Sales Cloud 4 skills]
+        GEN_SVC[Service Cloud 4 skills]
+        GEN_MKT[Marketing MCG MCAE]
+        GEN_REV[sf-revenue-cloud]
+        GEN_XP[sf-experience-cloud]
+        GEN_RPT[sf-reports-dashboards]
+    end
+
+    subgraph Core["CORE PLATFORM - foundation"]
+        direction LR
+        CORE_APEX[sf-apex]
+        CORE_LWC[sf-lwc]
+        CORE_FLOW[sf-flow]
+        CORE_META[sf-metadata]
+        CORE_SOQL[sf-soql]
+        CORE_DATA[sf-data]
+        CORE_TEST[sf-testing]
+        CORE_DEP[sf-deploy]
+        CORE_DBG[sf-debug]
+        CORE_PRM[sf-permissions]
+    end
+
+    subgraph AI["AI SKILLS"]
+        direction LR
+        AI_AG[sf-ai-agentforce]
+        AI_AGS[sf-ai-agentscript]
+        AI_PER[persona]
+        AI_TST[testing]
+        AI_OBS[observability]
+        AI_PB[sf-ai-prompt-builder]
+        AI_TL[trust-layer and BYOM]
+    end
+
+    subgraph DC["DATA CLOUD"]
+        DC_ORCH[sf-datacloud]
+        DC_PHASES[Connect Prepare Harmonize Segment Act Retrieve]
+    end
+
+    subgraph OS["OMNISTUDIO"]
+        direction LR
+        OS_OMNI[omniscript]
+        OS_IP[integration-procedure]
+        OS_DM[datamapper]
+        OS_FC[flexcard]
+        OS_CA[callable-apex]
+        OS_AN[omnistudio-analyze]
+    end
+
+    subgraph Builder["PLATFORM BUILDER"]
+        BLD_FO[sf-flow-orchestration]
+        BLD_LAB[sf-lightning-app-builder]
+    end
+
+    subgraph Integ["INTEGRATION and MIDDLEWARE"]
+        INT[sf-integration]
+        INT_OAUTH[sf-connected-apps]
+        INT_MS[sf-mulesoft]
+    end
+
+    subgraph Analyt["ANALYTICS"]
+        AN_TAB[sf-tableau]
+    end
+
+    subgraph Slack["SLACK"]
+        SL[sf-slack]
+    end
+
+    subgraph Trust["TRUST GOVERNANCE and OPS"]
+        direction LR
+        TR_SHD[sf-shield-event-monitoring]
+        TR_BAK[sf-backup-datamask]
+        TR_DEV[sf-devops-center]
+        TR_ID[sf-identity-sso]
+    end
+
+    subgraph Demo["DEMO LIFECYCLE"]
+        direction LR
+        D_ORCH[sf-demo-orchestrate]
+        D_AUTH[sf-demo-author]
+        D_VAL[sf-demo-validate]
+        D_PW[sf-demo-playwright]
+        D_DATA_NP[sf-nonprofit-demo-data]
+        D_DATA[sf-demo-data]
+        D_UIF[sf-ui-fallback-playwright]
+    end
+
+    subgraph Viz["VIZ and DOCS"]
+        direction LR
+        V_MER[sf-diagram-mermaid]
+        V_NBP[sf-diagram-nanobananapro]
+        V_DOC[sf-docs]
+    end
+
+    subgraph Meta["META"]
+        M_SUB[sf-subagent-orchestration]
+        M_SKM[sf-skill-maintenance]
+    end
+
+    Generic -.->|Phase 0 pre-check halts and forwards| Industry
+
+    Industry --> Core
+    Generic --> Core
+    AI --> Core
+    DC --> Core
+    OS --> Core
+    Builder --> Core
+    Integ --> Core
+    Analyt --> Core
+    Slack --> Core
+    Trust --> Core
+
+    Industry -.->|implementation| OS
+    Industry -.->|data pipeline| DC
+
+    DC --> AI_OBS
+    AI_PB -.->|grounding| DC
+    AI_TL -.->|audit trail| DC
+
+    Demo -.->|validates| Industry
+    Demo -.->|validates| Generic
+    Demo -.->|validates| AI
+    Demo -.->|validates| DC
+    Demo -.->|validates| OS
+    D_UIF -.->|CLI dead-end fallback| Demo
+
+    Meta -.->|authoring contract and weekly refresh| Industry
+    Meta -.->|authoring contract and weekly refresh| Generic
+    Meta -.->|authoring contract and weekly refresh| Core
+
+    classDef industry fill:#FFD4B2,stroke:#B45309,stroke-width:3px,color:#1F2937
+    classDef generic fill:#DBEAFE,stroke:#1D4ED8,stroke-width:2px,color:#1F2937
+    classDef core fill:#E0F2FE,stroke:#0369A1,stroke-width:2px,color:#1F2937
+    classDef ai fill:#F3E8FF,stroke:#7C3AED,stroke-width:2px,color:#1F2937
+    classDef dc fill:#D1FAE5,stroke:#059669,stroke-width:2px,color:#1F2937
+    classDef os fill:#FEF3C7,stroke:#B45309,stroke-width:2px,color:#1F2937
+    classDef builder fill:#FCE7F3,stroke:#BE185D,stroke-width:2px,color:#1F2937
+    classDef integ fill:#E5E7EB,stroke:#374151,stroke-width:2px,color:#1F2937
+    classDef analyt fill:#FFE4E6,stroke:#BE123C,stroke-width:2px,color:#1F2937
+    classDef slack fill:#EDE9FE,stroke:#6D28D9,stroke-width:2px,color:#1F2937
+    classDef trust fill:#FEE2E2,stroke:#B91C1C,stroke-width:2px,color:#1F2937
+    classDef demo fill:#CFFAFE,stroke:#0E7490,stroke-width:2px,color:#1F2937
+    classDef viz fill:#F5F5F4,stroke:#57534E,stroke-width:2px,color:#1F2937
+    classDef meta fill:#F0F9FF,stroke:#0284C7,stroke-width:2px,color:#1F2937
+
+    class Industry industry
+    class Generic generic
+    class Core core
+    class AI ai
+    class DC dc
+    class OS os
+    class Builder builder
+    class Integ integ
+    class Analyt analyt
+    class Slack slack
+    class Trust trust
+    class Demo demo
+    class Viz viz
+    class Meta meta
