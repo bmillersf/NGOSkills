@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  com.ngoskills.refresh.plist — macOS launchd job for NGOSkills weekly refresh.
+
+  Runs: refresh-skills.sh every Sunday at 03:00 local time.
+  Output: /tmp/ngoskills-refresh.log (stdout) + /tmp/ngoskills-refresh.err (stderr).
+
+  -----------------------------------------------------------------------------
+  INSTALL (one time):
+
+    cp ~/Cursor/Skills/NGOSkills/scripts/com.ngoskills.refresh.plist \
+       ~/Library/LaunchAgents/com.ngoskills.refresh.plist
+    launchctl load ~/Library/LaunchAgents/com.ngoskills.refresh.plist
+    launchctl list | grep com.ngoskills.refresh   # should show the job
+
+  Trigger a manual run (without waiting for Sunday):
+    launchctl start com.ngoskills.refresh
+
+  UNINSTALL:
+    launchctl unload ~/Library/LaunchAgents/com.ngoskills.refresh.plist
+    rm ~/Library/LaunchAgents/com.ngoskills.refresh.plist
+
+  NOTES:
+    - If you change the plist, you must `launchctl unload` then `launchctl load`
+      again for the change to take effect.
+    - `StartCalendarInterval` uses local time (not UTC). 03:00 is chosen to
+      avoid colliding with sleep/wake on standard developer laptops.
+    - Replace `brianmiller` in paths below if your home directory differs.
+      launchd does not expand $HOME inside the plist.
+  -----------------------------------------------------------------------------
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.ngoskills.refresh</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>-lc</string>
+        <string>/Users/brianmiller/Cursor/Skills/NGOSkills/scripts/refresh-skills.sh</string>
+    </array>
+
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Weekday</key>
+        <integer>0</integer>
+        <key>Hour</key>
+        <integer>3</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/brianmiller/Cursor/Skills/NGOSkills</string>
+
+    <key>StandardOutPath</key>
+    <string>/tmp/ngoskills-refresh.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/tmp/ngoskills-refresh.err</string>
+
+    <key>RunAtLoad</key>
+    <false/>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>HOME</key>
+        <string>/Users/brianmiller</string>
+    </dict>
+</dict>
+</plist>

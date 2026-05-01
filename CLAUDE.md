@@ -58,6 +58,8 @@ When the user's request matches a skill's trigger conditions, apply that skill's
 
 ## Skill routing rules
 
+**Industry-first precedence (MANDATORY):** Before routing to any generic Sales / Service / Marketing / Revenue / Tableau / Slack / Experience Cloud skill, check whether an industry package is installed. Industry skills WIN over generic cloud skills when detected and the request touches industry-owned objects. The detection logic lives in [`references/industry-precheck.md`](references/industry-precheck.md). Never silently override an industry data model.
+
 Use these as your primary routing guide. When the request involves:
 
 - Writing or reviewing Apex classes, triggers, or batch jobs → sf-apex
@@ -98,6 +100,48 @@ Use these as your primary routing guide. When the request involves:
 - Nonprofit Experience Cloud (portals, sharing, guest access) → sf-nonprofit-experience-cloud
 - Nonprofit portal UX/UI design → sf-nonprofit-experience-cloud-ux
 - Nonprofit Experience Cloud build methodology (brand-mine, design system, LWC decomposition, routing/deployment) → sf-nonprofit-experience-cloud-build
+- **Industry Clouds (industry-first routing — check these BEFORE generic cloud skills):**
+  - Financial Services Cloud (banking, wealth, insurance, mortgage, lending, Households, Financial Accounts, Life Events, ARC) → sf-industry-fsc
+  - Health Cloud (Patient, Care Plan, Care Request, Clinical Encounter, EHR/FHIR, Care Team, HIPAA/PHI) → sf-industry-health
+  - Education Cloud / EDA (Student, Program Enrollment, Course Connection, Affiliation, recruiting, admissions, retention, FERPA) → sf-industry-education
+  - Public Sector Solutions (Constituent intake, Benefit, License, Permit, Inspection, Regulatory Code Violation, Section 508, FedRAMP) → sf-industry-public-sector
+  - Field Service (Work Order, Service Appointment, Dispatcher Console, scheduling policy, mobile offline, ESO) → sf-field-service
+  - Manufacturing Cloud (Sales Agreement, Account Forecast, Rebate Program) → sf-industry-manufacturing
+  - Consumer Goods Cloud (Retail Execution, Visits, Trade Promotions, Penny Perfect Order) → sf-industry-consumer-goods
+  - Communications Cloud (enterprise product catalog, order decomposition, telecom CPQ) → sf-industry-communications
+  - Media Cloud (subscription management, ad sales, audience monetization) → sf-industry-media
+  - Energy & Utilities Cloud (premise, service point, meter-to-cash, AMI interval data) → sf-industry-energy
+- **Sales Cloud** (defers to industry/nonprofit first):
+  - Sales Cloud orchestrator (lead-to-cash, multi-capability design) → sf-sales-cloud
+  - Opportunity pipeline (stages, teams/splits, Pipeline Inspection, Deal Insights) → sf-sales-opportunity
+  - Collaborative Forecasts (Forecast Types, Categories, Hierarchies, Quotas) → sf-sales-forecasting
+  - Sales Engagement (Cadences, Sales Dialer, Einstein Activity Capture, Work Queues) → sf-sales-engagement
+- **Service Cloud** (defers to industry/nonprofit first):
+  - Service Cloud orchestrator (multi-capability design, Service Console, Voice, Messaging) → sf-service-cloud
+  - Case lifecycle (Record Types, Web-to-Case, Email-to-Case, Entitlements, Milestones, SLA) → sf-service-case
+  - Omni-Channel routing (Presence, Queues, Skills/Attribute Routing, Supervisor) → sf-service-omnichannel
+  - Lightning Knowledge (Article Types, Data Categories, Publication Workflow, multi-language) → sf-service-knowledge
+- **Marketing** (defers to industry/nonprofit for industry-specific campaigns):
+  - Marketing Cloud Growth (Data Cloud-native MC) → sf-marketing-cloud-growth
+  - Marketing Cloud Account Engagement (Pardot, `pi__`) → sf-marketing-account-engagement
+- **Revenue, Analytics, Middleware, Slack:**
+  - Revenue Cloud Advanced + legacy CPQ (Quote, Order, Contract, Subscription, Billing) → sf-revenue-cloud
+  - Tableau / Tableau Next / CRM Analytics → sf-tableau
+  - MuleSoft Anypoint + MuleSoft for Flow + DataWeave → sf-mulesoft
+  - Slack-First workflows, Canvases, Slack AI, Bolt SDK → sf-slack
+- **AI Primitives:**
+  - Prompt Builder (standalone PromptTemplate authoring, grounding, versioning) → sf-ai-prompt-builder
+  - Einstein Trust Layer + Model Builder (BYOM, masking, zero-retention, Content Safety) → sf-ai-model-builder-trust-layer
+- **Platform Builder:**
+  - Flow Orchestration (multi-user), Approval Processes, Work Queue → sf-flow-orchestration
+  - Native Reports + Dashboards (industry-first routing applies) → sf-reports-dashboards
+  - Lightning App Builder, FlexiPage, Dynamic Forms, Dynamic Actions → sf-lightning-app-builder
+  - General Experience Cloud (non-nonprofit; defers to nonprofit trio if nonprofit org) → sf-experience-cloud
+- **Trust, Governance & Ops:**
+  - Shield (Event Monitoring, Real-Time Events, Transaction Security, Platform Encryption, Field Audit Trail, Security Center) → sf-shield-event-monitoring
+  - Salesforce Backup + Data Mask (disaster recovery, sandbox masking) → sf-backup-datamask
+  - DevOps Center + 1GP/2GP/Unlocked packaging → sf-devops-center
+  - Identity + SSO (My Domain, SAML, OIDC, Social, JIT, IdP mode, ICP) + MFA → sf-identity-sso
 - Mermaid architecture diagrams → sf-diagram-mermaid
 - AI image generation, mockups, wireframes → sf-diagram-nanobananapro
 - Salesforce documentation retrieval → sf-docs
@@ -106,6 +150,8 @@ Use these as your primary routing guide. When the request involves:
 - Demo script authoring from notes → sf-demo-author
 - Nonprofit demo data seeding → sf-nonprofit-demo-data
 - Playwright demo test suite, presenter guide → sf-demo-playwright
+- Cross-cloud demo data (Sales/Service/Revenue/industry/Agentforce) → sf-demo-data
+- Reactive Playwright UI fallback (Agent Builder publish, Prompt Builder activation, Setup toggles, Experience Builder drag-drop — any CLI dead-end) → sf-ui-fallback-playwright
 - Demo script validation and repair → sf-demo-validate
 
 ## Quality standards
