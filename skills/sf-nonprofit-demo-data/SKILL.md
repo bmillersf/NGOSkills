@@ -23,6 +23,24 @@ metadata:
   version: "1.2.0"
   author: "Brian Miller"
   scoring: "170 points across 8 categories"
+release_pinned: "Spring '26"
+docs_last_verified: 2026-05-01
+upstream_refs:
+  - url: https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_data_unified.htm
+    anchor: ""
+    sha256: ""
+    importance: authoritative
+  - url: https://help.salesforce.com/s/articleView?id=sf.data_sample_import.htm
+    anchor: ""
+    sha256: ""
+    importance: authoritative
+  - url: https://architect.salesforce.com/design/data-model
+    anchor: ""
+    sha256: ""
+    importance: supplemental
+upstream_release_notes:
+  - release: "Spring '26"
+    url: https://help.salesforce.com/s/articleView?id=release-notes.rn_api.htm
 ---
 
 # sf-nonprofit-demo-data: Nonprofit Demo Data Factory

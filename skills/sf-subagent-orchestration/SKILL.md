@@ -23,6 +23,22 @@ metadata:
     - sf-apex
     - sf-lwc
     - sf-deploy
+release_pinned: "Spring '26"
+docs_last_verified: 2026-05-01
+upstream_refs:
+  - url: https://docs.anthropic.com/en/docs/claude-code/overview
+    anchor: ""
+    sha256: ""
+    importance: authoritative
+  - url: https://docs.cursor.com/composer/overview
+    anchor: ""
+    sha256: ""
+    importance: authoritative
+  - url: https://architect.salesforce.com
+    anchor: ""
+    sha256: ""
+    importance: supplemental
+upstream_release_notes: []
 ---
 
 # sf-subagent-orchestration: Subagent Delegation Policy

@@ -17,6 +17,24 @@ license: MIT
 metadata:
   version: "1.0.0"
   scoring: "120 points across 6 categories"
+release_pinned: "Spring '26"
+docs_last_verified: 2026-05-01
+upstream_refs:
+  - url: https://powerofus.force.com/s/article/NPSP-Documentation
+    anchor: ""
+    sha256: ""
+    importance: authoritative
+  - url: https://github.com/SalesforceFoundation/NPSP
+    anchor: ""
+    sha256: ""
+    importance: authoritative
+  - url: https://architect.salesforce.com/design/industries/nonprofit
+    anchor: ""
+    sha256: ""
+    importance: supplemental
+upstream_release_notes:
+  - release: "Spring '26"
+    url: https://powerofus.force.com/s/article/NPSP-Release-Notes
 ---
 
 # sf-nonprofit-npsp: Nonprofit Success Pack Architect

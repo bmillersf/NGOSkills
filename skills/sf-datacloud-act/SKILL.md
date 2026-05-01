@@ -15,6 +15,24 @@ metadata:
   version: "1.0.0"
   author: "Gnanasekaran Thoppae"
   phase: "Act"
+release_pinned: "Spring '26"
+docs_last_verified: 2026-05-01
+upstream_refs:
+  - url: https://help.salesforce.com/s/articleView?id=sf.c360_a_activation.htm
+    anchor: ""
+    sha256: ""
+    importance: authoritative
+  - url: https://developer.salesforce.com/docs/data/data-cloud-dev/guide/dc-activation.html
+    anchor: ""
+    sha256: ""
+    importance: authoritative
+  - url: https://architect.salesforce.com/design/data-cloud
+    anchor: ""
+    sha256: ""
+    importance: supplemental
+upstream_release_notes:
+  - release: "Spring '26"
+    url: https://help.salesforce.com/s/articleView?id=release-notes.rn_datacloud_activation.htm
 ---
 
 # sf-datacloud-act: Data Cloud Act Phase

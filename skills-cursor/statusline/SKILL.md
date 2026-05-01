@@ -4,6 +4,10 @@ description: >-
   Configure a custom status line in the CLI. Use when the user mentions status
   line, statusline, statusLine, CLI status bar, prompt footer customization, or
   wants to add session context above the prompt.
+release_pinned: "N/A"
+docs_last_verified: 2026-05-01
+upstream_refs: []
+upstream_release_notes: []
 ---
 # CLI Status Line
 

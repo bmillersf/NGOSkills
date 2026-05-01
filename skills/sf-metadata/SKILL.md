@@ -13,6 +13,24 @@ metadata:
   version: "1.2.0"
   author: "Jag Valaiyapathy"
   scoring: "120 points across 6 categories"
+release_pinned: "Spring '26"
+docs_last_verified: 2026-05-01
+upstream_refs:
+  - url: https://developer.salesforce.com/docs/atlas.en-us.api_meta.meta/api_meta/
+    anchor: ""
+    sha256: ""
+    importance: authoritative
+  - url: https://developer.salesforce.com/docs/atlas.en-us.object_reference.meta/object_reference/
+    anchor: ""
+    sha256: ""
+    importance: authoritative
+  - url: https://architect.salesforce.com/design/metadata
+    anchor: ""
+    sha256: ""
+    importance: supplemental
+upstream_release_notes:
+  - release: "Spring '26"
+    url: https://help.salesforce.com/s/articleView?id=release-notes.rn_metadata.htm
 ---
 
 # sf-metadata: Salesforce Metadata Generation and Org Querying

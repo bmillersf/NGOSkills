@@ -35,6 +35,24 @@ metadata:
     - sf-demo-playwright
     - sf-subagent-orchestration
     - sf-ui-fallback-playwright
+release_pinned: "Spring '26"
+docs_last_verified: 2026-05-01
+upstream_refs:
+  - url: https://architect.salesforce.com
+    anchor: ""
+    sha256: ""
+    importance: authoritative
+  - url: https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference.htm
+    anchor: ""
+    sha256: ""
+    importance: authoritative
+  - url: https://trailhead.salesforce.com
+    anchor: ""
+    sha256: ""
+    importance: supplemental
+upstream_release_notes:
+  - release: "Spring '26"
+    url: https://help.salesforce.com/s/articleView?id=release-notes.rn_summary.htm
 ---
 
 # sf-demo-orchestrate: End-to-End Demo Pipeline

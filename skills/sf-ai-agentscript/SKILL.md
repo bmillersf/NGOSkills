@@ -23,6 +23,24 @@ metadata:
   validation_agents: 24
   validate_by: "2026-04-06"  # 30 days from last validation
   validation_org: "AgentforceTesting"
+release_pinned: "Spring '26"
+docs_last_verified: 2026-05-01
+upstream_refs:
+  - url: https://developer.salesforce.com/docs/einstein/genai/guide/agent-script.html
+    anchor: ""
+    sha256: ""
+    importance: authoritative
+  - url: https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_agent_commands_unified.htm
+    anchor: ""
+    sha256: ""
+    importance: authoritative
+  - url: https://architect.salesforce.com/design/agentforce
+    anchor: ""
+    sha256: ""
+    importance: supplemental
+upstream_release_notes:
+  - release: "Spring '26"
+    url: https://help.salesforce.com/s/articleView?id=release-notes.rn_agentforce.htm
 ---
 
 # SF-AI-AgentScript Skill

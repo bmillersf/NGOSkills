@@ -12,6 +12,24 @@ license: MIT
 metadata:
   version: "2.3.0"
   author: "Jag Valaiyapathy"
+release_pinned: "Spring '26"
+docs_last_verified: 2026-05-01
+upstream_refs:
+  - url: https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_project_commands_unified.htm
+    anchor: ""
+    sha256: ""
+    importance: authoritative
+  - url: https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/
+    anchor: ""
+    sha256: ""
+    importance: authoritative
+  - url: https://architect.salesforce.com/devops
+    anchor: ""
+    sha256: ""
+    importance: supplemental
+upstream_release_notes:
+  - release: "Spring '26"
+    url: https://help.salesforce.com/s/articleView?id=release-notes.rn_deployment.htm
 ---
 
 # sf-deploy: Comprehensive Salesforce DevOps Automation
