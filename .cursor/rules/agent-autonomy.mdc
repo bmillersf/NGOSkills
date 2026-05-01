@@ -122,6 +122,98 @@ The `TRIGGER when:` / `DO NOT TRIGGER when:` clauses are what both Cursor and Cl
 
 ---
 
+## 4. Continuous Skill Learning
+
+After every non-trivial sf-* skill invocation, the agent evaluates whether a generalizable, redacted, non-methodology lesson emerged. If yes, the agent edits the skill's SKILL.md inline in one of the allowed sections and commits the change locally. **Never pushes.** The user reviews `git log --grep="^learn("` whenever they want and pushes to the repo when the learnings are worth sharing.
+
+### When to record a learning
+
+Record if ALL of:
+- The lesson generalizes — would help the next user of this skill, not just this specific org
+- It is non-obvious — removing it would surprise a future reader
+- It does not already exist in the skill (merge/replace over duplicate)
+- It can be expressed in a single bullet (1–3 lines)
+
+Skip if any of:
+- The lesson is client-specific (org name, custom object, specific user)
+- The lesson is already in the skill (grep first)
+- The lesson is a restatement of the methodology itself
+- The session was trivial or purely conversational
+
+### Allowed sections (auto-editable)
+
+| Section | OK to edit | Why |
+|---|---|---|
+| Anti-patterns | yes | Cumulative institutional memory |
+| Common failure modes + remediation | yes | Real failures beat theoretical ones |
+| Cheat sheet (CLI commands, object names, error messages) | yes | Facts, easily verified |
+| All other sections | **no** | Methodology / routing / metadata stay human-authored |
+
+Never auto-edit:
+- YAML frontmatter (`name`, `description`, `TRIGGER when:`, `DO NOT TRIGGER when:`, `release_pinned`, `docs_last_verified`, `upstream_refs`, `sha256`, `metadata`, `compatibility`, `license`, `upstream_release_notes`)
+- Scoring rubric
+- Workflow phases (numbered)
+- Required context / Industry pre-check sections
+- Delegation tables to other skills
+
+### Redaction (mandatory, applied before the edit lands)
+
+Strip from every learning:
+- Org usernames, My Domain names, sandbox URLs, customer names
+- Record IDs (15/18-char Salesforce IDs), specific emails, phone numbers
+- Industry-specific namespace values that would tie to one org (`FSC__MyClient*`, `npsp__TenantXYZ*`)
+- Any numeric amounts that look like customer KPIs
+
+Keep:
+- Standard object API names (Account, Contact, Case, etc.)
+- Framework/pattern choices (TriggerHandler, OmniScript element types)
+- Scoring-rubric categories that scored low (as learning signal, not methodology edits)
+- Error messages scrubbed of IDs
+
+### Guardrails
+
+- **≤3 new bullets per skill per session** — prevents one bad session from polluting the skill
+- **Merge-over-append** — if the new insight is similar to an existing bullet, replace or consolidate instead of duplicating
+- **Single skill scope** — each `learn(...)` commit touches exactly one SKILL.md
+
+### Commit convention
+
+```
+learn(<skill-name>): <one-line summary>
+```
+
+Examples:
+```
+learn(sf-apex): add governor-limit anti-pattern for bulk Account triggers
+learn(sf-industry-fsc): note household merge requires ACR cleanup first
+learn(sf-datacloud-segment): capture audience refresh lag after DMO schema change
+```
+
+The `learn(` prefix is load-bearing — it makes:
+- `git log --grep="^learn("` show the full learning history
+- `git log --grep="^learn("  --since="1 week ago"` produce a weekly summary
+- Easy bulk-squash before pushing to the repo
+
+### Branch safety net (no orphaned learnings)
+
+Before committing, the agent checks `git branch --show-current`. If the current branch is `main`, commit directly. If on a feature branch, do the same — the learning merges with the branch — UNLESS the branch name starts with `learn/` or looks scratch-like (`wip/`, `scratch/`, `throwaway/`). In that case, stash the learning to `~/.claude/skills-learnings-pending/<skill>-<YYYYMMDD-HHMMSS>.md` with full context and flush on the next `main`-branch invocation.
+
+If `git diff --quiet` reports uncommitted changes in the current skill's SKILL.md already (user is mid-edit), do NOT auto-commit. Stash to `skills-learnings-pending/` and surface a one-liner: *"Skill learning captured to pending/ — commit your in-flight edits and I'll flush it on next use."*
+
+### Never push
+
+The agent NEVER runs `git push` as part of a learning commit. Pushing is always user-initiated. The user may:
+- Run `git log --grep="^learn("` to see all pending learnings
+- Review `git diff <commit>~..<commit>` per commit
+- Squash with `git rebase -i` before pushing if desired
+- Push with plain `git push` when ready, or `scripts/push-learnings.sh` (if present) for a guided flow
+
+### Relationship to auto-refresh cron
+
+The Sunday 03:00 auto-refresh cron (Layer 2) only touches `refresh-report.md` and `upstream_refs`/`sha256` fields. The learning system only touches anti-patterns / common failure modes / cheat sheets. The two operate on disjoint section sets by design — no conflict possible as long as the allowed-sections list above is respected.
+
+---
+
 ## Compatibility note
 
 This file is the source of truth. It is loaded by:
