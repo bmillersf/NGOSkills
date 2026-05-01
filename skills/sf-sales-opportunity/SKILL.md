@@ -1,0 +1,324 @@
+---
+name: sf-sales-opportunity
+description: >
+  Sales Cloud Opportunity phase: deal modeling, pipeline management, opportunity
+  teams and splits, contact roles, stage history, Pipeline Inspection, and Deal
+  Insights, with industry-first routing precedence.
+  TRIGGER when: user is designing or fixing opportunity-centered work and says
+  things like "build the Opportunity stage model", "define Opportunity record
+  types for new vs renewal vs upsell", "configure Opportunity Splits for overlay
+  reps", "set up Opportunity Teams and default access", "populate Opportunity
+  Contact Roles automatically on conversion", "review OpportunityFieldHistory
+  / OpportunityStageHistory for pipeline velocity", "enable Pipeline Inspection",
+  "turn on Deal Insights for the AE team", "wire Opportunity territory assignment",
+  "hand Opportunity off to Quote for Quote-to-Cash", "tune probability per
+  stage", "close-date hygiene policy", "build a weighted pipeline report",
+  "forecast category mapping on each stage", "Opportunity duplicate detection",
+  or any question centered on the Opportunity object and its immediate children.
+  DO NOT TRIGGER when: the request is a multi-capability Sales Cloud design (use
+  sf-sales-cloud); the request is about Collaborative Forecasts, forecast types,
+  forecast hierarchies, adjustments, or quotas (use sf-sales-forecasting); the
+  request is about cadences, Sales Dialer, Einstein Activity Capture, or
+  prioritized work queues (use sf-sales-engagement); the org has Financial
+  Services Cloud and the Opportunity is extended with FinServ__ fields for a
+  mortgage/lending/wealth deal (use sf-industry-fsc); the org has Health Cloud
+  and the Opportunity is used for payer contracting (use sf-industry-health);
+  the org has Education Cloud / EDA and the Opportunity is used for advancement
+  giving on EDA (use sf-industry-education); the org has Public Sector
+  Solutions and Opportunity is used as a funding pursuit tied to Benefits (use
+  sf-industry-public-sector); the request is Work Order / Service Appointment
+  scheduling (use sf-field-service); the org has Nonprofit Cloud and the "deal"
+  is really a Gift Transaction or Funding Award (use sf-nonprofit-cloud); the
+  org has NPSP and the Opportunity is a donation (use sf-nonprofit-npsp); the
+  org has Manufacturing Cloud and the "deal" is a Sales Agreement (use
+  sf-industry-manufacturing); the org has Consumer Goods Cloud and the deal is
+  a Visit / Retail Execution outcome (use sf-industry-consumer-goods); the org
+  has Communications Cloud and the deal is a Cart / Offer / Order Decomposition
+  (use sf-industry-communications); the org has Media Cloud and the deal is a
+  Subscription / Entitlement (use sf-industry-media); the org has Energy &
+  Utilities Cloud and the deal is a Service Point / Work Request (use
+  sf-industry-energy); the work is Quote-to-Cash detail, CPQ rules, or
+  Subscription Management (use sf-revenue-cloud); the work is Case / Service
+  Console (use sf-service-cloud); the work is marketing campaign execution
+  (use sf-marketing-cloud-growth or sf-marketing-account-engagement); the work
+  is Apex code (use sf-apex); the work is LWC (use sf-lwc); the work is Flow
+  XML mechanics (use sf-flow); the work is Data Cloud (use sf-datacloud); the
+  work is nonprofit fundraising (use sf-nonprofit-fundraising); the work is
+  NPSP configuration (use sf-nonprofit-npsp).
+license: MIT
+compatibility: "Requires Sales Cloud edition; industry-first routing applies"
+metadata:
+  version: "1.0.0"
+  author: "NGOSkills"
+release_pinned: "Spring '26"
+docs_last_verified: 2026-05-01
+upstream_refs:
+  - url: https://help.salesforce.com/s/articleView?id=sf.sales_core.htm
+    anchor: ""
+    sha256: ""
+    importance: authoritative
+  - url: https://help.salesforce.com/s/articleView?id=sf.opportunities.htm
+    anchor: ""
+    sha256: ""
+    importance: authoritative
+  - url: https://architect.salesforce.com/design/sales
+    anchor: ""
+    sha256: ""
+    importance: supplemental
+upstream_release_notes:
+  - release: "Spring '26"
+    url: https://help.salesforce.com/s/articleView?id=release-notes.rn_sales.htm
+---
+
+# sf-sales-opportunity: Opportunity, Pipeline, Deal Insights
+
+Owns everything centered on the standard `Opportunity` object and its closest neighbors: Opportunity Line Item, Opportunity Contact Role, Opportunity Team, Opportunity Split, Opportunity Stage History, Pipeline Inspection, Deal Insights, Opportunity-based Quote hand-off, and territory assignment for opportunities. Forecasts, cadences, and Revenue Cloud are explicitly out of scope — this skill hands off cleanly to `sf-sales-forecasting`, `sf-sales-engagement`, and `sf-revenue-cloud`.
+
+---
+
+## When this skill owns the task
+
+Use `sf-sales-opportunity` when the work involves:
+
+- `Opportunity` record types, stages, probability, forecast category, and close date hygiene
+- `OpportunityLineItem` (OLI) and price book entry selection on the deal
+- `OpportunityContactRole` — influence, primary flag, automatic population
+- `OpportunityTeam` — team selling, default access, team templates
+- `OpportunitySplit` — revenue splits and overlay credit
+- `OpportunityFieldHistory` and `OpportunityStageHistory` — pipeline velocity and age-in-stage
+- Pipeline Inspection configuration (metric filters, inline edits, deal momentum)
+- Deal Insights signals (engagement, relationship, deal change)
+- Opportunity → Quote hand-off on the standard Quote object (CPQ/RCA route to `sf-revenue-cloud`)
+- Opportunity territory assignment (ETM / legacy TM)
+- Opportunity-level automation that does NOT cross into forecasting, cadences, or CPQ
+
+Delegate elsewhere when:
+
+| Scope | Route to |
+|---|---|
+| Forecast types, categories, hierarchy, adjustments, quotas | [sf-sales-forecasting](../sf-sales-forecasting/SKILL.md) |
+| Cadences, Sales Dialer, EAC, prioritized work | [sf-sales-engagement](../sf-sales-engagement/SKILL.md) |
+| CPQ, RCA, Subscription Management, Billing Schedules | [sf-revenue-cloud](../sf-revenue-cloud/SKILL.md) |
+| Multi-capability Sales Cloud design | [sf-sales-cloud](../sf-sales-cloud/SKILL.md) |
+| Apex trigger / handler / batch for Opportunity | [sf-apex](../sf-apex/SKILL.md) |
+| LWC rendering opportunity fields | [sf-lwc](../sf-lwc/SKILL.md) |
+| Flow XML mechanics on Opportunity | [sf-flow](../sf-flow/SKILL.md) |
+
+---
+
+## Phase 0: Industry Pre-Check (MANDATORY)
+
+**Before any opportunity modeling, run the shared industry pre-check.** See [references/industry-precheck.md](../../references/industry-precheck.md) for the full detection + deferral protocol.
+
+Procedure:
+
+1. **Detect.** Run license / namespace / object scans per the reference.
+2. **Cross-reference.** If the user's "Opportunity" request is actually a packaged industry artifact in disguise, halt and forward:
+
+   | Detected | "Opportunity" is really | Route to |
+   |---|---|---|
+   | FSC (`FinServ__`) | Mortgage / lending pipeline, wealth pursuit with Financial Goal / Life Event ties | `sf-industry-fsc` |
+   | Health Cloud (`HealthCloudGA__`) | Payer contracting, provider network deal | `sf-industry-health` |
+   | Education Cloud / EDA (`hed__`) | Advancement / gift cultivation on EDA | `sf-industry-education` |
+   | Public Sector (`OutfundsPS__`) | Funding pursuit tied to Benefit / Application | `sf-industry-public-sector` |
+   | Field Service | Work Order / Service Appointment (not an Opportunity at all) | `sf-field-service` |
+   | Nonprofit Cloud | Gift Transaction / Funding Award | `sf-nonprofit-cloud` + children |
+   | NPSP (`npsp`) | Opportunity-as-donation, Recurring Donation | `sf-nonprofit-npsp` |
+   | Manufacturing Cloud | Sales Agreement, Account Forecast | `sf-industry-manufacturing` |
+   | Consumer Goods Cloud | Visit / Retail Execution outcome | `sf-industry-consumer-goods` |
+   | Communications Cloud (`vlocity_cmt__`) | Cart / Offer / Order Decomposition | `sf-industry-communications` |
+   | Media Cloud (`vlocity_media__`) | Subscription / Entitlement | `sf-industry-media` |
+   | Energy & Utilities (`vlocity_ins__` + E&U) | Premise / Service Point / Work Request | `sf-industry-energy` |
+   | Revenue Cloud Advanced / CPQ (`SBQQ__`) | Quote line item / Subscription / Asset | `sf-revenue-cloud` |
+
+3. **Defer.** Emit the standard handoff line and stop generic work.
+4. **Proceed only when clean**, or when the user has explicitly opted out, or when the work is pure generic Opportunity configuration with no industry extension.
+
+**NEVER silently override an industry data model.** A packaged industry Opportunity has upgrade-protected picklists, triggers, and sharing; layering generic stage changes on top of it corrupts the next package release.
+
+---
+
+## Required context to gather first
+
+- **Org edition** — Enterprise+ for Opportunity Splits and ETM.
+- **Revenue Cloud state** — no CPQ, CPQ classic (`SBQQ__`), or Revenue Cloud Advanced. Drives whether OLI lives here or routes to `sf-revenue-cloud`.
+- **Sales motion** — new / upsell / renewal / partner-sourced. Informs record types.
+- **Deal complexity** — direct vs team-sold vs overlay. Drives Team + Split requirements.
+- **Probability policy** — per-stage fixed probability vs per-deal override allowed.
+- **Close-date hygiene** — back-dating allowed? future-pushing tracked?
+- **Territory model** — ETM, legacy TM, or rule-based.
+- **Forecast alignment** — who owns stage → forecast category mapping (delegate to `sf-sales-forecasting` for the mapping itself, but gather the intent here).
+- **Industry overlay** — confirmed clean from Phase 0.
+
+---
+
+## Workflow phases
+
+### Phase 1 — Stage + record type design
+
+1. Limit to ~5–8 stages. Funnel, not project plan.
+2. Decide record types: at minimum New Business vs Renewal (and Upsell if the motion warrants). Each record type gets its own stage picklist values via Record Type Picklist Values.
+3. Map every stage to a Forecast Category (`Pipeline` / `Best Case` / `Commit` / `Closed Won` / `Closed Lost` / `Omitted`). Missing mappings break forecasts silently.
+4. Set default probability per stage. Allow per-deal override only if Sales Ops explicitly owns the policy.
+5. Decide on close-date behavior: auto-push on stage advance vs manual, back-dating lockout, stale-deal policy.
+
+### Phase 2 — Line items + quote hand-off
+
+1. Confirm price book strategy with `sf-sales-cloud` orchestrator if unclear; OLI must reference a Price Book Entry.
+2. Decide whether Quotes live here (standard Quote) or route to `sf-revenue-cloud` (CPQ/RCA).
+3. If standard Quote: confirm Quote → Order → Contract flow and who owns each hop.
+4. If CPQ/RCA: stop, hand off to `sf-revenue-cloud`.
+
+### Phase 3 — Teams, contact roles, splits
+
+1. **Opportunity Contact Role** — auto-populate on conversion from Lead; require a Primary contact; drive influence reporting.
+2. **Opportunity Team** — decide default access (Read / Read-Write), team roles, default team template per user, auto-add triggers.
+3. **Opportunity Splits** — only if the comp plan needs them. Revenue splits must total 100%; overlay splits are independent and can exceed 100%.
+4. Verify Opportunity OWD + Account Team sharing is consistent with team role access. Private OWD + team role Read will not unlock the team to edit.
+
+### Phase 4 — Pipeline Inspection + Deal Insights
+
+1. Enable Pipeline Inspection; configure the metric set (Amount change, close-date change, stage change) and the time window filter.
+2. Enable Deal Insights; review the engagement, relationship, and deal-change signals.
+3. Train reps + managers on inline editing from Pipeline Inspection (it is an editing surface, not a report).
+4. Confirm Pipeline Inspection filters match the forecast hierarchy view used by `sf-sales-forecasting` — mismatched filters drive "my forecast doesn't match my pipeline" complaints.
+
+### Phase 5 — Territory + assignment
+
+1. Confirm ETM vs legacy TM vs rule-based from Phase 0 context.
+2. Enable Opportunity territory assignment if ETM; run `RunAssignmentRules` on insert / update as appropriate.
+3. Document manual override path for reps to reassign a deal with reason code.
+
+### Phase 6 — Velocity + history
+
+1. Use `OpportunityStageHistory` + `OpportunityFieldHistory` for age-in-stage, stage skip, and amount-change velocity.
+2. Decide audit-field policy: which fields track history, which drive reports, which feed Einstein Opportunity Scoring.
+3. Confirm deal-momentum fields feed Deal Insights, not custom aggregation Apex.
+
+### Phase 7 — Verification + report
+
+1. Confirm Phase 0 ran cleanly.
+2. Confirm every stage maps to a forecast category.
+3. Confirm team + split + contact-role rules are consistent with OWD.
+4. Confirm Pipeline Inspection + Deal Insights are enabled with aligned filters.
+5. Confirm hand-offs to `sf-sales-forecasting` (stage → forecast category), `sf-revenue-cloud` (CPQ/RCA), and `sf-sales-engagement` (cadence on opportunities) are explicit.
+
+---
+
+## Scoring rubric (120 pts)
+
+| Category | Points | Pass threshold |
+|---|---|---|
+| Phase 0 industry pre-check executed + documented | 20 | Industry detection run; deferral emitted if positive |
+| Stage model quality (≤ 8 stages, forecast-category complete) | 20 | Every stage mapped, no "Pipeline" catch-all for closed deals |
+| Record type strategy (New / Renewal / Upsell separated) | 10 | Separate stages where motions differ |
+| Line item + quote hand-off clarity | 10 | OLI or Quote routed correctly; CPQ/RCA → sf-revenue-cloud |
+| Opportunity Contact Role automation | 10 | Primary enforced, auto-populate on conversion |
+| Opportunity Teams + default access | 10 | Access matrix matches OWD; team templates defined |
+| Opportunity Splits correctness | 10 | Revenue = 100%; overlay independent |
+| Pipeline Inspection + Deal Insights enabled + aligned | 10 | Filters match forecast hierarchy |
+| Territory assignment (ETM / legacy / rules) correct | 10 | Assignment fires on insert/update |
+| Anti-patterns explicitly avoided | 10 | No stage-explosion, no forecast silence, no industry override |
+
+Pass = 96 / 120. Below 96, revise.
+
+---
+
+## Anti-patterns
+
+1. **Skipping Phase 0.** Recommending an Opportunity stage model in an FSC / Nonprofit / Manufacturing / Revenue Cloud org without running the industry pre-check.
+2. **Silently overriding an industry data model.** NEVER silently override an industry data model. Editing stage picklists, record types, or adding fields to an industry-managed Opportunity will break the next package upgrade.
+3. **Stage explosion.** More than ~8 stages. Stages are a funnel; per-deal state lives in status, record type, or line-item level.
+4. **Forecast-category silence.** Leaving stages unmapped to a forecast category, or mapping closed-won stages to `Pipeline`. Forecasts break silently.
+5. **Per-deal probability override without governance.** Turning on free-form probability editing with no Sales Ops policy produces forecast noise and AE gaming.
+6. **Mis-specified Opportunity Splits.** Letting revenue splits sum to less than or more than 100%, or confusing revenue splits with overlay splits. Compensation reports will be wrong.
+7. **OWD / team role mismatch.** Keeping Opportunity OWD Private and granting Opportunity Team members Read without also confirming Account Team sharing. Reps will complain they can see but can't edit.
+8. **Treating Pipeline Inspection as a report.** It is an editing + metric-change surface with inline update capability, not a tabular dashboard. Using it as a reporting substitute misreads the feature.
+9. **Einstein Opportunity Scoring without 12 months of history.** The model has nothing to learn from and will output noise.
+
+---
+
+## Common failure modes + remediation
+
+### Symptom: "Forecasts don't match my pipeline report."
+- **Root cause:** Stage → Forecast Category mapping has a gap, or a closed-won stage is mapped to `Pipeline`.
+- **Fix:** Re-verify every stage's forecast category. Route hierarchy-level mismatches to `sf-sales-forecasting`.
+
+### Symptom: "Sales Operations says splits total 120%."
+- **Root cause:** Revenue splits (must total 100%) and overlay splits (can exceed) are being edited as one pool.
+- **Fix:** Separate the two split types; enforce 100% on revenue splits via validation; overlay stays free.
+
+### Symptom: "AE is on the Opportunity Team but can't edit."
+- **Root cause:** Opportunity OWD Private + team role Read-only, or Account Team access blocks the chain.
+- **Fix:** Promote the team role to Read-Write, and confirm Account Team access if the Account is also Private.
+
+### Symptom: "Opportunity territory isn't assigned on insert."
+- **Root cause:** ETM opportunity assignment not enabled, or the trigger flow doesn't run assignment rules.
+- **Fix:** Enable opportunity territory assignment in ETM settings; ensure `Opportunity.RunAssignmentRules` fires on insert and update.
+
+### Symptom: "Pipeline Inspection filters don't match the forecast view."
+- **Root cause:** Pipeline Inspection default filter (e.g., "My Team's Opportunities") doesn't align with the forecast hierarchy role.
+- **Fix:** Align filters with the forecast role; confirm with `sf-sales-forecasting` owner.
+
+---
+
+## CLI / metadata cheat sheet
+
+```bash
+# Stage → forecast category audit
+sf data query --target-org <alias> --query "SELECT MasterLabel, ForecastCategory, DefaultProbability, IsClosed, IsWon, SortOrder FROM OpportunityStage ORDER BY SortOrder"
+
+# Record type inventory
+sf data query --target-org <alias> --query "SELECT DeveloperName, IsActive FROM RecordType WHERE SobjectType = 'Opportunity'"
+
+# Opportunity Contact Role coverage
+sf data query --target-org <alias> --query "SELECT COUNT(Id), IsPrimary FROM OpportunityContactRole GROUP BY IsPrimary"
+
+# Opportunity Team default access
+sf data query --target-org <alias> --query "SELECT UserId, TeamMemberRole, OpportunityAccessLevel FROM OpportunityTeamMember LIMIT 50"
+
+# Opportunity Splits audit
+sf data query --target-org <alias> --query "SELECT OpportunityId, SplitPercentage, SplitType.MasterLabel FROM OpportunitySplit LIMIT 50"
+
+# Stage history velocity
+sf data query --target-org <alias> --query "SELECT OpportunityId, StageName, CreatedDate FROM OpportunityStageHistory ORDER BY OpportunityId, CreatedDate DESC LIMIT 200"
+
+# Territory assignment state
+sf data query --target-org <alias> --query "SELECT Id, Territory2Id, Name FROM Opportunity WHERE Territory2Id != NULL LIMIT 50"
+```
+
+Metadata surfaces owned here:
+
+- `OpportunityStage` (picklist + forecast category + probability)
+- `Opportunity` custom fields + record types
+- `OpportunityTeamRole` templates
+- `OpportunitySplitType` configuration
+- `AppMenuItem` / Pipeline Inspection + Deal Insights permission sets
+
+---
+
+## Output format
+
+```text
+Opportunity task: <stage model / team / split / contact role / pipeline inspection / territory>
+Phase 0 industry pre-check: <clean / deferred to sf-industry-X (reason)>
+Edition gates: <Enterprise+ confirmed for Splits / ETM>
+Stage model: <count + forecast category coverage>
+Record types: <New / Renewal / Upsell / other>
+Teams + splits: <default access; revenue vs overlay>
+Pipeline Inspection + Deal Insights: <enabled / configured / aligned with forecast>
+Territory: <ETM / legacy / rules>
+Hand-offs: <sf-sales-forecasting / sf-revenue-cloud / sf-sales-engagement>
+Verification: <stage mapping complete / splits sum correctly / team access matches OWD>
+Next step: <open phase skill or sales-ops decision>
+```
+
+---
+
+## References
+
+- [Industry pre-check reference](../../references/industry-precheck.md) — MANDATORY Phase 0
+- [sf-sales-cloud orchestrator](../sf-sales-cloud/SKILL.md)
+- [sf-sales-forecasting](../sf-sales-forecasting/SKILL.md)
+- [sf-sales-engagement](../sf-sales-engagement/SKILL.md)
+- [sf-revenue-cloud](../sf-revenue-cloud/SKILL.md)

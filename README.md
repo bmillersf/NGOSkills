@@ -11,7 +11,7 @@ What this collection makes possible:
 - **Fully automated demo generation** — hand Cursor a set of raw discovery notes from a client meeting and it produces a complete, presentation-ready demo: a structured narrative with named personas, a verbatim step-by-step click path, seeded Salesforce data matched to the story, and a Playwright test suite that runs as an automated pre-flight check before you walk into the room. What used to take days of prep now takes minutes.
 - **Autonomous demo validation and repair** — `sf-demo-validate` reads your demo script and simulates delivering the demo end-to-end: it walks every click path step, takes Playwright screenshots to visually verify the UI matches what you expect, executes the full demo flow as the specific named demo user (shift sign-ups, intake form submissions), and loads the Experience Cloud portal as both a guest and a logged-in member. Anything that fails, it fixes: missing metadata gets generated and deployed, stale data gets re-seeded, broken flows get repaired, permission gaps get patched. Then it re-validates and gives you a scored pass/fail report -- all without a human touching the org.
 - **Integration storytelling and "art of the possible" simulation** — for demo environments where a live integration doesn't exist, the agent can show what an integration *would* look like: a Mermaid sequence diagram with a verbatim presenter talking track and a prepared answer for "is this live?", or Anonymous Apex that simulates the integration as real data (fake inbound payloads, records stamped as if they arrived from an external system, Platform Events fired as if triggered by third-party software). The audience sees the capability. No external system required.
-- **Deep Salesforce domain expertise on demand** — 47 skills covering every layer of the Salesforce platform: Apex, LWC, Flow, Metadata, SOQL, Deployment, Data Operations, Permissions, Integration, Connected Apps, Data Cloud (all 5 phases), Agentforce (build, test, observe, persona, script), OmniStudio (OmniScript, Integration Procedure, Data Mapper, FlexCard), and the full Nonprofit Cloud stack (fundraising, grants, program management, Experience Cloud). Each skill encodes the standards, patterns, and scoring rubrics I use -- so the agent produces production-quality output, not generic boilerplate.
+- **Deep Salesforce domain expertise on demand** — 88 skills covering every layer of the Salesforce platform: Apex, LWC, Flow, Metadata, SOQL, Deployment, Data Operations, Permissions, Integration, Connected Apps; Data Cloud (all 5 phases); Agentforce (build, test, observe, persona, script); OmniStudio (OmniScript, Integration Procedure, Data Mapper, FlexCard); Sales Cloud (opportunity, forecasting, engagement); Service Cloud (case, omnichannel, knowledge); Marketing (MC Growth, Account Engagement); Revenue Cloud; Tableau; MuleSoft; Slack; Industry Clouds (FSC, Health, Education, Public Sector, Field Service, Manufacturing, CG, Comms, Media, Energy); and the full Nonprofit Cloud stack (fundraising, grants, program management, Experience Cloud). Industry-first routing ensures industry skills win over generic cloud skills when detected. Each skill encodes the standards, patterns, and scoring rubrics I use -- so the agent produces production-quality output, not generic boilerplate.
 - **End-to-end nonprofit-specific intelligence** — from NPSP migration guidance and NPC data modeling to donor lifecycle management, grant pipelines, volunteer intake, program enrollment, and the portal experiences that serve constituents -- the agent knows the nonprofit platform the way a specialized architect does.
 
 These skills encode my approach to Salesforce architecture, coding standards, and demo delivery into reusable instructions that give any AI agent the domain knowledge to work the way I would -- with the depth, precision, and nonprofit context that generic AI assistance can't provide. The skills are written in standard markdown and work identically in **Cursor** (native skill system, auto-triggered), **Claude Code** (native skill system via `~/.claude/skills/`, auto-triggered), and **Claude.ai** (via Claude Projects or direct conversation). See [CLAUDE.md](CLAUDE.md) for Claude-specific setup.
@@ -64,7 +64,7 @@ Then run scripts/sync-skills.sh --check and confirm drift is 0. If the repo is
 already cloned, just git pull and re-run --fix.
 ```
 
-Claude Code will handle the clone, symlinks, and health check autonomously. Restart Claude Code once it finishes and all 47 skills are available, matched automatically by their `TRIGGER when` descriptions, with the always-apply autonomy and parallel-delegation policy already loaded.
+Claude Code will handle the clone, symlinks, and health check autonomously. Restart Claude Code once it finishes and all 88 skills are available, matched automatically by their `TRIGGER when` descriptions, with the always-apply autonomy and parallel-delegation policy already loaded.
 
 **Install (manual shell alternative)** — if you'd rather run it yourself:
 
@@ -192,13 +192,30 @@ The entire workflow -- from pasting discovery notes to having a validated, prese
 ## Repository Structure
 
 ```
-skills/                          # Salesforce-domain skills (47 sf-* skills)
+skills/                          # Salesforce-domain skills (83 sf-* skills)
 skills-cursor/                   # Cursor-ecosystem utilities (babysit, create-hook,
-                                 #   statusline, update-cli-config) — Cursor-only
+                                 #   statusline, update-cli-config) + sf-skill-maintenance
+                                 #   meta-skill (authoring contract + 4-layer auto-refresh)
+references/
+  industry-precheck.md           # MANDATORY Phase 0 pre-check for every generic cloud skill —
+                                 #   detects industry license/namespace/object and forwards
+                                 #   to owning sf-industry-* / sf-nonprofit-* skill
+  subagent-authoring-brief.md    # Template for skill-authoring subagents
 CLAUDE.md                        # Claude.ai setup guide (Projects, per-conversation, API)
+                                 #   + industry-first precedence rule + full routing table
 scripts/
   sync-skills.sh                 # Health-check (--check) and idempotent fix (--fix) for
                                  #   all skill, rule, and Claude-config symlinks
+  audit-triggers.sh              # Static audit for overlapping TRIGGER phrases across skills
+  refresh-skills.sh              # Layer 1+2 auto-refresh — scans every skill's upstream_refs,
+                                 #   diffs against stored sha256, emits refresh-report.md
+  refresh-skills-auto.sh         # Layer 3 — generates a Claude Code subagent queue for
+                                 #   drift-detected skills; subagents propose PRs, never auto-merge
+  release-handoff.sh             # Layer 4 — release-cut playbook; cross-references release
+                                 #   notes TOC against every skill's TRIGGER clauses
+  com.ngoskills.refresh.plist    # macOS launchd plist — weekly Sunday 03:00 auto-refresh
+  gh-workflow-staging/           # GitHub Action for weekly auto-refresh (staged until PAT
+                                 #   has workflow scope; see staging README for install)
   generate-claude-bundle.sh      # Generates a bundled Claude system prompt from all skills
   nonprofit-knowledge-engine.py  # Scrapes SF docs, compartmentalizes NPSP vs NPC, builds keyword index
   refresh-nonprofit-content.sh   # One-command refresh for release-day updates
@@ -206,7 +223,7 @@ scripts/
 assets/
   images/                        # Rendered architecture diagrams (generated from Mermaid source)
 content/                         # Auto-generated knowledge base (populated by the engine)
-  keyword-index.json             # Keyword→skill routing index (135+ keywords across 7 skills)
+  keyword-index.json             # Keyword→skill routing index
   npsp/                          # NPSP-classified content sections
   npc/                           # NPC-classified content sections
   shared/                        # Cross-platform content sections
@@ -227,11 +244,39 @@ content/                         # Auto-generated knowledge base (populated by t
 
 The skills are organized into layered domains that mirror the Salesforce platform stack. The agent reads a user's prompt, matches it against each skill's trigger conditions, and activates the appropriate skill. Skills that share boundaries have explicit routing rules so only one fires at a time.
 
-### Domain overview
+### Industry-first routing (the primary architectural rule)
+
+**Before any generic cloud skill produces output, it must run the industry pre-check defined in [`references/industry-precheck.md`](references/industry-precheck.md).** If an industry package is installed (FSC, Health Cloud, Education Cloud / EDA, Public Sector Solutions, Field Service, Nonprofit Cloud / NPSP, Manufacturing, Consumer Goods, Communications, Media, or Energy) **and** the request touches an industry-owned object, the generic skill halts and forwards control to the matching `sf-industry-*` or `sf-nonprofit-*` skill. Generic skills never silently override an industry data model.
+
+The pre-check uses three detection signals in order: (1) license / feature flag from `sf org display --json`, (2) namespace scan (`FSC__`, `HealthCloudGA__`, `hed__`, `npsp__`, `vlocity_cmt__`, `vlocity_ins__`, …), (3) `EntityDefinition` object-existence query. Industry skills (`sf-industry-*`, `sf-nonprofit-*`, `sf-field-service`, and `sf-revenue-cloud` when CPQ/RCA is installed) are the destinations of this pre-check — they do not run it themselves.
+
+### How routing works (quick visual)
+
+![Routing decision flow](assets/images/routing-flow.png)
+
+Every user request flows through the **Phase 0 industry pre-check** before any skill produces output. If an industry package is installed AND the request touches an industry-owned object (e.g., `FSC__Household`, `HealthCloudGA__EhrEncounter__c`, `npsp__Recurring_Donation__c`), the matching industry skill wins. Otherwise the request routes to the matching generic cloud skill. Both paths rest on the Core Platform foundation. Source: [`assets/diagrams/routing-flow.mmd`](assets/diagrams/routing-flow.mmd).
+
+### Domain overview (5-tier map)
 
 ![NGO Salesforce Skills — Domain Architecture](assets/images/domain-architecture.png)
 
-> **Core Platform** is the foundation -- every other Salesforce domain depends on it. **Agentforce**, **Nonprofit Cloud**, and **OmniStudio** each extend Core with domain-specific capabilities. **Data Cloud** feeds telemetry into Agentforce observability. **Integration & Security** provides external connectivity via Apex callouts. The **Demo Workflow** is a 4-skill pipeline: raw notes flow through `sf-demo-author` (demoscript authoring), `sf-nonprofit-demo-data` (data seeding), and `sf-demo-playwright` (test suite + presenter guide), before **Demo Validation** (`sf-demo-validate`) validates the entire stack end-to-end. **Visualization & Docs** is a cross-cutting utility.
+The 88 skills organize into five tiers that mirror the routing decision above:
+
+- **Tier 1 — Vertical / Industry (11)** — FSC, Health, Education, Public Sector, Field Service, Manufacturing, Consumer Goods, Communications, Media, Energy, Nonprofit NPC/NPSP. *First line of defense; wins over generic clouds when detected.*
+- **Tier 2 — Horizontal / Generic clouds (14)** — Sales (×4), Service (×4), Marketing (×2), Revenue, Experience, Reports/Dashboards. *Runs Phase 0 industry pre-check before emitting output; halts and forwards to Tier 1 on detection.*
+- **Tier 3 — Shared capabilities (28)** — AI (7), Data Cloud (7 phases), OmniStudio (6 components), Integration (3), Platform Builder (2), Analytics (Tableau), Slack, Trust + Ops (4). *Consumed by both vertical and horizontal tracks.*
+- **Tier 4 — Core Platform (10)** — Apex, LWC, Flow, Metadata, SOQL, Data, Testing, Deploy, Debug, Permissions. *Foundation; every other skill depends on one or more of these.*
+- **Tier 5 — Demo lifecycle + Meta (13)** — End-to-end demo pipeline (orchestrate/author/validate/playwright + demo-data × 2 + ui-fallback-playwright), plus meta skills that maintain the routing contract (`sf-skill-maintenance`, `sf-subagent-orchestration`, and the three Visualization + Docs skills).
+
+Diagram sources: [`assets/diagrams/domain-architecture.mmd`](assets/diagrams/domain-architecture.mmd) and [`assets/diagrams/routing-flow.mmd`](assets/diagrams/routing-flow.mmd). Regenerate PNGs after edits with:
+
+```bash
+npx -p @mermaid-js/mermaid-cli mmdc -i assets/diagrams/routing-flow.mmd \
+  -o assets/images/routing-flow.png -w 1200 -H 1600 -b white --scale 2
+npx -p @mermaid-js/mermaid-cli mmdc -i assets/diagrams/domain-architecture.mmd \
+  -o assets/images/domain-architecture.png -w 1800 -H 1400 -b white --scale 2
+```
+
 
 ### Demo Validation in the architecture
 
@@ -247,9 +292,15 @@ The demo script (`demoscript.md`) is the source of truth. It defines the demo st
 4. **Automations** -- validates Flows, triggers, and scheduled jobs fire as expected
 5. **UI & Experience Cloud** -- HTTP-pings public sites, verifies guest and member portal pages render with live data
 6. **End-to-end user simulation** -- executes transactional demo paths (form submissions, record creation) as specific demo personas via Anonymous Apex
-7. **Product-specific checks** -- validates Agentforce agents, Data Cloud pipelines, OmniStudio components, and any other products referenced in the script
+7. **Product-specific checks (core)** -- validates Agentforce agents, Data Cloud pipelines, OmniStudio components, and any other products referenced in the script
+8. **Cross-cloud product blocks** (added Phase 4) — Sales Cloud (pipeline health, forecast types, cadences), Service Cloud (entitlements, omni-channel queues, knowledge), Marketing (MC Growth journey OR MCAE automation), Revenue Cloud (price books, quote flow), Tableau (workbooks, data sources), MuleSoft (Anypoint + MuleSoft for Flow), and Slack-extended (apps installed, workflows published)
+9. **Industry Cloud blocks** (added Phase 4) — one per industry (FSC household present, Health care plan template active, EDA program enrollment, PSS benefit/license records, Field Service work orders, Manufacturing sales agreements, CG visits, Comms catalog, Media subscribers, Energy premises)
 
-When a step fails, `sf-demo-validate` delegates the fix to the appropriate domain skill (e.g., `sf-apex` for code fixes, `sf-permissions` for access issues, `sf-data` for missing records), then re-validates -- looping up to 3 times before escalating. The result is a scored pass/fail report covering all 10 validation categories.
+When a step fails, `sf-demo-validate` delegates the fix to the appropriate domain skill (e.g., `sf-apex` for code fixes, `sf-permissions` for access issues, `sf-data` for missing records, `sf-ui-fallback-playwright` when the fix requires a Setup UI click the CLI can't reach), then re-validates -- looping up to 3 times before escalating. The result is a scored pass/fail report: the base 200-point rubric covers all 10 core validation categories, and 13 prorated add-on categories (20 pts each) score the cross-cloud and industry blocks that apply to the detected products.
+
+### Cross-cloud demo orchestration (Phase 2.5 Product Detection)
+
+`sf-demo-orchestrate` now runs a Phase 2.5 **Product Detection & Skill Routing** step before authoring the demoscript. It invokes the industry pre-check, classifies every detected product (industry cloud, generic cloud, Agentforce, Data Cloud, OmniStudio, Tableau, MuleSoft, Slack, Revenue Cloud, etc.), and writes a routing manifest into `DEMO-PIPELINE-STATUS.md`. Phase 5 (data seeding) then routes to `sf-nonprofit-demo-data` for nonprofit parents and `sf-demo-data` for cross-cloud commercial overlays, sequenced deterministically. Any CLI dead-end encountered mid-pipeline (Agent Builder publish, Prompt Builder activation, Experience Builder drag-drop, certain Setup toggles) invokes `sf-ui-fallback-playwright` as a reactive fallback.
 
 ---
 
@@ -393,6 +444,88 @@ Each phase skill uses `sf data360` subcommands specific to its domain. The orche
 
 </details>
 
+### Industry Clouds
+
+> **Industry-first routing is mandatory.** When any industry license or package is detected in an org, the matching industry skill wins over generic Sales Cloud / Service Cloud / Marketing skills. Every generic cloud skill runs a Phase 0 pre-check against [`references/industry-precheck.md`](references/industry-precheck.md) and defers to the industry owner before producing any output.
+
+| Skill | Description |
+|---|---|
+| **sf-industry-fsc** | Financial Services Cloud architecture with 150-point scoring — Households, Financial Accounts, Financial Goals, Life Event Moments, Relationship Maps, ARC, banking/wealth/insurance/mortgage workflows. |
+| **sf-industry-health** | Health Cloud architecture with 150-point scoring — Patient/Member, Care Plans, Care Requests, Clinical Encounters, EHR/FHIR integration, Care Teams, HIPAA/PHI handling. |
+| **sf-industry-education** | Education Cloud (native) + EDA (legacy) architecture with 150-point scoring — Student, Program Enrollment, Course Connection, Affiliation, recruiting/admissions/retention/advising, FERPA. |
+| **sf-industry-public-sector** | Public Sector Solutions architecture with 150-point scoring — Constituent intake, Benefit/License/Permit/Inspection, regulatory code tracking, Section 508 / FedRAMP callouts. |
+| **sf-field-service** | Salesforce Field Service architecture with 140-point scoring — Work Orders, Service Appointments, Dispatcher Console, scheduling policies, mobile offline workflows, ESO optimization. |
+| **sf-industry-manufacturing** | Manufacturing Cloud stub with industry-first routing — Sales Agreements, Account Forecasts, Rebate Programs. Delegates implementation to OmniStudio common-core skills. |
+| **sf-industry-consumer-goods** | Consumer Goods Cloud stub — Retail Execution, Visits, Trade Promotions, Penny Perfect Order, offline mobile. Delegates implementation to OmniStudio common-core. |
+| **sf-industry-communications** | Communications Cloud stub (`vlocity_cmt__`) — enterprise product catalog, order decomposition, CPQ for telecom, number management. Delegates implementation to OmniStudio common-core. |
+| **sf-industry-media** | Media Cloud stub (`vlocity_cmt__` / `vlocity_media__`) — subscription management, ad sales, audience monetization. Delegates implementation to OmniStudio common-core. |
+| **sf-industry-energy** | Energy & Utilities Cloud stub (`vlocity_ins__`) — premise/service point, meter-to-cash, AMI interval data, outage management. Delegates implementation to OmniStudio common-core. |
+
+### Sales Cloud
+
+> Industry-first: Sales Cloud skills defer to the matching industry skill when FSC, Health, Education, Public Sector, Nonprofit, Manufacturing, Consumer Goods, Communications, Media, or Energy is detected.
+
+| Skill | Description |
+|---|---|
+| **sf-sales-cloud** | Sales Cloud product orchestrator with 150-point scoring — lead-to-cash, Leads, Accounts, Contacts, Opportunities, Activities, Campaigns, Quotes, Orders, Territory Management, Einstein for Sales, Revenue Intelligence. |
+| **sf-sales-opportunity** | Opportunity-phase skill with 120-point scoring — deal modeling, pipeline, Opportunity Teams/Splits, Contact Roles, Stage History, Pipeline Inspection, Deal Insights. |
+| **sf-sales-forecasting** | Collaborative Forecasts with 120-point scoring — Forecast Types, Categories, Hierarchies, Adjustments, Submissions, cumulative rollups, quotas, partner forecasts. |
+| **sf-sales-engagement** | Sales Engagement (formerly High Velocity Sales) with 120-point scoring — Cadences, Work Queues, Sales Dialer, Einstein Activity Capture, Lightning email, call dispositions, Sales Email Capture. |
+
+### Service Cloud
+
+> Industry-first: Service Cloud skills defer to Health Cloud, Public Sector Solutions, Field Service, Nonprofit Program & Case, or other industry owners when detected.
+
+| Skill | Description |
+|---|---|
+| **sf-service-cloud** | Service Cloud product orchestrator with 150-point scoring — Case lifecycle, Service Console, Omni-Channel, Knowledge, Entitlements/Milestones, Service Contracts, Assets, Incident Management, Service Cloud Voice, Messaging, Einstein for Service. |
+| **sf-service-case** | Case data model with 120-point scoring — Record Types, Case Teams, Web-to-Case, Email-to-Case, Assignment Rules, Escalation Rules, Entitlements, Milestones, SLA Processes, Service Contracts. |
+| **sf-service-omnichannel** | Omni-Channel routing with 120-point scoring — Presence, Queues, Skills-Based / Attribute-Based / External Routing, Supervisor Dashboard, Omni Flow, Omni-Channel API. |
+| **sf-service-knowledge** | Lightning Knowledge with 120-point scoring — Article Types, Data Categories, Publication Workflow, Multi-Language Articles, Einstein Search Answers, Article-to-Case linking. |
+
+### Marketing
+
+> Industry-first: marketing skills defer to industry skills for industry-specific campaign objects (FSC advisor outreach, Health member engagement, NPC donor campaigns).
+
+| Skill | Description |
+|---|---|
+| **sf-marketing-cloud-growth** | Marketing Cloud Growth (Data Cloud-native MC) with 130-point scoring — Journey Builder, Email/SMS Studio, Content Builder, Data Cloud-backed segments, activations. Routes DMO work to `sf-datacloud-*`. |
+| **sf-marketing-account-engagement** | Marketing Cloud Account Engagement (formerly Pardot) with 130-point scoring — Engagement Studio, Forms, Landing Pages, Dynamic Lists, Automation Rules, Scoring/Grading, B2B Marketing Analytics. |
+
+### Revenue, Analytics, Middleware & Slack
+
+| Skill | Description |
+|---|---|
+| **sf-revenue-cloud** | Revenue Cloud Advanced (RCA) + legacy CPQ with 140-point scoring and industry-first routing — Product Catalog, Quote/Order/Contract, Subscription Management, Billing Schedules, Product/Pricing Rules, Asset lifecycle. |
+| **sf-tableau** | Tableau + Tableau Next + CRM Analytics with 140-point scoring — workbooks, semantic models, Pulse metrics, dataflows, recipes, SAQL, Einstein Discovery, Tableau Semantic Layer. |
+| **sf-mulesoft** | MuleSoft Anypoint Platform, MuleSoft for Flow, DataWeave with 140-point scoring — Mule apps, RAML/OAS, API Manager, Exchange, Runtime Manager. Explicit boundary with `sf-integration` (SF-side Named Credentials/callouts). |
+| **sf-slack** | Slack-First workflows with 140-point scoring — Slack app manifests, Workflow Builder, Canvases, Slack AI, Bolt SDK, slash commands, Slack actions from Flow/Agentforce, Slack Sales Elevate, Slack for Service. |
+
+### AI Primitives
+
+| Skill | Description |
+|---|---|
+| **sf-ai-prompt-builder** | Prompt Builder authoring with 130-point scoring — standalone PromptTemplate metadata, Prompt Template Builder UI, grounding (CRM fields, Data Cloud DMOs, Flows, Apex), versioning, activation. Complements sf-ai-agentforce (which consumes templates via GenAiFunction). |
+| **sf-ai-model-builder-trust-layer** | Einstein Trust Layer + Model Builder (BYOM) with 130-point scoring — masking, zero-retention, toxicity detection, Content Safety, Audit Trail in Data Cloud, and generative/embedding endpoints for Azure OpenAI, AWS Bedrock, Google Vertex. |
+
+### Platform Builder
+
+| Skill | Description |
+|---|---|
+| **sf-flow-orchestration** | Flow Orchestration with 130-point scoring — multi-user orchestrated flows (Stages, Steps, Decisions, Interactive/Background Steps, Async Path), Approval Processes, Work Queue, Work Guide, Orchestration events/logs/runs. |
+| **sf-reports-dashboards** | Native Salesforce Reports + Dashboards with 120-point scoring and industry-first routing — Report Types, Formats (Tabular/Summary/Matrix/Joined), Cross-Filters, Bucket Fields, Subscriptions, Dashboard Components, Dynamic Dashboards. |
+| **sf-lightning-app-builder** | Lightning App Builder with 120-point scoring — record/app/home pages, FlexiPage metadata, Dynamic Forms, Dynamic Actions, Dynamic Interactions, Component Visibility, Record Page Assignments, legacy Page Layout migration. |
+| **sf-experience-cloud** | General (non-nonprofit) Experience Cloud with 140-point scoring and industry-first routing — LWR + Aura sites, Experience Builder, Audiences, Branding Sets, CMS, external licenses, Sharing Sets, Share Groups, Account Relationships, guest access. Defers to sf-nonprofit-experience-cloud trio for nonprofit orgs. |
+
+### Trust, Governance & Ops
+
+| Skill | Description |
+|---|---|
+| **sf-shield-event-monitoring** | Salesforce Shield with 130-point scoring — Event Monitoring, Real-Time Events, Transaction Security Policies, Platform Encryption, Field Audit Trail, Security Center, Event Monitoring Analytics App. Cross-references industry skills for HIPAA / PCI / FedRAMP / FERPA requirements. |
+| **sf-backup-datamask** | Salesforce Backup + Data Mask with 120-point scoring — automated daily backups, point-in-time recovery, retention policies, irreversible sandbox masking for FERPA/HIPAA/PCI/GDPR-safe sandboxes. |
+| **sf-devops-center** | DevOps Center + 1GP/2GP/Unlocked packaging with 130-point scoring — Work Items, Pipelines, Stages, GitHub-backed change bundles, managed/unlocked package lifecycle, AppExchange listing prep. Complements sf-deploy (CLI-first). |
+| **sf-identity-sso** | Identity, SSO, MFA with 130-point scoring — My Domain, SAML 2.0, OIDC, Social Sign-On, JIT provisioning, Salesforce as IdP, ICP, WebAuthn, Login Flows, Auth. Providers, password/session/IP policies. Consumes sf-connected-apps output. |
+
 ### Industries / OmniStudio
 
 ```mermaid
@@ -518,7 +651,9 @@ These four skills form the front half of the demo pipeline -- taking you from ra
 | **sf-demo-orchestrate** | End-to-end demo pipeline orchestrator. From one trigger phrase ("run the full demo workflow", "build me a demo for <org>", "notes to presenter-ready"), it runs all 7 steps from the project README -- org connect + baseline, notes intake, product-approval gate, `sf-demo-author`, `sf-nonprofit-demo-data`, `sf-demo-validate` repair loop, `sf-demo-playwright` -- with a live `DEMO-PIPELINE-STATUS.md` that tracks every phase, score, and artifact. Hard stops for user approval at product recommendations and final sign-off. |
 | **sf-demo-author** | Transforms raw notes, meeting transcripts, or bullet-point requirements into a fully structured `demoscript.md` with narrative story arc, named personas, verbatim click-by-click steps, and presenter talking points. Output feeds directly into the rest of the demo pipeline. |
 | **sf-nonprofit-demo-data** | Nonprofit demo data factory. Reads persona definitions and data requirements from the demoscript, detects NPC vs NPSP, and generates story-coherent data packages -- JSON trees, `sf data` CLI commands, and Anonymous Apex with realistic names, amounts, and future-dated records. Includes teardown scripts that target `@demo.` email domains to never touch real data. |
+| **sf-demo-data** | Cross-cloud demo data factory (peer of sf-nonprofit-demo-data) with 130-point scoring — story-coherent data for Sales Cloud pipelines, Service Cloud case volumes, Revenue Cloud quote-to-cash, FSC households, Health patient cohorts, Field Service work orders, Manufacturing sales agreements, and Agentforce demos. Enforces hard scope boundary with the nonprofit peer. |
 | **sf-demo-playwright** | Persistent Playwright test suite and presenter guide generator. Converts the demoscript click path into a reusable `demo-preflight.spec.js`, a `PRESENTER-GUIDE.md` with embedded screenshots and talking points, and a `preflight.sh` script to run as an automated pre-flight check before every demo session. |
+| **sf-ui-fallback-playwright** | Reactive Playwright UI fallback with 120-point scoring — runs when agents hit CLI dead-ends (Agent Builder publish, Prompt Builder activation, Experience Builder drag-drop, Setup toggles). Auths via SFDX session token, generates a Playwright script on the fly, executes it, saves it to `.claude/playwright-fallbacks/` for replay, and self-heals selectors when Salesforce UI changes. Distinct from `sf-demo-playwright` (reactive vs proactive). |
 
 <details>
 <summary><strong>Under the hood</strong></summary>
@@ -727,6 +862,40 @@ scripts/auto-update-skills.sh --apply-only    # apply pending without fetching
 ```
 
 **To disable auto-update** for a single session, set `NGOSKILLS_RATE_LIMIT=999999999`. To disable permanently, remove the `auto-update-skills.sh` entry from `.cursor/hooks.json` and the `SessionStart` block from `~/.claude/settings.local.json`.
+
+## Keeping Skills Current
+
+Salesforce ships three major releases per year (Spring / Summer / Winter) plus continuous Agentforce, Tableau Next, MuleSoft, and Slack updates. Skills stay aligned with the platform through a four-layer auto-refresh system — the meta-skill [`sf-skill-maintenance`](skills-cursor/sf-skill-maintenance/SKILL.md) documents the full contract.
+
+**Layer 1 — Passive staleness banner.** Every skill's frontmatter carries `release_pinned: "Spring '26"` and `docs_last_verified: 2026-05-01`. If a skill has not been verified in >60 days, agents emit a one-line banner on invocation so you're always aware of staleness without surprises.
+
+**Layer 2 — Scheduled diff scan.** `scripts/refresh-skills.sh` walks every skill's `upstream_refs` URLs (canonical `help.salesforce.com` / `developer.salesforce.com` / `architect.salesforce.com` pages), recomputes content hashes, and produces `refresh-report.md` with a fresh-vs-stale table. Runs read-only — no SKILL.md changes.
+
+**Layer 3 — Subagent-driven PR generation.** `scripts/refresh-skills-auto.sh` takes the Layer 2 drift list and emits a subagent queue (`.claude/refresh-queue.md`) with per-skill briefs. When you pass those briefs to Claude Code subagents, each proposes a SKILL.md edit and opens a PR. Severity-gated: trivial changes (URL repair, new CLI flags) land quickly; behavior-change edits get human review; scoring-rubric / workflow / anti-pattern edits are human-only (never auto-edited).
+
+**Layer 4 — Release-cut handoff.** `scripts/release-handoff.sh <release>` runs when Salesforce publishes a release notes TOC (~6 weeks before GA). It cross-references TOC headings against every skill's `TRIGGER when:` clauses and produces a prioritized review list: *"These N skills touch areas with <Release> release notes."* Net-new features get dedicated refresh subagent runs.
+
+### Scheduled auto-refresh
+
+Two schedulers ship out of the box:
+
+- **macOS launchd** — [`scripts/com.ngoskills.refresh.plist`](scripts/com.ngoskills.refresh.plist). Runs Sunday 03:00 local. Install with `cp scripts/com.ngoskills.refresh.plist ~/Library/LaunchAgents/ && launchctl load ~/Library/LaunchAgents/com.ngoskills.refresh.plist`. Logs to `/tmp/ngoskills-refresh.log`.
+- **GitHub Action** — workflow file ships at [`scripts/gh-workflow-staging/refresh-skills.yml`](scripts/gh-workflow-staging/refresh-skills.yml) (staged rather than placed directly in `.github/workflows/` because the initial push was performed with an OAuth token lacking `workflow` scope). To activate, follow [`scripts/gh-workflow-staging/README.md`](scripts/gh-workflow-staging/README.md) — either create the file via GitHub UI or re-push after granting `workflow` scope. Weekly cron `0 3 * * 0`, opens PRs on `refresh-report.md` drift. Requires "Allow GitHub Actions to create and approve pull requests" in repo settings → Actions → General.
+
+### Responding to a refresh PR
+
+The meta-skill's review checklist:
+1. Read the severity label (trivial / additive / behavior-change / methodology-refused).
+2. Verify only sections appropriate to the severity class were touched.
+3. Confirm `docs_last_verified` bumped; `sha256` values re-populated.
+4. Reject PRs that modify scoring rubrics or trigger clauses — those are human-authored decisions.
+5. Merge with squash commit after running `scripts/audit-triggers.sh` to catch routing collisions.
+
+### Adding `upstream_refs` to a new skill
+
+Every new SKILL.md MUST include 2–5 authoritative URLs (help.salesforce.com / developer.salesforce.com / architect.salesforce.com only — no blogs) with `importance: authoritative` or `supplemental`. Leave `sha256: ""` on creation; the first Layer 2 run populates it. Missing `upstream_refs` or `docs_last_verified` is a hard gate — `scripts/audit-triggers.sh` will flag it.
+
+---
 
 ## Skill Anatomy
 

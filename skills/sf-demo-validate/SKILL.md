@@ -326,6 +326,174 @@ If a step has type `omnistudio`, validate OmniStudio components:
 
 > Cross-skill delegation: sf-industry-commoncore-omniscript, sf-industry-commoncore-flexcard, sf-industry-commoncore-integration-procedure, sf-industry-commoncore-datamapper, sf-industry-commoncore-omnistudio-analyze
 
+#### Sales Cloud Validation
+
+If a step touches Sales Cloud pipeline, opportunities, forecasting, or sales engagement (and no industry overlay like FSC / NPC claims it), validate pipeline health:
+
+1. **Opportunity records per stage** — SOQL-aggregate `Opportunity` by `StageName` and verify at least one record exists in each active stage the demoscript walks through. A demo that narrates "move from Qualification to Proposal" fails if both stages are empty.
+2. **Forecast Types configured** — query `ForecastingType` for IsActive = true and confirm the demo's forecast category (Revenue, Quantity, Custom) is enabled; verify `ForecastingCategoryMapping` reflects the demoscript's categories.
+3. **Forecast Hierarchy populated** — query `UserRole` and `ForecastingUserPreference` to confirm the role hierarchy used by the demo has at least two levels with submitters below the manager persona.
+4. **Cadences running** — query `SalesCadence` and `SalesCadenceTarget` for active cadences with non-empty target lists. A demo showing "the cadence auto-emails on day 3" fails if the cadence has zero targets.
+5. **Pipeline Inspection accessible** — verify the Pipeline Inspection app exists (`AppDefinition`), the page is reachable for the demo user, and at least one saved view filter matches the demo narrative.
+6. **Opportunity Teams / Splits** — if the demoscript shows opportunity splits, confirm `OpportunitySplitType` records exist and at least one `OpportunitySplit` row is present for the demo Opportunity.
+7. **Deal Insights / Einstein** — if the demo mentions Deal Insights, verify the Einstein feature is enabled on the org and at least one Opportunity has been scored.
+
+Routes repairs to `sf-sales-cloud` -> `sf-sales-opportunity`, `sf-sales-forecasting`, or `sf-sales-engagement` depending on what failed.
+
+#### Service Cloud Validation
+
+If a step touches Service Cloud Case lifecycle, Omni-Channel, Knowledge, or Entitlements (and no industry overlay like Health / PSS claims it), validate:
+
+1. **Entitlements active** — query `Entitlement` for `Status = 'Active'` and `EndDate >= TODAY`; confirm the demo's entitlement is tied to an `Asset` or `Account` the demoscript references, and that at least one `MilestoneType` is in play.
+2. **SLA Process / Milestones firing** — query `ProcessMilestone` and `CaseMilestone` for recent completions; verify the case used in the demo has an active milestone with expected `TargetDate`.
+3. **Omni-Channel queue capacity** — query `ServiceChannel`, `PresenceConfiguration`, and `PresenceUserConfig`; confirm at least one queue has `CapacityUnit = 'Weight'` or `'Count'` with unused capacity. Verify the demo user has a Presence status assigned.
+4. **Omni-Channel Routing Configurations** — confirm `RoutingConfiguration` records exist and reference the queues the demoscript mentions; skills-based routing verifies `Skill` records and `SkillRequirement` per queue.
+5. **Knowledge articles published** — query `Knowledge__kav` (or `KnowledgeArticleVersion`) with `PublishStatus = 'Online'` and `IsLatestVersion = true`; confirm at least one published article matches the demoscript's Data Category path.
+6. **Web-to-Case / Email-to-Case active** — if the demoscript shows inbound case creation, verify `EmailServicesFunction` / `EmailServicesAddress` records exist and are active; verify `WebToCaseHttpPost` default assignment rule is configured.
+7. **Case Assignment / Escalation Rules** — query `AssignmentRule` and `EscalationRule` with `Active = true` that match the demo's case record type.
+8. **Service Console layout** — verify `AppDefinition` for the Service Console matches the demoscript; utility bar components required by the demo (Omni Widget, Macros, Softphone) are present.
+
+Routes repairs to `sf-service-cloud` -> `sf-service-case`, `sf-service-omnichannel`, or `sf-service-knowledge`.
+
+#### Marketing Cloud Validation (Growth and Account Engagement)
+
+If a step touches MC Growth or MCAE, validate the variant the org is running:
+
+**MC Growth** (`MarketingCloudGrowth` feature + Data Cloud enabled):
+
+1. **Journey active** — query `MarketingAppExtensionActivity` or use the Marketing Cloud Growth REST API to verify at least one journey referenced by the demoscript is in `Active` status.
+2. **Journey goal + exit criteria** — confirm goal and exit criteria are configured (not left blank); empty goals break the analytics view the demo shows.
+3. **Segment membership non-zero** — the journey's entry segment (Data Cloud segment) must have `MemberCount > 0`.
+4. **Email / SMS templates published** — confirm `ContentVersion` or Growth content records for the email/SMS asset exist and are in `Published` state.
+5. **Sender Profile configured** — verify the journey's from-address / sender profile resolves to an active `EmailSenderProfile` record.
+
+**MCAE / Pardot** (`pi__` namespace):
+
+1. **Automation Rules firing** — query `pi__automation_rule__c` (or Tooling API on the MCAE business unit) for `Active = true` and `matched_count__c > 0` within the last 30 days.
+2. **Forms + Landing Pages published** — confirm `pi__form__c` and `pi__landing_page__c` records exist, are published, and are accessible via their public URL (HTTP 200 smoke check).
+3. **Dynamic Lists populated** — verify `pi__list__c` with `list_type = 'Dynamic'` has non-zero `prospect_count__c`.
+4. **Scoring / Grading categories** — verify the scoring category definitions referenced by the demoscript exist and are attached to assets.
+5. **Connector status** — verify the MCAE-to-Salesforce connector is `Verified` (not `Not Verified` or `Paused`), via the `pi__connector__c` object.
+
+Routes repairs to `sf-marketing-cloud-growth` or `sf-marketing-account-engagement`.
+
+#### Revenue Cloud Validation
+
+If a step touches Revenue Cloud Advanced or legacy CPQ, validate:
+
+1. **Price Books active** — query `Pricebook2` with `IsActive = true` and at least one `PricebookEntry` per demo product; confirm the demo user's default price book matches the demoscript.
+2. **Products configured** — query `Product2` for `IsActive = true`; confirm the products referenced by the demoscript exist and have the right product family, product rules, and feature codes.
+3. **Quote flow end-to-end** — create a test Quote + QuoteLineItem via Anonymous Apex (or REST) for the demo Opportunity; verify the quote generates without hitting product-rule validation errors; delete afterward.
+4. **Order + Contract scaffolding** — for Order/Contract demos, verify `Order` record types exist, `OrderItem` relationship holds, and the Contract auto-creation rule fires on Order activation.
+5. **Subscription / Billing Schedules** — for subscription demos, verify `SubscriptionManagement` records exist (RCA) or `SBQQ__Subscription__c` records exist (CPQ); `BillingSchedule` has non-zero lines.
+6. **Revenue Cloud feature flags** — confirm the org has the `RevenueCloudAdvanced` or `SBQQ__` feature enabled (industry-precheck reconfirm).
+7. **Product Rules + Pricing Rules** — verify at least one `ProductRule` and `PricingRule` are `Active = true` and reference the demo's products.
+
+Routes repairs to `sf-revenue-cloud`.
+
+#### Tableau Validation
+
+If a step touches Tableau, Tableau Next, or CRM Analytics, validate:
+
+1. **Workbooks / Dashboards published** — for Tableau Desktop/Server/Cloud, confirm the workbook URL is reachable and returns the expected title; for CRM Analytics, query `WaveDashboard` / `AnalyticsDashboard` for the expected assets. For Tableau Next, query the Semantic Model / Pulse Metric records.
+2. **Data sources connected** — Tableau Server/Cloud published data sources have a recent successful refresh; CRM Analytics datasets have a `LastDataUpdateDate` within the freshness window the demoscript expects.
+3. **Pulse Metrics (Tableau Next)** — verify at least one `PulseMetric` is published and has recent datapoints; confirm the subscription/follow count matches the demo persona.
+4. **Einstein Discovery stories** — if the demo showcases Einstein Discovery, verify the story is deployed (`EDStory`) and the model is trained; confirm predictions are non-null for the demo records.
+5. **Embed in Salesforce** — if the demo shows a Tableau viz embedded on a record page, verify the `FlexiPage` references the Tableau LWC and the embed token / Connected App is valid.
+6. **Permissions to view** — verify the demo user has the right permission set assignments for CRM Analytics (`CRMAnalyticsPlus` or equivalent); Tableau uses the Connected App / SSO principal.
+
+Routes repairs to `sf-tableau`.
+
+#### MuleSoft Validation
+
+If a step touches MuleSoft Anypoint Platform, MuleSoft for Flow, or DataWeave, validate:
+
+1. **Named Credentials pointing at Anypoint** — query `NamedCredential` and confirm the callout endpoint matches the Anypoint API instance URL (not a stale sandbox URL); confirm OAuth/mTLS is valid.
+2. **MuleSoft for Flow connectors online** — verify the Connected App for MuleSoft for Flow is authorized; query `InvocableAction` for MuleSoft-provided flow actions to confirm the connector is loaded.
+3. **External Services registered** — query `ExternalServiceRegistration` for the Anypoint Exchange-published API; confirm the latest version is registered and the schema matches the demo's invocable action.
+4. **API Manager policies** — for demos that highlight policy enforcement (rate limit, client ID), confirm the policy is applied on the API instance (via Anypoint REST or a smoke call that expects the policy to fire).
+5. **DataWeave transforms in Flow** — if the demoscript uses a DataWeave step inside a Salesforce Flow, verify the Flow is active and the DataWeave expression compiles (can test by triggering the flow once with safe input).
+6. **Runtime Manager app status** — if the demo mentions the Mule application directly, confirm it is `Started` on CloudHub / RTF.
+
+Routes repairs to `sf-mulesoft` + `sf-integration`.
+
+#### Slack Validation (Extended)
+
+In addition to the existing Slack section above, for Slack-First demos (Canvases, Slack AI, Slack Sales Elevate, Slack for Service):
+
+1. **Slack app installed** — query `ConnectedApplication` for the Salesforce-Slack bridge; confirm the app manifest version matches the demoscript's expected features.
+2. **Workflows published** — verify the Slack workflows referenced by the demoscript are `Published` (via Slack Workflow Builder or manifest inspection); the bot user is a member of the target channels.
+3. **Slack Canvases** — if the demo shows an auto-generated Canvas, verify the Canvas template exists and the bot has `canvases:write` scope.
+4. **Slack AI Recaps** — if the demo highlights AI summaries, confirm the Slack AI feature is provisioned on the workspace (cannot be verified from Salesforce; escalate to manual check if ambiguous).
+5. **Sales Elevate / Service panels** — verify the Slack Sales Elevate or Slack for Service LWC / panel is deployed and the Connected App scopes include `record.read`.
+6. **Channel routing** — verify the Flow or trigger that pushes a record event to Slack references the right `ChannelConfiguration__c` / custom metadata entry the demoscript expects.
+
+Routes repairs to `sf-slack` + `sf-integration`.
+
+#### Industry Cloud Validation Blocks
+
+For any step that touches an industry cloud, defer to the owning skill's detection pattern and score against its rubric. One block per industry:
+
+**FSC (Financial Services Cloud)** -> `sf-industry-fsc`:
+- Household account present (`AccountContactRelation` with Role = 'Household Member' or FSC's Household Model v2)
+- Financial Accounts (`FinServ__FinancialAccount__c`) linked to the household
+- Life Events (`FinServ__LifeEventMoment__c` or the v2 `FinServ__LifeEvent__c`) recent within the demo window
+- Financial Goals, Relationship Map population
+- ARC (Actionable Relationship Center) configured if demo highlights the visual tree
+
+**Health Cloud** -> `sf-industry-health`:
+- Patient record (Person Account with Health Cloud patient attributes)
+- Care Plan template active (`CarePlanTemplate`) with at least one `CarePlanProblem` + `CarePlanGoal`
+- Care Team members resolved (`CareTeamMember`)
+- Care Request in a non-terminal status (`CareRequest`)
+- Clinical Encounter / Assessment records if the demo shows them
+- PHI redaction verified in sandbox (no real patient data present)
+
+**Education Cloud / EDA** -> `sf-industry-education`:
+- Student record (Contact or EducationAccount depending on variant)
+- Program Enrollment active, Course Connections present, Affiliations to Educational Institution
+- Term / Academic Period current
+- Advising / Recruiting / Retention records populated if the demo covers them
+
+**Public Sector Solutions** -> `sf-industry-public-sector`:
+- Constituent intake record (`BusinessLicense`, `RegulatoryCodeCase`, or `PublicComplaint`)
+- Benefit, License, Permit, Inspection records per demo step
+- Regulatory Code Violation tied to the right jurisdiction
+- Section 508 accessibility guardrails enforced on pages the demo shows
+
+**Field Service** -> `sf-field-service`:
+- Work Order + Work Order Line Items resolved
+- Service Appointment scheduled with `SchedStartTime` future-dated
+- Service Resource + Service Territory populated
+- Scheduling Policy + Dispatcher Console configured
+- Mobile offline briefcase includes the demo's WOLIs
+
+**Manufacturing Cloud** -> `sf-industry-manufacturing`:
+- Sales Agreement active with forecast/actual splits
+- Account Forecast has recent calculation
+- Rebate Program with non-zero accruals
+
+**Consumer Goods Cloud** -> `sf-industry-consumer-goods`:
+- Retail Store + Visit records populated
+- Trade Promotion active, Assortment resolved
+- Perfect Store compliance task open
+
+**Communications Cloud** -> `sf-industry-communications`:
+- Enterprise Product Catalog items loaded
+- Order Decomposition pattern executes for the demo product
+- Number Management pool non-empty
+
+**Media Cloud** -> `sf-industry-media`:
+- Subscriber + Billing Account records resolved
+- Entitlement active
+
+**Energy & Utilities Cloud** -> `sf-industry-energy`:
+- Premise + Service Point records linked
+- Meter with recent interval data
+- Work Request in a non-terminal status
+
+Each block links to its owning `sf-industry-*` skill for the detection SOQL and full prerequisite matrix. Routes repairs accordingly.
+
 #### Dashboard Validation
 
 If a step has type `dashboard`, validate reports and dashboards:
@@ -506,7 +674,11 @@ UNRESOLVED ISSUES (requires manual intervention):
 
 ---
 
-## Scoring Rubric (200 Points)
+## Scoring Rubric (base 200 + cross-cloud add-on categories)
+
+The base 200-point rubric covers the original 10 categories (unchanged). Cross-cloud and industry validation add new **prorated** categories that appear in the score ONLY when the demo exercises those surfaces. If a demo has no Sales Cloud step, the Sales Cloud category is not assessed, it does not appear in the scorecard, and the denominator shrinks accordingly. This preserves additivity: nothing in the legacy rubric changes.
+
+### Base rubric (200 pts — unchanged)
 
 | Category | Points | What's Checked |
 |----------|--------|----------------|
@@ -521,9 +693,43 @@ UNRESOLVED ISSUES (requires manual intervention):
 | **Intake Simulation** | 20 | Guest intake form creates ApplicationForm + Applicant + Person Account + Task; trigger chain verified |
 | **Dashboard & Reporting** | 20 | Report types, reports, dashboard exist and reference correct columns |
 
-**Thresholds**: 180+ Deploy-ready | 140-179 Review needed | <140 Blocked -- requires manual intervention
+### Cross-cloud add-on categories (only scored when demoed)
 
-Scoring is prorated based on which categories apply. If a demo has no Experience Cloud steps, score is out of 180 and thresholds adjust proportionally. Same for Intake Simulation, E2E Simulation, and Visual/UI.
+| Add-on category | Points | What's Checked | Routes to |
+|---|---|---|---|
+| **Sales Cloud** | 20 | Opportunities per stage, Forecast Types active, cadences running, Pipeline Inspection reachable | sf-sales-cloud (sf-sales-opportunity / -forecasting / -engagement) |
+| **Service Cloud** | 20 | Entitlements active, Omni-Channel queue capacity, Knowledge published, Case Assignment / Escalation rules | sf-service-cloud (sf-service-case / -omnichannel / -knowledge) |
+| **Marketing Cloud (Growth or MCAE)** | 20 | MCG journey active + segment membership + templates published; OR MCAE automation rules firing + forms published + connector verified | sf-marketing-cloud-growth / sf-marketing-account-engagement |
+| **Revenue Cloud** | 20 | Price Books + Products active, quote flow end-to-end, subscription/billing schedule populated | sf-revenue-cloud |
+| **Tableau / Analytics** | 20 | Workbooks/dashboards published, data sources connected + fresh, Pulse metrics non-zero, Einstein Discovery story trained | sf-tableau |
+| **MuleSoft** | 20 | Named Credentials -> Anypoint, MuleSoft for Flow connectors online, External Services registered, API Manager policies applied | sf-mulesoft + sf-integration |
+| **Slack (Slack-First)** | 20 | Slack app installed, workflows published, Canvases accessible, channel routing correct | sf-slack + sf-integration |
+| **FSC** | 20 | Household resolved, Financial Accounts linked, Life Event recent, Financial Goal populated, Relationship Map/ARC present | sf-industry-fsc |
+| **Health Cloud** | 20 | Patient record, active Care Plan template, Care Team resolved, Care Request in non-terminal status, PHI redacted in sandbox | sf-industry-health |
+| **Education Cloud / EDA** | 20 | Student + Program Enrollment + Course Connection + Affiliation + Term current | sf-industry-education |
+| **Public Sector Solutions** | 20 | Benefit / License / Permit / Inspection records per demo step, Regulatory Code tie, Section 508 guardrails | sf-industry-public-sector |
+| **Field Service** | 20 | Work Order + Service Appointment (future), Service Resource + Territory, Scheduling Policy, mobile briefcase | sf-field-service |
+| **Manufacturing Cloud** | 20 | Sales Agreement active, Account Forecast calculated, Rebate Program with accruals | sf-industry-manufacturing |
+| **Consumer Goods / Communications / Media / E&U** | 20 each | Per-industry object population (Visit, Offer, Subscriber, Premise/Meter) | sf-industry-consumer-goods / -communications / -media / -energy |
+
+### Thresholds (prorated)
+
+For a demo with N applicable categories, total possible = N × 20. Thresholds scale the same way:
+
+- **>= 90% of possible** -> Deploy-ready (e.g., 180/200, or 216/240 with two add-ons)
+- **70 - 89%** -> Review needed
+- **< 70%** -> Blocked; requires manual intervention
+
+Scoring is **prorated** based on which categories apply. The legacy 200-point ceiling stays intact for nonprofit volunteer demos (no add-ons). A cross-cloud demo that includes Sales + Service + Slack adds 60 points and targets >= 234/260.
+
+Example prorated scorecards:
+
+```
+Nonprofit volunteer demo:       180 / 200 (Deploy-ready)
+FSC + Agentforce + Tableau:     216 / 240 (Deploy-ready)   [+FSC +Tableau]
+Sales + Service + MC Growth:    205 / 260 (Review)         [+Sales +Service +MC]
+Health + Field Service + Slack: 198 / 260 (Review)         [+Health +FieldService +Slack]
+```
 
 ---
 
