@@ -13,6 +13,24 @@ metadata:
   version: "1.1.0"
   author: "Jag Valaiyapathy"
   inspiration: "PSLab by Oumaima Arbani (github.com/OumArbani/PSLab)"
+release_pinned: "Spring '26"
+docs_last_verified: 2026-05-01
+upstream_refs:
+  - url: https://help.salesforce.com/s/articleView?id=sf.perm_sets_overview.htm
+    anchor: ""
+    sha256: ""
+    importance: authoritative
+  - url: https://developer.salesforce.com/docs/atlas.en-us.securityImplGuide.meta/securityImplGuide/
+    anchor: ""
+    sha256: ""
+    importance: authoritative
+  - url: https://architect.salesforce.com/security
+    anchor: ""
+    sha256: ""
+    importance: supplemental
+upstream_release_notes:
+  - release: "Spring '26"
+    url: https://help.salesforce.com/s/articleView?id=release-notes.rn_security.htm
 ---
 
 # sf-permissions

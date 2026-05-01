@@ -13,6 +13,24 @@ metadata:
   version: "1.0.0"
   author: "Gnanasekaran Thoppae"
   phase: "Prepare"
+release_pinned: "Spring '26"
+docs_last_verified: 2026-05-01
+upstream_refs:
+  - url: https://help.salesforce.com/s/articleView?id=sf.c360_a_data_streams.htm
+    anchor: ""
+    sha256: ""
+    importance: authoritative
+  - url: https://developer.salesforce.com/docs/data/data-cloud-dev/guide/dc-dlo.html
+    anchor: ""
+    sha256: ""
+    importance: authoritative
+  - url: https://architect.salesforce.com/design/data-cloud
+    anchor: ""
+    sha256: ""
+    importance: supplemental
+upstream_release_notes:
+  - release: "Spring '26"
+    url: https://help.salesforce.com/s/articleView?id=release-notes.rn_datacloud_streams.htm
 ---
 
 # sf-datacloud-prepare: Data Cloud Prepare Phase

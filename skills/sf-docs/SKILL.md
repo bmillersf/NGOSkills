@@ -9,6 +9,24 @@ license: MIT
 metadata:
   version: "0.4.0"
   author: "Jag Valaiyapathy"
+release_pinned: "Spring '26"
+docs_last_verified: 2026-05-01
+upstream_refs:
+  - url: https://developer.salesforce.com/docs
+    anchor: ""
+    sha256: ""
+    importance: authoritative
+  - url: https://help.salesforce.com/s
+    anchor: ""
+    sha256: ""
+    importance: authoritative
+  - url: https://architect.salesforce.com
+    anchor: ""
+    sha256: ""
+    importance: supplemental
+upstream_release_notes:
+  - release: "Spring '26"
+    url: https://help.salesforce.com/s/articleView?id=release-notes.rn_summary.htm
 ---
 
 # sf-docs

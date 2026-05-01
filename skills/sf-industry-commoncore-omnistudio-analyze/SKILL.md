@@ -16,6 +16,24 @@ license: MIT
 metadata:
   version: "1.0.0"
   author: "David Ryan (weytani)"
+release_pinned: "Spring '26"
+docs_last_verified: 2026-05-01
+upstream_refs:
+  - url: https://developer.salesforce.com/docs/platform/omnistudio/guide/os-design.html
+    anchor: ""
+    sha256: ""
+    importance: authoritative
+  - url: https://help.salesforce.com/s/articleView?id=sf.os_omnistudio_overview.htm
+    anchor: ""
+    sha256: ""
+    importance: authoritative
+  - url: https://architect.salesforce.com/design/industries
+    anchor: ""
+    sha256: ""
+    importance: supplemental
+upstream_release_notes:
+  - release: "Spring '26"
+    url: https://help.salesforce.com/s/articleView?id=release-notes.rn_omnistudio.htm
 ---
 
 # sf-industry-commoncore-omnistudio-analyze: OmniStudio Cross-Component Analysis

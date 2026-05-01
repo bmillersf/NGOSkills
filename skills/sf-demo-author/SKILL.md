@@ -17,6 +17,24 @@ metadata:
   version: "2.0.0"
   author: "Brian Miller"
   scoring: "150 points across 6 categories"
+release_pinned: "Spring '26"
+docs_last_verified: 2026-05-01
+upstream_refs:
+  - url: https://architect.salesforce.com
+    anchor: ""
+    sha256: ""
+    importance: authoritative
+  - url: https://help.salesforce.com/s/articleView?id=sf.quickstart.htm
+    anchor: ""
+    sha256: ""
+    importance: authoritative
+  - url: https://trailhead.salesforce.com/content/learn/modules/solution-kit-accelerator
+    anchor: ""
+    sha256: ""
+    importance: supplemental
+upstream_release_notes:
+  - release: "Spring '26"
+    url: https://help.salesforce.com/s/articleView?id=release-notes.rn_summary.htm
 ---
 
 # sf-demo-author: Demo Script Authoring from Raw Notes

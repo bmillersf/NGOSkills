@@ -14,6 +14,24 @@ metadata:
   version: "1.0.0"
   author: "Gnanasekaran Thoppae"
   phase: "Retrieve"
+release_pinned: "Spring '26"
+docs_last_verified: 2026-05-01
+upstream_refs:
+  - url: https://developer.salesforce.com/docs/data/data-cloud-query/guide/overview.html
+    anchor: ""
+    sha256: ""
+    importance: authoritative
+  - url: https://help.salesforce.com/s/articleView?id=sf.c360_a_query_editor.htm
+    anchor: ""
+    sha256: ""
+    importance: authoritative
+  - url: https://architect.salesforce.com/design/data-cloud
+    anchor: ""
+    sha256: ""
+    importance: supplemental
+upstream_release_notes:
+  - release: "Spring '26"
+    url: https://help.salesforce.com/s/articleView?id=release-notes.rn_datacloud_query.htm
 ---
 
 # sf-datacloud-retrieve: Data Cloud Retrieve Phase

@@ -12,6 +12,24 @@ metadata:
   version: "2.1.0"
   author: "Jag Valaiyapathy"
   scoring: "165 points across 8 categories (SLDS 2 + Dark Mode compliant)"
+release_pinned: "Spring '26"
+docs_last_verified: 2026-05-01
+upstream_refs:
+  - url: https://developer.salesforce.com/docs/platform/lwc/guide/
+    anchor: ""
+    sha256: ""
+    importance: authoritative
+  - url: https://developer.salesforce.com/docs/component-library/overview/components
+    anchor: ""
+    sha256: ""
+    importance: authoritative
+  - url: https://architect.salesforce.com/design/lwc
+    anchor: ""
+    sha256: ""
+    importance: supplemental
+upstream_release_notes:
+  - release: "Spring '26"
+    url: https://help.salesforce.com/s/articleView?id=release-notes.rn_lwc.htm
 ---
 
 # sf-lwc: Lightning Web Components Development

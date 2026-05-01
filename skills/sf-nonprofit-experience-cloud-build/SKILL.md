@@ -23,6 +23,24 @@ metadata:
     - sf-nonprofit-experience-cloud-ux
     - sf-lwc
     - sf-subagent-orchestration
+release_pinned: "Spring '26"
+docs_last_verified: 2026-05-01
+upstream_refs:
+  - url: https://developer.salesforce.com/docs/atlas.en-us.exp_cloud_lwr.meta/exp_cloud_lwr/
+    anchor: ""
+    sha256: ""
+    importance: authoritative
+  - url: https://help.salesforce.com/s/articleView?id=sf.networks_communitybuilder_overview.htm
+    anchor: ""
+    sha256: ""
+    importance: authoritative
+  - url: https://architect.salesforce.com/design/experience-cloud
+    anchor: ""
+    sha256: ""
+    importance: supplemental
+upstream_release_notes:
+  - release: "Spring '26"
+    url: https://help.salesforce.com/s/articleView?id=release-notes.rn_networks.htm
 ---
 
 # sf-nonprofit-experience-cloud-build: Nonprofit Portal Build Methodology

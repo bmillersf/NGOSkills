@@ -3,6 +3,10 @@ name: babysit
 description: >-
   Keep a PR merge-ready by triaging comments, resolving clear conflicts, and
   fixing CI in a loop.
+release_pinned: "N/A"
+docs_last_verified: 2026-05-01
+upstream_refs: []
+upstream_release_notes: []
 ---
 # Babysit PR
 Your job is to get this PR to a merge-ready state.

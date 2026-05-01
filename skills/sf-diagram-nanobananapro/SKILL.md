@@ -15,6 +15,24 @@ metadata:
   version: "1.6.0"
   author: "Jag Valaiyapathy"
   scoring: "80 points across 5 categories"
+release_pinned: "Spring '26"
+docs_last_verified: 2026-05-01
+upstream_refs:
+  - url: https://ai.google.dev/gemini-api/docs/image-generation
+    anchor: ""
+    sha256: ""
+    importance: authoritative
+  - url: https://mermaid.js.org/intro/
+    anchor: ""
+    sha256: ""
+    importance: authoritative
+  - url: https://architect.salesforce.com
+    anchor: ""
+    sha256: ""
+    importance: supplemental
+upstream_release_notes:
+  - release: "Spring '26"
+    url: https://ai.google.dev/gemini-api/docs/release-notes
 ---
 
 # sf-diagram-nanobananapro: Salesforce Visual AI Skill

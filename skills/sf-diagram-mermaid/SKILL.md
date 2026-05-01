@@ -16,6 +16,24 @@ metadata:
   version: "1.4.0"
   author: "Jag Valaiyapathy"
   scoring: "80 points across 5 categories"
+release_pinned: "Spring '26"
+docs_last_verified: 2026-05-01
+upstream_refs:
+  - url: https://mermaid.js.org/intro/
+    anchor: ""
+    sha256: ""
+    importance: authoritative
+  - url: https://mermaid.js.org/syntax/flowchart.html
+    anchor: ""
+    sha256: ""
+    importance: authoritative
+  - url: https://architect.salesforce.com
+    anchor: ""
+    sha256: ""
+    importance: supplemental
+upstream_release_notes:
+  - release: "Spring '26"
+    url: https://github.com/mermaid-js/mermaid/releases
 ---
 
 # sf-diagram-mermaid: Salesforce Diagram Generation

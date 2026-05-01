@@ -19,6 +19,24 @@ metadata:
   version: "1.0.0"
   author: "Brian Miller"
   scoring: "120 points across 5 categories"
+release_pinned: "Spring '26"
+docs_last_verified: 2026-05-01
+upstream_refs:
+  - url: https://playwright.dev/docs/intro
+    anchor: ""
+    sha256: ""
+    importance: authoritative
+  - url: https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_org_unified.htm
+    anchor: ""
+    sha256: ""
+    importance: authoritative
+  - url: https://playwright.dev/docs/selectors
+    anchor: ""
+    sha256: ""
+    importance: supplemental
+upstream_release_notes:
+  - release: "Spring '26"
+    url: https://playwright.dev/docs/release-notes
 ---
 
 # sf-demo-playwright: Demo Test Suite and Presenter Guide Generator
