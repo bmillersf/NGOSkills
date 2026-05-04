@@ -30,7 +30,7 @@ metadata:
   version: "1.0.0"
   author: "NGOSkills"
 release_pinned: "Spring '26"
-docs_last_verified: 2026-05-01
+docs_last_verified: 2026-05-04
 upstream_refs:
   - url: https://help.salesforce.com/s/articleView?id=sf.edc_overview.htm&type=5
     anchor: ""
@@ -40,6 +40,7 @@ upstream_refs:
     anchor: ""
     sha256: ""
     importance: authoritative
+    status: "broken (410 / URL No Longer Exists as of 2026-05-04) — EDA docs retired from Power of Us Hub; Education Cloud is the supported path"
   - url: https://architect.salesforce.com/design/industries/education
     anchor: ""
     sha256: ""
@@ -156,6 +157,7 @@ sf package installed list -o <alias>
 - Run EDA and Education Cloud side-by-side during transition; keep the source of truth explicit per workflow. Decide object by object, not globally.
 - Custom fields, validation rules, flows, and Apex that reference `hed__` objects will **not** auto-port. Treat them as net-new builds against the native data model.
 - Reporting: dashboards rebuilt against native objects; legacy EDA dashboards will continue to work only against surviving `hed__` data.
+- Doc availability: the canonical Power of Us Hub EDA Documentation page (`powerofus.force.com/s/article/EDA-Documentation`) now returns **"URL No Longer Exists"** (verified 2026-05-04). Treat this as a sunset signal — EDA runtime still works, but authoritative EDA reference material is being consolidated onto help.salesforce.com Education Cloud docs, not the Hub. Cache local copies of any EDA setup guides you still depend on.
 
 ### When to stay on EDA
 
