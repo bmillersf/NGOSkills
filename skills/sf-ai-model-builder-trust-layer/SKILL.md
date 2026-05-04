@@ -36,7 +36,7 @@ metadata:
   version: "1.0.0"
   author: "NGOSkills"
 release_pinned: "Spring '26"
-docs_last_verified: 2026-05-01
+docs_last_verified: 2026-05-04
 upstream_refs:
   - url: https://help.salesforce.com/s/articleView?id=sf.einstein_trust_layer.htm
     importance: authoritative
@@ -168,7 +168,7 @@ Use when the default Einstein models don't meet a requirement (regulated region,
 
 1. Create a **Named Credential** (delegate to `sf-integration`) pointing at the provider.
 2. `Setup → Einstein Studio → Model Builder → New Model`.
-3. Choose provider: Azure OpenAI / AWS Bedrock / Google Vertex / OpenAI / Anthropic / Custom.
+3. Choose provider. BYOLLM foundation-model providers currently supported: Amazon Bedrock, Azure OpenAI, OpenAI, Vertex AI (Google). Any other model (including Anthropic direct, IBM Granite, Databricks DBRX, or self-hosted open-source) must be registered via the **BYOLLM Open Connector** (OpenAI-API-compatible shim) rather than as a first-class provider.
 4. Choose **Generative** or **Embedding**.
 5. Fill the **Model Card**:
    - API name (e.g., `Acme_Bedrock_Claude45Sonnet`)
@@ -333,11 +333,19 @@ trustLayer:
 
 ### 8.5 Provider quick reference
 
-| Provider | Generative model family | Zero-retention default | Notes |
-|---|---|---|---|
-| Einstein-managed (sfdc_ai__Default*) | GPT-4o, Claude on Bedrock, Gemini, Nova | Enforced | No BYOM setup required |
-| Azure OpenAI (BYOM) | GPT-4o, GPT-5, o-series | Requires opt-out filing | Deployment-name pinned |
-| AWS Bedrock (BYOM) | Claude 4.x, Llama, Nova, Mistral | Default | Region-pinned |
-| Google Vertex (BYOM) | Gemini 2.5 / 3 | Default per Vertex governance | Project + region pinned |
-| OpenAI direct (BYOM) | GPT-4o, GPT-5 | Contract-dependent | Rarely used when Azure is available |
-| Anthropic direct (BYOM) | Claude 4.5 | Contract-dependent | Bedrock route usually preferred |
+Salesforce-managed standard configurations (`sfdc_ai__Default*` API names, all inside the Salesforce Trust Boundary when hosted on Bedrock; Azure OpenAI / OpenAI direct / Vertex routes traverse partner trust zones):
+
+| Provider route | Current standard models (API-name stems) | Notes |
+|---|---|---|
+| Amazon Bedrock (inside Salesforce Trust Boundary) | Amazon Nova Lite / Pro; Anthropic Claude Haiku 4.5, Sonnet 4 / 4.5 / 4.6, Opus 4.5 / 4.6 (Beta) / 4.7 (Beta); NVIDIA Nemotron 3 Nano 30B (Beta) | Region-pinned; zero-retention default |
+| Azure OpenAI / OpenAI (geo-aware) | GPT-4o, GPT-4o Mini, GPT-4.1, GPT-4.1 Mini, GPT-5, GPT-5 Mini, GPT-5.1, GPT-5.2, GPT-5.4, O3, O4 Mini | Azure requires abuse-monitoring opt-out for zero-retention; geo-aware models auto-route to nearest region matching Data 360 provisioning |
+| Vertex AI (Google) | Gemini 2.5 Flash / Flash Lite / Pro; Gemini 3 Flash; Gemini 3 Pro (Beta, retiring 2026-04-23); Gemini 3.1 Flash Lite (Beta), Gemini 3.1 Pro (Beta) | Project + region pinned |
+| Embeddings (Models API only) | `sfdc_ai__DefaultAzureOpenAITextEmbeddingAda_002`, `sfdc_ai__DefaultOpenAITextEmbeddingAda_002` | Generative-Embedding split enforced at registration |
+
+**BYOLLM foundation providers:** Amazon Bedrock, Azure OpenAI, OpenAI, Vertex AI. All other models (Anthropic direct, IBM Granite, Databricks DBRX, custom in-house) must use the **BYOLLM Open Connector** (OpenAI-compatible spec; see Einstein AI Platform GitHub repo). BYOLLM consumes 30% fewer Einstein Requests than standard models. Deprecation reroutes handled automatically by Salesforce (e.g., Claude 3 Haiku → Claude Haiku 4.5; GPT 3.5 Turbo → GPT-4o Mini; Gemini 2.0 Flash → Gemini 2.5 Flash).
+
+**Beta models:** display as `(Disabled)` until explicitly enabled in AI Models; run under Beta Services Terms; use sandbox/dev only.
+
+### 8.6 Context-window cap under data masking
+
+All models are capped at **65,536 tokens** total context (input + output) when Trust Layer data masking is ON. This supersedes the provider's native context window (e.g., Claude Sonnet 200K, Gemini Pro 1M). If a template truly needs the full provider window, masking must be disabled for that path — which requires a documented compliance exception; never do this silently. Record the effective context ceiling on the Model Card.
