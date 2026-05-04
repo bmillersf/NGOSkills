@@ -14,7 +14,7 @@ metadata:
   author: "Gnanasekaran Thoppae"
   phase: "Prepare"
 release_pinned: "Spring '26"
-docs_last_verified: 2026-05-01
+docs_last_verified: 2026-05-04
 upstream_refs:
   - url: https://help.salesforce.com/s/articleView?id=sf.c360_a_data_streams.htm
     anchor: ""
@@ -34,6 +34,8 @@ upstream_release_notes:
 ---
 
 # sf-datacloud-prepare: Data Cloud Prepare Phase
+
+> **Product rename note (2025-10-14):** Salesforce rebranded **Data Cloud** to **Data 360**. Official Help docs, UI labels, and tab names now read "Data 360" (e.g., "Data Streams in Data 360", "Data 360 Data Streams tab"). The `sf data360 *` CLI namespace already reflects this. Both names still refer to the same product; prefer **Data 360** in new user-facing copy, keep the existing `sf-datacloud-*` skill names and `sf data360` commands unchanged.
 
 Use this skill when the user needs **ingestion and lake preparation work**: data streams, Data Lake Objects, transforms, or DocAI-based extraction.
 
