@@ -15,20 +15,22 @@ metadata:
   author: "Gnanasekaran Thoppae"
   phase: "Harmonize"
 release_pinned: "Spring '26"
-docs_last_verified: 2026-05-01
+docs_last_verified: 2026-05-04
 upstream_refs:
   - url: https://help.salesforce.com/s/articleView?id=sf.c360_a_identity_resolution.htm
     anchor: ""
     sha256: ""
     importance: authoritative
-  - url: https://developer.salesforce.com/docs/data/data-cloud-dev/guide/dc-dmo.html
+  - url: https://developer.salesforce.com/docs/atlas.en-us.c360a_api.meta/c360a_api/c360a_api_dmo.htm
     anchor: ""
     sha256: ""
     importance: authoritative
-  - url: https://architect.salesforce.com/design/data-cloud
+    note: "Previous dc-dmo.html path returned 404 on 2026-05-04; Data Cloud rebranded to Salesforce Data 360 — verify canonical DMO dev-guide URL."
+  - url: https://architect.salesforce.com/
     anchor: ""
     sha256: ""
     importance: supplemental
+    note: "Previous /design/data-cloud path returned 404 on 2026-05-04 following Data 360 rebrand."
 upstream_release_notes:
   - release: "Spring '26"
     url: https://help.salesforce.com/s/articleView?id=release-notes.rn_datacloud_identity_resolution.htm
