@@ -17,17 +17,17 @@ metadata:
   author: "Gnanasekaran Thoppae"
   runtime: "External sf data360 community CLI plugin"
 release_pinned: "Spring '26"
-docs_last_verified: 2026-05-01
+docs_last_verified: 2026-05-04
 upstream_refs:
   - url: https://help.salesforce.com/s/articleView?id=sf.c360_a_data_cloud.htm
     anchor: ""
     sha256: ""
     importance: authoritative
-  - url: https://developer.salesforce.com/docs/data/data-cloud-dev/guide/overview.html
+  - url: https://help.salesforce.com/s/articleView?id=sf.c360_a_data_cloud_developer.htm
     anchor: ""
     sha256: ""
     importance: authoritative
-  - url: https://architect.salesforce.com/design/data-cloud
+  - url: https://architect.salesforce.com/decision-guides
     anchor: ""
     sha256: ""
     importance: supplemental
@@ -193,6 +193,7 @@ Typical verification:
 
 ## High-Signal Gotchas
 
+- As of October 14, 2025, **Data Cloud has been rebranded to Data 360**. Functionality and CLI surface (`sf data360`) are unchanged, but user-facing docs, Setup menus, and marketing materials now say "Data 360." Expect mixed terminology in orgs and help content during the transition; do not treat "Data 360" as a new product.
 - `connection list` requires `--connector-type`.
 - `dmo list --all` is useful when you need the full catalog, but first-page `dmo list` is often enough for readiness checks and much faster.
 - Segment creation may need `--api-version 64.0`.
