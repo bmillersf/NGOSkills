@@ -28,7 +28,7 @@ metadata:
   version: "1.0.0"
   author: "NGOSkills"
 release_pinned: "Spring '26"
-docs_last_verified: 2026-05-01
+docs_last_verified: 2026-05-04
 upstream_refs:
   - url: https://playwright.dev/docs/intro
     anchor: ""
@@ -324,6 +324,9 @@ page.getByRole('link', { name: 'Setup' })
 
 // Setup quick-find (left nav)
 page.getByPlaceholder('Quick Find')
+
+// Form field by associated label (preferred over CSS for inputs)
+page.getByLabel('Label Text')
 
 // Save button (most Setup pages)
 page.getByRole('button', { name: 'Save' })
