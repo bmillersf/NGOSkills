@@ -7,3 +7,7 @@
 content/raw/
 content/manifest.json
 .venv-nke/
+
+# Vendored third-party skill packs (cloned by scripts/vendor-install.sh to
+# the pinned SHAs in vendor-pins.txt). Commit the pins, not the trees.
+.vendor/

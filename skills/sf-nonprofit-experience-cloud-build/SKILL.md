@@ -96,12 +96,43 @@ Apply this skill whenever the user asks to:
 - **Phase 3 decomposition** — must begin with a written standard-component audit (see below). No custom-LWC subagents are spawned until the audit is captured.
 - **Phase 5 verification** — the review summary must list the standard:custom ratio and the one-line justification for each custom component.
 
+## Everything is Metadata API — do NOT automate Experience Builder
+
+Every page composition, branding change, route, guest access toggle, navigation menu item, and theme decision in an Experience Cloud site is expressible as Metadata API files in the ExperienceBundle, Network, Profile, NavigationMenu, and BrandingSet types. Author those JSON/XML files directly, deploy with `sf project deploy start`, and publish with `sf community publish --name "<Site Name>"`.
+
+**Do not reach for Playwright or Experience Builder drag-drop** to wire up components, pages, or branding. The Builder UI is iframe-wrapped and shadow-DOM heavy; selectors are fragile and shift between releases. The same state is authorable in ~10 minutes of JSON editing and deploys reliably across orgs. If you find yourself generating Playwright selectors to drag a component onto a page, stop and re-read [reference.md](reference.md) — the metadata path exists.
+
+The only legitimate UI-only steps are (a) visually previewing a theme and (b) troubleshooting when a metadata-only deploy isn't reflecting — both rare. Even `sf community publish` usually replaces the Builder's Publish button.
+
+## Phase 0 — Detect the site runtime (Aura vs LWR)
+
+Authoring rules diverge sharply between Aura and LWR sites. Get the flavor right before copying any template, or gotchas compound.
+
+1. **Identify the ExperienceBundle name** — it's often NOT the Network name. Run:
+
+   ```bash
+   sf data query --query "SELECT Name, UrlPathPrefix FROM Site WHERE UrlPathPrefix LIKE '<prefix>%'"
+   ```
+
+   The `Site.Name` (e.g. `CSEA1`) is the `sf project retrieve --metadata "ExperienceBundle:<Name>"` target — NOT the Network name (`CSEA`). A numeric suffix is common for Aura sites.
+
+2. **First publish materializes the bundle.** Until `sf community publish --name "<Network Name>"` runs once, `ExperienceBundle:<Name>` retrieves as "Entity cannot be found." Publish first, wait 30-60s, then retrieve.
+
+3. **Detect Aura vs LWR** by looking at `experiences/<Bundle>/views/home.json` once retrieved:
+   - Aura: `componentName` is `siteforce:sldsTwoCol84SidebarFeaturedLayout` / `sldsOneColLayout` / `serviceBody`. Regions include `header` / `featured` / `content` / `sidebar` / `footer` / `sfdcHiddenRegion`.
+   - LWR: `componentName` is `siteforce:dynamicLayout`. Components wrapped in `forceCommunity:section`.
+
+4. **Customer Community Plus orgs almost always use Aura** (Customer Service template). Confirm with the `siteforce:serviceBody` check above.
+
+See [reference.md § Aura vs LWR](reference.md#aura-vs-lwr--two-site-runtimes-with-different-authoring-rules) for the side-by-side table of route/view/viewType/devName rules by runtime.
+
 ## The five-phase workflow
 
 Copy this checklist at the start of the engagement:
 
 ```
 Phase Progress:
+- [ ] Phase 0: Detect site runtime (Aura vs LWR) + discover ExperienceBundle name
 - [ ] Phase 1: Brand-mine the reference website
 - [ ] Phase 2: Translate brand into a design system
 - [ ] Phase 3: Compose standard-first, custom LWCs only where standard falls short
@@ -191,17 +222,26 @@ See [examples.md](examples.md) for concrete component shells you can adapt.
 
 This phase has the most Salesforce-specific gotchas. Get these wrong and nothing renders.
 
-**Routing — custom public pages require all four pieces:**
+**Routing — custom public pages** (rules split by runtime per Phase 0):
 
+LWR:
 1. `routes/<page>.json` → `devName: "<Page>__c"` (must end in `__c`), `routeType: "custom-<page>"`, `pageAccess: "Public"`
-2. `views/<page>.json` → `componentName: "siteforce:dynamicLayout"`, wrap your LWC in a `forceCommunity:section`
+2. `views/<page>.json` → `componentName: "siteforce:dynamicLayout"`, wrap LWC in a `forceCommunity:section`
 3. LWC's `js-meta.xml` → include `lightning__CommunityPage` in `targets`
-4. **Critical URL rule**: `@salesforce/community/basePath` **already includes `/s`**. Build URLs as `` `${basePath}/donate` ``, never `` `${basePath}/s/donate` ``
 
-**Guest access:**
+Aura:
+1. `routes/<page>.json` → `devName: "<Page_Name>"` (NO `__c` suffix), `routeType: "custom-<page>"`, `pageAccess: "Public"`, `pageAuthorization: "Public"`
+2. `views/<page>.json` → `componentName: "siteforce:sldsOneColLayout"` (or another Aura layout), `viewType` matches the `routeType` exactly, component dropped directly into `regions[].components` (no `forceCommunity:section` wrapper needed)
+3. Aura component's `.cmp-meta.xml` or LWC's `js-meta.xml` → must expose to Experience Cloud (`forceCommunity:availableForAllPageTypes` or `lightning__CommunityPage`)
 
-- `experiences/<Site>/config/<site>.json` → `"isAvailableToGuests": true`
-- `profiles/<Guest Profile>.profile-meta.xml` → add `<classAccesses>` for **every Apex class** any public LWC imports, even if the LWC hides content from guests — `@wire` still fires before render
+Both runtimes:
+- **Critical URL rule**: `@salesforce/community/basePath` **already includes `/s`**. Build URLs as `` `${basePath}/donate` ``, never `` `${basePath}/s/donate` ``
+- View's `viewType` MUST equal route's `routeType` (e.g. both `custom-application`). Deploy rejects mismatches.
+
+**Guest access — three toggles that ALL must be set:**
+
+- `experiences/<Site>/config/<siteName>.json` → `"isAvailableToGuests": true`. **Without this, every guest request redirects to `/login` even if individual routes say `pageAccess: Public`.** This is the single most common "my site keeps redirecting to login" cause.
+- `profiles/<Guest Profile>.profile-meta.xml` → add `<classAccesses>` for **every Apex class** any public LWC/Aura component imports, even if the component hides content from guests (Aura controllers and `@wire` fire before render). Grant `objectPermissions` (Create + Read together — Create requires Read) for any object a public form submits to. Remove required fields from `fieldPermissions` — required fields inherit access and Salesforce rejects the deploy otherwise.
 - `networks/<Site>.network-meta.xml` → `<status>Live</status>`. Network status **cannot** be changed via Apex DML; it must be set in metadata.
 
 **Deployment order matters:**
@@ -230,12 +270,17 @@ Before calling the site done, verify:
 - [ ] Authenticated user sees dashboard LWCs that guests don't
 - [ ] Every custom route is listed in NavigationMenu if user-discoverable
 - [ ] Community status in `sf data query "SELECT Name, Status FROM Network"` is `Live`
+- [ ] `experiences/<Bundle>/config/<siteName>.json` has `isAvailableToGuests: true` (the single most common cause of "my public site redirects to login")
+- [ ] Guest profile `<Site Name> Profile` has `classAccesses` for every Apex class any public LWC/Aura component imports
+- [ ] Guest profile has `objectPermissions` Create+Read (paired) for any object public forms submit to
 - [ ] **Standard-first audit**: list the final standard:custom component ratio and the one-line justification for each custom component. If any custom component's justification reduces to "for branding" or "to look nicer," revert to the standard equivalent and re-theme.
 
 If a route returns "Page not available," 95% of the time it is one of:
 - `/s/s/` double-prefix in a navigation URL (see basePath rule above)
-- `devName` missing `__c` suffix
-- View using `siteforce:sldsOneColLayout` instead of `siteforce:dynamicLayout`
+- LWR: `devName` missing `__c` suffix. Aura: `devName` has a `__c` suffix it shouldn't have.
+- LWR view using `siteforce:sldsOneColLayout` instead of `siteforce:dynamicLayout`
+- Aura view's `viewType` doesn't match the route's `routeType`
+- `isAvailableToGuests: false` in the ExperienceBundle config
 - Community not re-published after ExperienceBundle change
 
 ## Reference implementation

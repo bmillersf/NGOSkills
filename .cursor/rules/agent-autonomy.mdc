@@ -214,6 +214,62 @@ The Sunday 03:00 auto-refresh cron (Layer 2) only touches `refresh-report.md` an
 
 ---
 
+## 5. Workflow integration: gsd × superpowers × gstack
+
+Three vendored skill packs are installed side-by-side. They are complementary, not alternatives — each owns a distinct layer of the workflow. Apply them together rather than picking one.
+
+| Pack | Owns | Command prefix |
+|---|---|---|
+| **gsd** (get-shit-done) | Phase-based spec→plan→execute lifecycle, roadmap/milestone management, multi-phase orchestration | `/gsd-*` |
+| **superpowers** | Core engineering methodology: TDD, subagent-driven development, plan-writing, code-review hygiene | `/brainstorm`, `/write-plan`, `/execute-plan`, plus auto-triggering skills (`brainstorming`, `test-driven-development`, `executing-plans`, etc.) |
+| **gstack** | Cognitive-mode specialists: founder taste, paranoid review, browser-based QA, release mechanics | `/gstack-*` (49 skills: `/gstack-plan-ceo-review`, `/gstack-plan-eng-review`, `/gstack-review`, `/gstack-ship`, `/gstack-qa`, `/gstack-browse`, `/gstack-retro`, etc.) |
+
+### Composition rule (MANDATORY)
+
+**gstack's gears run inside gsd's phases, not instead of them.** Never substitute a gstack command for its gsd equivalent — they have different contracts. gsd commands write to `.planning/` and advance phase state; gstack commands are stateless cognitive passes. Run gstack as a rigor layer *within* the gsd phase that needs it.
+
+### Canonical phase-to-gear mapping
+
+| gsd phase | Superpowers skill | gstack gear to run inside it | Why |
+|---|---|---|---|
+| `/gsd-spec-phase` (defining WHAT) | `brainstorming` auto-triggers | `/gstack-plan-ceo-review` | Founder-mode pressure-tests whether the spec is describing the *right* product before it's locked |
+| `/gsd-discuss-phase` (gathering context) | — | `/gstack-plan-eng-review` | Tech-lead mode surfaces architecture constraints, failure modes, and diagrams before planning |
+| `/gsd-plan-phase` (writing PLAN.md) | `writing-plans`, `test-driven-development` | — | gsd-planner + superpowers TDD is sufficient here; don't layer a third planner |
+| `/gsd-execute-phase` (implementing) | `executing-plans`, `subagent-driven-development`, `dispatching-parallel-agents` | — | Superpowers owns execution; gstack doesn't overlap |
+| `/gsd-code-review` (pre-ship audit) | `requesting-code-review`, `receiving-code-review` | `/gstack-review` | Paranoid-staff-engineer mode hunts production-killing bugs (N+1, race conditions, trust-boundary violations) that gsd's reviewer may miss |
+| `/gsd-verify-work` (UAT) | — | `/gstack-qa` or `/gstack-qa-only` | Browser-based diff-aware verification — reads the diff, spins up Chromium, tests every affected page |
+| `/gsd-ship` (PR creation) | `finishing-a-development-branch` | `/gstack-ship` (optional) | gsd-ship handles planning-aware PRs; use gstack-ship only when operating outside a gsd phase |
+| After milestone completion | — | `/gstack-retro` | Data-driven retrospective from commit history; feeds back into the next `/gsd-new-milestone` |
+
+### When NOT to use a pack
+
+- **Don't use gstack-ship inside a gsd phase** — it bypasses `.planning/` state. Use `/gsd-ship` instead.
+- **Don't use gstack-plan-ceo-review after code is already written** — its value is pre-spec; after implementation it becomes scope-creep theater.
+- **Don't use gsd alone for pure exploratory coding** — spec→plan→execute overhead isn't worth it for a one-file script. Use superpowers' `/brainstorm` and TDD directly.
+- **Don't run gstack-review AND gsd-code-review on the same diff and merge findings** — run gstack-review first (broader paranoid pass), then gsd-code-review (phase-aware, writes REVIEW.md). Sequential, not redundant.
+
+### Browser-based QA note
+
+`/gstack-qa`, `/gstack-qa-only`, `/gstack-browse`, and `/gstack-setup-browser-cookies` require a Bun-compiled Chromium binary at `NGOSkills/.vendor/gstack/browse/dist/browse`. The `scripts/vendor-hooks/gstack-post-install.sh` hook rebuilds it on every pin bump. If a `/gstack-qa` invocation fails with "browse binary missing", run:
+
+```bash
+~/Cursor/Skills/NGOSkills/scripts/vendor-install.sh gstack
+```
+
+### Supply-chain review: updates flow through one pipeline
+
+All three packs update via the same mechanism:
+
+1. `scripts/auto-update-skills.sh` (hooked to Claude Code SessionStart) pulls NGOSkills updates
+2. A landed commit bumps `vendor-pins.txt` (SHA changes are one-line diffs, reviewed in PR)
+3. `scripts/vendor-install.sh` materializes the new SHA in `.vendor/<slug>/`
+4. Per-vendor post-install hooks (in `scripts/vendor-hooks/`) run if present — e.g., gstack rebuilds its Chromium binary and relinks its skills
+5. `scripts/sync-skills.sh --fix` fans out symlinks into `~/.claude/` and `~/.cursor/`
+
+Never install a vendor pack out-of-band (directly cloning into `~/.claude/skills/`, running a vendor's own `setup` from a random location, etc.). That breaks the supply-chain review trail and creates drift the audit scripts can't catch.
+
+---
+
 ## Compatibility note
 
 This file is the source of truth. It is loaded by:

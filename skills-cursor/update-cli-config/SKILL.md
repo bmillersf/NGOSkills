@@ -8,10 +8,6 @@ description: >-
 metadata:
   surfaces:
     - cli
-release_pinned: "N/A"
-docs_last_verified: 2026-05-01
-upstream_refs: []
-upstream_release_notes: []
 ---
 # Cursor CLI Configuration
 

@@ -16,6 +16,16 @@ What this collection makes possible:
 
 These skills encode my approach to Salesforce architecture, coding standards, and demo delivery into reusable instructions that give any AI agent the domain knowledge to work the way I would -- with the depth, precision, and nonprofit context that generic AI assistance can't provide. The skills are written in standard markdown and work identically in **Cursor** (native skill system, auto-triggered), **Claude Code** (native skill system via `~/.claude/skills/`, auto-triggered), and **Claude.ai** (via Claude Projects or direct conversation). See [CLAUDE.md](CLAUDE.md) for Claude-specific setup.
 
+### Three-pack composition (what changed)
+
+The 88 `sf-*` skills are the *domain knowledge* layer. A complete development workflow also needs a **project lifecycle**, **engineering methodology**, and **cognitive-gear specialists**. Rather than reinvent those, NGOSkills now vendors three upstream skill packs at pinned SHAs and composes them on top of the `sf-*` track:
+
+- **[get-shit-done (gsd)](https://github.com/gsd-build/get-shit-done)** — phase-based spec→plan→execute→verify→ship lifecycle, invoked as `/gsd-*`
+- **[superpowers](https://github.com/obra/superpowers)** — TDD, subagent-driven development, systematic debugging, auto-triggering skills that fire on pattern match
+- **[gstack](https://github.com/garrytan/gstack)** — Y Combinator–grade cognitive specialists (founder taste, paranoid review, browser-based QA, release mechanics), invoked as `/gstack-*`
+
+Pin bumps land as one-line diffs in `vendor-pins.txt`, reviewable before they ship to the team. Per-vendor post-install hooks handle builds (e.g., gstack rebuilds its Chromium binary). Read the full composition model in [**Vendored skill packs: gsd × superpowers × gstack**](#vendored-skill-packs-gsd--superpowers--gstack) below.
+
 ## Getting Started
 
 Skills work in **Cursor**, **Claude Code** (CLI), and **Claude.ai**. The same `SKILL.md` files power all three -- no conversion, no duplication. Both Cursor and Claude Code read the skills directly from this repo, so a single `git pull` updates every environment at once. Any new skill added from either system becomes instantly available in the other.
@@ -203,9 +213,24 @@ references/
   subagent-authoring-brief.md    # Template for skill-authoring subagents
 CLAUDE.md                        # Claude.ai setup guide (Projects, per-conversation, API)
                                  #   + industry-first precedence rule + full routing table
+vendor-pins.txt                  # Pinned SHAs for vendored third-party skill packs
+                                 #   (gsd, superpowers, gstack). Every pin bump lands
+                                 #   as a reviewable one-line diff — see references/vendor-policy.md.
+.vendor/                         # Gitignored. Vendored trees materialized by scripts/vendor-install.sh
+                                 #   at the pinned SHAs. Never edit directly; never commit.
 scripts/
+  setup.sh                       # One-shot teammate onboarding: vendor-install + sync-skills --fix.
+                                 #   Safe to re-run; everything is idempotent.
+  vendor-install.sh              # Materializes every pin in vendor-pins.txt into .vendor/<slug>/
+                                 #   (--verify is read-only; exit 1 on drift).
+  vendor-update.sh               # Dry-runs pin bumps (shows upstream diff); --apply rewrites
+                                 #   vendor-pins.txt. One vendor at a time by design.
+  vendor-hooks/                  # Per-vendor post-install scripts run after checkout at the
+                                 #   pinned SHA. gstack-post-install.sh rebuilds its Chromium
+                                 #   browse binary and relinks /gstack-* commands.
   sync-skills.sh                 # Health-check (--check) and idempotent fix (--fix) for
-                                 #   all skill, rule, and Claude-config symlinks
+                                 #   all skill, rule, Claude-config, vendor-hook, and
+                                 #   get-shit-done-payload symlinks.
   audit-triggers.sh              # Static audit for overlapping TRIGGER phrases across skills
   refresh-skills.sh              # Layer 1+2 auto-refresh — scans every skill's upstream_refs,
                                  #   diffs against stored sha256, emits refresh-report.md
@@ -238,7 +263,92 @@ content/                         # Auto-generated knowledge base (populated by t
   rules/nonprofit-auto-router.md # Always-applied rule with keyword index for auto-routing
   rules/org-discovery.mdc        # Always-applied rule: org connection, product approval, query-before-create
   rules/dashboard-report-ux.mdc  # Always-applied rule: dashboard and report UX standards
+references/
+  vendor-policy.md               # Supply-chain review checklist for pin bumps (read upstream
+                                 #   diff, check for new commands/settings writes, etc.)
 ```
+
+## Vendored skill packs: gsd × superpowers × gstack
+
+NGOSkills owns the 88 `sf-*` domain skills, but a complete development workflow needs more than just domain knowledge — it needs a project lifecycle (spec → plan → execute → verify), engineering methodology (TDD, brainstorming, code review), and cognitive-gear specialists (founder taste, paranoid review, browser-based QA). Rather than reinvent those, NGOSkills vendors three upstream skill packs at pinned SHAs and composes them with the `sf-*` track.
+
+| Pack | Owns | Invocation |
+|---|---|---|
+| **[get-shit-done (gsd)](https://github.com/gsd-build/get-shit-done)** | Phase-based spec→plan→execute lifecycle, roadmap/milestone management, multi-phase orchestration, verification gates, context-window monitoring | `/gsd-*` (≈65 slash commands: `spec-phase`, `plan-phase`, `execute-phase`, `verify-work`, `ship`, `code-review`, etc.) |
+| **[superpowers](https://github.com/obra/superpowers)** | Core engineering methodology: TDD red/green, subagent-driven development, plan-writing, systematic debugging, verification-before-completion | `/brainstorm`, `/write-plan`, `/execute-plan`, plus 14 auto-triggering skills (fire on pattern match without explicit invocation) |
+| **[gstack](https://github.com/garrytan/gstack)** | Cognitive-mode specialists — Y Combinator "founder taste" pressure-test, paranoid-staff-engineer review, browser-based QA via Playwright, release-engineer shipping mechanics, engineering retrospectives | `/gstack-*` (≈45 slash commands: `plan-ceo-review`, `plan-eng-review`, `review`, `ship`, `qa`, `browse`, `retro`, etc.) |
+
+### Composition rule (MANDATORY)
+
+**gstack's gears run inside gsd's phases, not instead of them.** Never substitute a gstack command for its gsd equivalent — they have different contracts. gsd commands write to `.planning/` and advance phase state; gstack commands are stateless cognitive passes. superpowers skills auto-fire on pattern match inside every phase. Run all three as layered rigor, not as competing alternatives.
+
+### Canonical phase-to-gear mapping
+
+| gsd phase | Superpowers skills (auto-fire) | gstack gear to run inside it | Why |
+|---|---|---|---|
+| `/gsd-spec-phase` (defining WHAT) | `brainstorming` | `/gstack-plan-ceo-review` | Founder-mode pressure-tests whether the spec is describing the *right* product before it's locked |
+| `/gsd-discuss-phase` (gathering context) | — | `/gstack-plan-eng-review` | Tech-lead mode surfaces architecture constraints, failure modes, and diagrams before planning |
+| `/gsd-plan-phase` (writing PLAN.md) | `writing-plans`, `test-driven-development` | — | gsd-planner + superpowers TDD is sufficient here |
+| `/gsd-execute-phase` (implementing) | `executing-plans`, `subagent-driven-development`, `dispatching-parallel-agents` | — | Superpowers owns execution; gstack doesn't overlap |
+| `/gsd-code-review` (pre-ship audit) | `requesting-code-review`, `receiving-code-review` | `/gstack-review` | Paranoid-staff-engineer mode hunts production-killing bugs (N+1, race conditions, trust-boundary violations) that gsd's reviewer may miss |
+| `/gsd-verify-work` (UAT) | `verification-before-completion` | `/gstack-qa` or `/gstack-qa-only` | Browser-based diff-aware verification — reads the diff, spins up Chromium, tests every affected page |
+| `/gsd-ship` (PR creation) | `finishing-a-development-branch` | `/gstack-ship` (optional) | gsd-ship handles planning-aware PRs; use gstack-ship only when operating outside a gsd phase |
+| After milestone completion | — | `/gstack-retro` | Data-driven retrospective from commit history; feeds into next `/gsd-new-milestone` |
+
+### When NOT to use a pack
+
+- **Don't use `/gstack-ship` inside a gsd phase** — it bypasses `.planning/` state. Use `/gsd-ship` instead.
+- **Don't use `/gstack-plan-ceo-review` after code is already written** — its value is pre-spec; after implementation it's scope-creep theater.
+- **Don't use gsd alone for pure exploratory coding** — spec→plan→execute overhead isn't worth it for a one-file script. Use superpowers' `/brainstorm` and TDD directly.
+- **Don't run `/gstack-review` AND `/gsd-code-review` on the same diff and merge findings** — run gstack-review first (broader paranoid pass), then gsd-code-review (phase-aware, writes REVIEW.md). Sequential, not redundant.
+
+### Supply-chain review and update pipeline
+
+All three vendors flow through the same 5-step pipeline. Pin bumps land as one-line diffs in `vendor-pins.txt`, making every update reviewable before it runs.
+
+```
+scripts/auto-update-skills.sh      →  pulls NGOSkills main (SessionStart hook, two-phase fast-forward)
+       ↓
+vendor-pins.txt                    →  SHA bumps land via PR; reviewed for malicious instructions
+       ↓
+scripts/vendor-install.sh          →  materializes new SHA in .vendor/<slug>/
+       ↓
+scripts/vendor-hooks/<slug>-post-install.sh  →  per-vendor rebuild (gstack rebuilds Chromium binary)
+       ↓
+scripts/sync-skills.sh --fix       →  fans out symlinks into ~/.claude/ and ~/.cursor/
+```
+
+Read [`references/vendor-policy.md`](references/vendor-policy.md) before bumping any pin. Treat every bump as a supply-chain review, not a version bump — the packs contain instructions the assistant executes.
+
+### What actually lands on disk
+
+After `scripts/setup.sh` runs (or after `auto-update-skills.sh` applies a pending update):
+
+- `~/.claude/skills/sf-*` → `NGOSkills/skills/` (83 domain skills)
+- `~/.claude/skills/gstack-*` → `NGOSkills/.vendor/gstack/<name>/SKILL.md` (45 cognitive-gear skills)
+- `~/.claude/skills/<superpowers-skill>` → `NGOSkills/.vendor/superpowers/skills/` (14 auto-triggering skills)
+- `~/.claude/agents/gsd-*.md` → `NGOSkills/.vendor/gsd/agents/` (33 phase subagents)
+- `~/.claude/commands/gsd/` → `NGOSkills/.vendor/gsd/commands/gsd/` (65 phase commands)
+- `~/.claude/commands/brainstorm.md`, `write-plan.md`, `execute-plan.md` → superpowers
+- `~/.claude/get-shit-done/` → `NGOSkills/.vendor/gsd/get-shit-done/` — gsd's runtime payload (references, workflows, templates, bin). Without this link, gsd agents silently 404 on 187 `@~/.claude/get-shit-done/...` includes and run degraded.
+- `~/.claude/hooks/gsd-*` → `NGOSkills/.vendor/gsd/hooks/` — context-monitor, statusline, session-state, prompt-guard, etc.
+- `~/.claude/CLAUDE.md` → `NGOSkills/.cursor/rules/agent-autonomy.mdc` (global autonomy + routing rules)
+
+Everything is a symlink into the NGOSkills tree, so a single `git pull` (or auto-update) refreshes every layer atomically.
+
+### Hooks wired into settings.json (recommended)
+
+Two gsd hooks significantly improve execution quality when registered in `~/.claude/settings.json`. They work only because the symlinks above are in place:
+
+| Event | Hook | What it does |
+|---|---|---|
+| `SessionStart` | `bash $HOME/.claude/hooks/gsd-session-state.sh` | Opt-in via `.planning/config.json` → `hooks.community: true`; injects STATE.md head when resuming a gsd project |
+| `PostToolUse` (matcher `Bash\|Edit\|Write\|MultiEdit\|Agent\|Task`) | `node $HOME/.claude/hooks/gsd-context-monitor.js` | Reads context metrics from the statusline bridge; injects `CONTEXT WARNING` (≤35% remaining) or `CONTEXT CRITICAL` (≤25%) directly into the agent's conversation so it can pause cleanly |
+| `statusLine` (top-level) | `node $HOME/.claude/hooks/gsd-statusline.js` | Renders `model │ task │ dir │ context-bar`; writes the bridge file that context-monitor reads |
+
+Register them manually in `~/.claude/settings.json` (see the `hooks` and `statusLine` keys). They're not enforced by `sync-skills.sh` — `settings.json` is user-owned and often contains site-specific env vars and marketplaces that a managed sync shouldn't touch.
+
+---
 
 ## Architecture
 
