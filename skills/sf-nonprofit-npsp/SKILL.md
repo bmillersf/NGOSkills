@@ -18,9 +18,9 @@ metadata:
   version: "1.0.0"
   scoring: "120 points across 6 categories"
 release_pinned: "Spring '26"
-docs_last_verified: 2026-05-01
+docs_last_verified: 2026-05-04
 upstream_refs:
-  - url: https://powerofus.force.com/s/article/NPSP-Documentation
+  - url: https://help.salesforce.com/s/articleView?id=sfdo.Nonprofit_Success_Pack.htm
     anchor: ""
     sha256: ""
     importance: authoritative
@@ -33,8 +33,8 @@ upstream_refs:
     sha256: ""
     importance: supplemental
 upstream_release_notes:
-  - release: "Spring '26"
-    url: https://powerofus.force.com/s/article/NPSP-Release-Notes
+  - release: "NPSP 3.237"
+    url: https://github.com/SalesforceFoundation/NPSP/releases/tag/rel%2F3.237
 ---
 
 # sf-nonprofit-npsp: Nonprofit Success Pack Architect
@@ -494,6 +494,8 @@ Consider migration when:
 - Org needs native program/outcome management
 - NPSP customization limits are blocking requirements
 - Organization is ready for an operational change (not just a product swap)
+
+Upstream guidance (SalesforceFoundation/NPSP README): Salesforce continues to support the NPSP managed package for existing customers, but new implementations are steered toward Nonprofit Cloud ("Use Nonprofit Cloud as your single solution to begin or continue in your digital transformation journey"). The Power of Us Program now grants free licenses for both NPSP and Nonprofit Cloud — license cost is not a differentiator. Route net-new orgs through `sf-nonprofit-cloud` first unless AppExchange or historical-data constraints force NPSP.
 
 ---
 
