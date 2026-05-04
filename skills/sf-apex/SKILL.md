@@ -15,7 +15,7 @@ metadata:
   author: "Jag Valaiyapathy"
   scoring: "150 points across 8 categories"
 release_pinned: "Spring '26"
-docs_last_verified: 2026-05-01
+docs_last_verified: 2026-05-04
 upstream_refs:
   - url: https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/
     anchor: ""
