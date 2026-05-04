@@ -28,7 +28,7 @@ metadata:
   author: "Brian Miller"
   scoring: "120 points across 5 categories"
 release_pinned: "Spring '26"
-docs_last_verified: 2026-05-01
+docs_last_verified: 2026-05-04
 upstream_refs:
   - url: https://playwright.dev/docs/intro
     anchor: ""
@@ -38,7 +38,7 @@ upstream_refs:
     anchor: ""
     sha256: ""
     importance: authoritative
-  - url: https://playwright.dev/docs/selectors
+  - url: https://playwright.dev/docs/locators
     anchor: ""
     sha256: ""
     importance: supplemental
