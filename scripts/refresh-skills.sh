@@ -85,6 +85,7 @@ STALE=0
 CHANGED=0
 OK=0
 MISSING_META=0
+OPT_OUT=0
 
 scan_skill() {
   local skill_dir="$1"
@@ -102,11 +103,21 @@ scan_skill() {
     [ $match -eq 0 ] && return
   fi
 
-  # Extract docs_last_verified and release_pinned from frontmatter
-  local last_verified release_pinned refs_count
+  # Extract docs_last_verified, release_pinned, scan_upstream from frontmatter.
+  # scan_upstream: false opts a skill out of freshness tracking — appropriate
+  # for skills with no external docs (e.g. harness skills like babysit,
+  # create-hook, statusline that describe local tool behavior only).
+  local last_verified release_pinned refs_count scan_opt
   last_verified="$(awk '/^---$/{fm=!fm; next} fm && /^docs_last_verified:/ {gsub(/^docs_last_verified:[ \t]*/, ""); gsub(/[ \t\r\n]+$/, ""); print; exit}' "$file")"
   release_pinned="$(awk '/^---$/{fm=!fm; next} fm && /^release_pinned:/ {gsub(/^release_pinned:[ \t]*"/, ""); gsub(/".*$/, ""); print; exit}' "$file")"
   refs_count="$(awk '/^---$/{fm=!fm; next} fm && /^upstream_refs:/ {found=1} fm && found && /^  - url:/ {c++} END {print c+0}' "$file")"
+  scan_opt="$(awk '/^---$/{fm=!fm; next} fm && /^scan_upstream:/ {gsub(/^scan_upstream:[ \t]*/, ""); gsub(/[ \t\r\n]+$/, ""); print; exit}' "$file")"
+
+  if [ "$scan_opt" = "false" ]; then
+    echo "| $skill_name | — | — | — | ⚪ opt-out |" >> "$REPORT"
+    OPT_OUT=$((OPT_OUT+1))
+    return
+  fi
 
   if [ -z "$last_verified" ]; then
     echo "| $skill_name | _unset_ | — | $refs_count | 🟥 **missing metadata** |" >> "$REPORT"
@@ -144,6 +155,7 @@ done
   echo "- Stale (>${STALE_DAYS}d): $STALE"
   echo "- Content-drift detected: $CHANGED"
   echo "- Missing metadata: $MISSING_META"
+  echo "- Opted out (scan_upstream: false): $OPT_OUT"
   echo ""
   echo "## Recommended actions"
   echo ""
@@ -160,10 +172,13 @@ done
 } >> "$REPORT"
 
 echo "Report: $REPORT"
-echo "Fresh=$OK  Stale=$STALE  Changed=$CHANGED  MissingMeta=$MISSING_META"
+echo "Fresh=$OK  Stale=$STALE  Changed=$CHANGED  MissingMeta=$MISSING_META  OptOut=$OPT_OUT"
 
-# Exit non-zero if anything needs attention so CI can gate on it.
-if [ $MISSING_META -gt 0 ] || [ $STALE -gt 0 ]; then
+# Exit non-zero only when we detect something *stale* — content that should
+# have been re-verified but wasn't. Missing metadata is reported in the
+# summary but does not fail the run; authors see it in the report and fix
+# at their own pace. (The weekly launchd job is a reminder, not a gate.)
+if [ $STALE -gt 0 ]; then
   exit 1
 fi
 exit 0

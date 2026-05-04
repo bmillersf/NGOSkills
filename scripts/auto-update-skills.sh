@@ -141,9 +141,21 @@ apply_pending() {
     new_sha="$(inrepo rev-parse --short HEAD)"
     log "applied update -> $new_sha"
     say "[ngoskills] Updated to $new_sha (run scripts/sync-skills.sh --check to verify symlinks)."
-    # Auto-fix any new skill symlinks
+
+    # Vendor pin bumps may have landed in this ff-merge. Materialize any new
+    # vendor SHAs, then re-link. vendor-install.sh is idempotent; if the new
+    # SHA isn't in the local clone yet it will `git fetch`, which can be slow
+    # on first pull, so we spawn it in the background. sync-skills.sh runs
+    # synchronously here to re-link anything from the NGOSkills tree that the
+    # ff-merge added; a second sync runs after the vendor refresh finishes.
     if [ -x "$REPO_ROOT/scripts/sync-skills.sh" ]; then
       "$REPO_ROOT/scripts/sync-skills.sh" --fix --quiet >/dev/null 2>&1 || true
+    fi
+    if [ -x "$REPO_ROOT/scripts/vendor-install.sh" ]; then
+      (
+        "$REPO_ROOT/scripts/vendor-install.sh" --quiet >/dev/null 2>>"$LOG_FILE" || true
+        "$REPO_ROOT/scripts/sync-skills.sh" --fix --quiet >/dev/null 2>&1 || true
+      ) </dev/null >/dev/null 2>&1 &
     fi
     rm -f "$PENDING_UPDATE_FILE"
     return 0

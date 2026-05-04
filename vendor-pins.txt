@@ -1,0 +1,18 @@
+# vendor-pins.txt
+# Canonical list of third-party skill/agent/command packs vendored into NGOSkills.
+# Format: <slug> <repo-url> <ref-for-humans> <immutable-sha>
+#
+# Rules:
+#   - Every line is a pin. No unpinned vendors.
+#   - The SHA is the source of truth; the ref (tag/branch) is a comment for reviewers.
+#   - Bump by running: scripts/vendor-update.sh <slug> --apply
+#   - Every bump is a reviewable one-line diff and MUST land via PR.
+#   - See references/vendor-policy.md for the review checklist.
+#
+# Security note: these packs contain instructions (skills/agents/commands) the
+# assistant executes. Treat every pin bump as a supply-chain review, not a
+# version bump. Read the upstream diff before approving.
+
+superpowers  https://github.com/obra/superpowers.git             v5.0.7    1f20bef3f59b85ad7b52718f822e37c4478a3ff5
+gsd          https://github.com/gsd-build/get-shit-done.git      v1.40.0   1e6737cd8ee114bf0ea2a23619bc582534ad7d2d
+gstack       https://github.com/garrytan/gstack.git              main      db9447c3339950bb0506c547e5b3225f5def3854
