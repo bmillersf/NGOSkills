@@ -50,8 +50,12 @@ if [ ! -f "$REPORT" ]; then
 fi
 
 # Step 2: Extract stale/drifted skills from the report. Lines matching
-# "🟧 stale" or "🟥" in the summary table.
-mapfile -t DRIFTED < <(awk -F'|' '/🟧 stale|🟥/ {gsub(/^ +| +$/, "", $2); print $2}' "$REPORT")
+# "🟧 stale" or "🟥 **missing metadata**" in the summary table.
+# bash 3.2 (macOS default) has no mapfile; read into array portably.
+DRIFTED=()
+while IFS= read -r _line; do
+  [ -n "$_line" ] && DRIFTED+=("$_line")
+done < <(awk -F'|' '/🟧 stale|🟥/ {gsub(/^ +| +$/, "", $2); print $2}' "$REPORT")
 
 # Step 3: Classify severity + emit queue entries.
 classify_severity() {
