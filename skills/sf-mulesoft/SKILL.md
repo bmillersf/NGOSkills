@@ -27,7 +27,7 @@ metadata:
   author: "NGOSkills"
   scoring: "140 points across 7 categories"
 release_pinned: "Spring '26"
-docs_last_verified: 2026-05-01
+docs_last_verified: 2026-05-04
 upstream_refs:
   - url: https://docs.mulesoft.com
     anchor: ""
@@ -109,7 +109,7 @@ build the Mule subscription + DataWeave transform + downstream HTTP consumer.
 Ask for or infer:
 
 - Anypoint Platform edition: Titanium, Gold, Silver; CloudHub 1.0 vs **CloudHub 2.0** (strongly prefer 2.0 for new work) vs Runtime Fabric vs Hybrid
-- Runtime version: Mule 4.4 LTS, Mule 4.6, Mule 4.9+
+- Runtime version: Mule 4.4 LTS, Mule 4.6, Mule 4.9, **Mule 4.11 (current)** — see `docs.mulesoft.com/mule-runtime/latest/`
 - Design-first or code-first? (RAML / OAS **first** is the house recommendation)
 - Target connector(s): Salesforce (which variant — REST, Bulk, Composite, Platform Events, Pub/Sub), external system, DB, SaaS
 - MuleSoft for Flow enabled? (requires Salesforce + MuleSoft entitlement)
@@ -161,6 +161,7 @@ Ask for or infer:
 1. Package: `mvn clean package` produces `.jar`.
 2. Deploy target:
    - **CloudHub 2.0** (preferred): via Runtime Manager or `anypoint-cli runtime-mgr cloudhub-application`.
+     (Anypoint CLI is officially versioned as **Anypoint CLI 3.x**.)
    - **Runtime Fabric**: for customer-managed Kubernetes.
    - **Hybrid / on-prem**: for data-locality requirements.
 3. Parameterise per environment via Runtime Manager secure properties.
@@ -247,6 +248,11 @@ Passing score: **100/140 with every category at pass threshold.** Boundary Respe
 | Connector catalog | Salesforce / DB / HTTP / SAP / etc. | Exchange → add dependency to `pom.xml` |
 | Low-code iPaaS | MuleSoft Composer flows | Composer (no-code UI) |
 | SF-Flow-invocable Mule action | Exchange-published API with invocable flag | Salesforce Flow Builder → Mule action element |
+| Agentforce-invocable Mule action | **MuleSoft for Agentforce** — APIs exposed as agent actions | Agentforce → Mule action |
+| AI-assisted Mule build | **Einstein for MuleSoft** — natural-language flow/DataWeave generation | Anypoint Code Builder / Studio |
+| Low-code cloud IDE | **Anypoint Code Builder** (VS Code-based) — alternative to Anypoint Studio | Browser + VS Code |
+| Edge API gateway | **Flex Gateway** — lightweight runtime-independent gateway | Customer-managed edge |
+| MCP-exposed APIs | **MuleSoft MCP Support** — expose Exchange APIs as MCP tools for agents | Exchange + MCP endpoint |
 
 ---
 
@@ -268,5 +274,5 @@ Passing score: **100/140 with every category at pass threshold.** Boundary Respe
 
 - [MuleSoft documentation](https://docs.mulesoft.com)
 - [MuleSoft for Flow (Salesforce Help)](https://help.salesforce.com/s/articleView?id=sf.platform_events_mulesoft.htm)
-- [MuleSoft Composer docs](https://docs.mulesoft.com/mulesoft-composer/)
+- [MuleSoft Composer docs](https://docs.mulesoft.com/mulesoft-composer/) (note: `mulesoft-composer/latest/` returns 404 as of 2026-05-04; Composer content may be consolidating under "MuleSoft for Flow: Integration")
 - [sf-integration boundary](../sf-integration/SKILL.md) (load-bearing cross-skill dependency)
