@@ -17,7 +17,7 @@ metadata:
   author: "Jag Valaiyapathy"
   scoring: "80 points across 5 categories"
 release_pinned: "Spring '26"
-docs_last_verified: 2026-05-01
+docs_last_verified: 2026-05-04
 upstream_refs:
   - url: https://mermaid.js.org/intro/
     anchor: ""
@@ -94,6 +94,20 @@ This format lets a presenter walk through the diagram live without needing to im
 | System Landscapes | `flowchart` | High-level architecture, component diagrams |
 | Role Hierarchies | `flowchart` | User hierarchies, profile/permission structures |
 | Agentforce Flows | `flowchart` | Agent → Topic → Action flows |
+
+### Additional Mermaid Diagram Types (reference)
+
+As of Mermaid 11.14.0 the following diagram types are also available if a specific use case calls for them. They are **not** part of the core Salesforce templates above, but can be used ad hoc when the standard types don't fit:
+
+- `architecture-beta` — cloud/system architecture with groups, services, and edges
+- `block-beta` — block layouts (panels, grids) useful for landscape wireframes
+- `packet-beta` — byte/bit packet layouts (rarely relevant for Salesforce)
+- `kanban` — Kanban boards
+- `timeline` — chronological events
+- `mindmap` — hierarchical idea maps
+- `sankey-beta`, `xychart-beta`, `quadrantChart`, `radar-beta`, `treemap`, `venn`, `ishikawa`, `treeview` — specialty charts
+
+Prefer the core types in the table above for Salesforce work; reach for these only when the user asks for a shape the core types can't produce.
 
 ## Workflow (5-Phase Pattern)
 
@@ -270,6 +284,30 @@ Use Tailwind 200-level pastel fills with dark strokes. See [references/mermaid-s
 %%{init: {"flowchart": {"nodeSpacing": 80, "rankSpacing": 70}} }%%
 style A fill:#fbcfe8,stroke:#be185d,color:#1f2937
 ```
+
+Either the legacy `%%{init: ...}%%` directive or the YAML frontmatter form is valid:
+
+```
+---
+config:
+  flowchart:
+    nodeSpacing: 80
+    rankSpacing: 70
+    curve: stepBefore
+---
+flowchart LR
+```
+
+### Optional: Modern shape / edge features (Mermaid v11.3.0+ and v11.10.0+)
+
+These are **optional** enhancements. Keep the base templates as-is; reach for these only when the user asks for them or when the default shapes are insufficient.
+
+- **Typed shape syntax (v11.3.0+)**: `A@{ shape: rect }`, `A@{ shape: cyl }` (database), `A@{ shape: doc }`, `A@{ shape: docs }` (multi-doc), `A@{ shape: hex }`, `A@{ shape: bolt }` (com link), `A@{ shape: cloud }`, `A@{ shape: das }` (direct access storage), etc. 30 new semantic shapes total.
+- **Icon shape**: `A@{ icon: "fa:fa-server", form: "rounded", label: "API", pos: "b", h: 48 }` — requires a registered icon pack.
+- **Image shape**: `A@{ img: "https://…/logo.png", label: "…", w: 60, h: 60, constraint: "on" }`.
+- **Edge IDs (v11.10.0+)**: `A e1@--> B` — assign an ID to an edge so it can be styled, animated, or curve-overridden later.
+- **Edge animations (v11.10.0+)**: after assigning an ID, either set properties (`e1@{ animate: true, animation: fast }`) or apply a `classDef` with `stroke-dasharray` (escape commas as `\,`). Useful for demo integration storytelling to show data flowing from one system to Salesforce.
+- **Per-edge curve override (v11.10.0+)**: `e1@{ curve: stepBefore }` — overrides the diagram-level curve on just that edge.
 
 ---
 
