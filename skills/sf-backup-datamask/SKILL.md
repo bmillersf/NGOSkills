@@ -23,7 +23,7 @@ metadata:
   author: "NGOSkills"
   scoring: "120 points across 6 categories"
 release_pinned: "Spring '26"
-docs_last_verified: 2026-05-01
+docs_last_verified: 2026-05-04
 upstream_refs:
   - url: https://help.salesforce.com/s/articleView?id=sf.backup_restore.htm
     anchor: ""
@@ -225,7 +225,8 @@ Both run independently; no dependency between them.
 
 | Symptom | Root cause | Fix |
 |---|---|---|
-| "Backup restore returned `BACKUP_NOT_FOUND` for yesterday's snapshot" | Backup license not yet active, or first-run snapshot is still processing (24-48h lead time after activation) | Verify Setup → Backup dashboard shows "Healthy"; the first snapshot completes within 48h of license activation — you cannot restore before then |
+| "Backup restore returned `BACKUP_NOT_FOUND` for yesterday's snapshot" | Salesforce Backup managed package not yet installed, license/permission set not assigned, or first-run snapshot still processing (24-48h lead time after activation) | Install the Salesforce Backup managed package (via subscription order-form link), assign the Salesforce Backup license + permission set, verify the Backup app dashboard shows "Healthy"; the first snapshot completes within 48h of activation — you cannot restore before then |
+| "Storage bill spiked after enabling Backup" | Effective file-storage charge is 10% of actual GB used in Backup (per current Salesforce Help pricing note) — customers often size retention before knowing the multiplier | Re-scope retention / per-object overrides; confirm the 10% effective-GB rule with Account Exec before sizing contract; Salesforce does not expose Backup product data consumption in the UI — open a Support case to get actuals |
 | "Selective restore imported duplicates — records already existed" | Restore mode set to "Insert" instead of "Upsert by External ID" | Use Upsert mode with a stable external key; if no external key exists, use Salesforce Id match with `overwrite existing` explicitly confirmed |
 | "Data Mask run failed with `INSUFFICIENT_ACCESS_OR_READONLY`" | Operator user doesn't have the Data Mask permission set group, or the object has an active validation rule / required field that fails post-mask | Assign `Data Mask` PSG; temporarily deactivate validation rules on masked objects (Data Mask UI has a flag for this), re-enable after mask |
 | "Masked sandbox still contains real donor emails after run" | Custom long-text field (`Notes__c`) contains embedded PII not covered by the rule | Add pattern-based masking rule for custom text fields; scan first with a grep-style query for `@` + top-level domains to find missed fields |
@@ -241,11 +242,19 @@ Both run independently; no dependency between them.
 ### Enable Salesforce Backup
 
 ```
-Setup → Backup → Provision → "Enable Salesforce Backup"
-  (License must already be active; first backup runs within 24-48h)
-Setup → Backup → Policies → Configure Retention
-  → Default: 90 days
-  → Per-object overrides for high-volume objects
+1. Install the Salesforce Backup managed package
+     (link from your subscription order form; Backup is managed-package-based,
+      not a built-in Setup node)
+2. Assign the Salesforce Backup license + "Salesforce Backup" permission set
+     to admin users
+3. Open the Salesforce Backup app → Configure connection (secure OAuth link
+     between the managed-package app and the org)
+4. Plan the Backup strategy (identify high-value / regulated objects first)
+5. Build Backup policies in batches
+     → Default schedule: daily automatic
+     → Per-object retention overrides for high-volume objects
+6. First backup completes within 24-48h of activation
+7. Storage note: effective GB charged = 10% of actual GB backed up (file data)
 ```
 
 ### Selective restore (UI)
