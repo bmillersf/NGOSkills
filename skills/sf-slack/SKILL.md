@@ -30,7 +30,7 @@ metadata:
   author: "NGOSkills"
   scoring: "140 points across 7 categories"
 release_pinned: "Spring '26"
-docs_last_verified: 2026-05-01
+docs_last_verified: 2026-05-04
 upstream_refs:
   - url: https://api.slack.com/docs
     anchor: ""
@@ -156,9 +156,9 @@ Ask for or infer:
 
 ### Phase 5: Bolt SDK App (when Workflow Builder isn't enough)
 
-1. Decide stack: **Bolt for TypeScript** (Node) or **Bolt for Python**. Both are first-class.
+1. Decide stack: **Bolt for TypeScript** (Node), **Bolt for Python**, or **Bolt for Java**. All three are first-class on api.slack.com/tools.
 2. Hosting: Salesforce Hyperforce / Heroku / AWS / Slack-hosted functions. For tight SF integration, Heroku is the historical choice; Hyperforce emerging for 2026.
-3. Manifest-first: author `manifest.json`, version-control it, rotate tokens via Slack API.
+3. Manifest-first: author `manifest.json`, version-control it, rotate tokens via Slack API. The Slack CLI (`slack create` / `slack run` / `slack deploy`) is the current recommended onboarding and dev loop; pair it with the Slack GitHub Action for CI.
 4. Event subscription scopes: **grant the minimum** needed. `channels:history` is an audit landmine — prefer `channels:read` + explicit conversation API calls.
 5. Persistence: store conversation state, not messages. Let Slack remain the source of truth for message history.
 6. Test in a sandbox Slack workspace before promoting to production Grid.
@@ -245,8 +245,11 @@ Passing score: **100/140 with every category at pass threshold.** Governance + C
 | Salesforce-side action | Flow "Send to Slack" | Salesforce Flow Builder |
 | Deal Room | Channel + Canvas + record pins | Slack Sales Elevate |
 | Case swarm | Channel + Canvas + SME routing | Slack for Service |
-| Bolt app | TypeScript/Python project | Anypoint/IDE + manifest |
-| Hosting | Heroku / Hyperforce / AWS / Slack functions | ops choice |
+| Bolt app | TypeScript/Python/Java project | Slack CLI (`slack create`/`slack run`) or IDE + manifest |
+| Slack CLI | `slack login`, `slack create`, `slack run`, `slack deploy` | Terminal; official onboarding path per api.slack.com/docs |
+| Slack GitHub Action | CI workflow step | `.github/workflows/*.yml` (see Slack GitHub Action tool) |
+| Slack AI agent | Agent app built on Slack platform | `/ai/agent-quickstart` (Slack-native agents, distinct from Agentforce handoff) |
+| Hosting | Heroku / Hyperforce / AWS / Slack-hosted functions | ops choice |
 | Governance | Information barriers + retention + DLP | Enterprise Grid admin |
 
 ---
@@ -271,5 +274,9 @@ Passing score: **100/140 with every category at pass threshold.** Governance + C
 
 - [Slack API documentation](https://api.slack.com/docs)
 - [Slack Automation (Workflow Builder + functions)](https://api.slack.com/automation)
+- [AI in Slack / Create an agent quickstart](https://api.slack.com/ai/agent-quickstart)
+- [Slack CLI](https://api.slack.com/tools/slack-cli)
+- [Slack GitHub Action](https://api.slack.com/tools/slack-github-action)
+- [Bolt frameworks (JavaScript, Python, Java)](https://api.slack.com/tools)
 - [Slack Sales Elevate (Salesforce Help)](https://help.salesforce.com/s/articleView?id=sf.slack_sales_elevate.htm)
 - [Industry pre-check reference](../../references/industry-precheck.md)
