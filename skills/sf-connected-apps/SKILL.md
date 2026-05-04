@@ -19,7 +19,7 @@ metadata:
   author: "Jag Valaiyapathy"
   scoring: "120 points across 6 categories"
 release_pinned: "Spring '26"
-docs_last_verified: 2026-05-01
+docs_last_verified: 2026-05-04
 upstream_refs:
   - url: https://help.salesforce.com/s/articleView?id=sf.connected_app_overview.htm
     anchor: ""
@@ -300,6 +300,16 @@ sf project deploy start --source-dir force-app/main/default/connectedApps --targ
 # Go to Setup > App Manager > [App] > View
 ```
 
+> ⚠️ **Spring '26 restriction** (verified 2026-05-04): New Connected App *creation* is restricted in Spring '26 and later. Existing Connected Apps continue to function and can still be edited/retrieved/deployed. For any *new* app, default to an External Client App (ECA). Creating a new Connected App requires contacting Salesforce Support. Source: `help.salesforce.com/s/articleView?id=sf.connected_app_overview.htm`.
+
+### OAuth cheat sheet (verified 2026-05-04)
+
+- **Access token types**: Salesforce issues two kinds — *opaque* (default, revocable, introspect via `/services/oauth2/introspect`) and *JWT-based* (self-contained, carries claims, useful when downstream services validate locally without a round-trip). Pick JWT-based when resource servers need offline validation; opaque when you need server-side revocation semantics.
+- **OAuth Custom Scopes** are an **ECA-only** feature for gating access to *externally hosted* protected resources. Connected Apps still only support the built-in scopes (`Api`, `RefreshToken`, `Full`, `OpenID`, `Web`, `ChatterApi`, `CustomPermissions`, `Wave`). If the user asks for a named custom scope, route them to ECA.
+- **OAuth 2.0 Echo Endpoint** (`/services/oauth2/echo`) simplifies development for Authorization Code + Credentials flows on public clients (SPAs, headless registration, passwordless, guest-user). Use for local OAuth bring-up before wiring real callbacks.
+- **UI Bridge API** (Single Access UI Bridge): exchange a valid access token for a *frontdoor URL* that silently logs a user into a new Salesforce UI session (with optional `retURL`). Replaces ad-hoc `secur/frontdoor.jsp` usage for cross-app SSO-style redirects.
+- **PKCE org-wide enforcement**: PKCE can be required at the org level (not just per-app) under Identity → OAuth and OpenID Connect Settings. Prefer org-wide enforcement for any org with public clients.
+
 ---
 
 ## Migration: Connected App → External Client App
@@ -348,8 +358,9 @@ sf project deploy start --source-dir force-app/main/default/connectedApps --targ
 - **API Version**: 62.0+ recommended, 61.0+ required for External Client Apps
 - **Scoring**: Block deployment if score < 54 (54% threshold)
 - **Consumer Secret**: Never commit to version control - use environment variables
-- **External Client Apps**: Preferred for new development (modern security model)
+- **External Client Apps**: Preferred for new development (modern security model); **required for new apps in Spring '26+** unless Salesforce Support grants a Connected App exception
 - **Testing**: Use Postman for OAuth flow testing before production
+- **Upstream link health**: `architect.salesforce.com/security/oauth` currently returns 404 (verified 2026-05-04); use `help.salesforce.com/s/articleView?id=sf.remoteaccess_authenticate.htm` as the canonical OAuth reference instead
 
 ---
 
