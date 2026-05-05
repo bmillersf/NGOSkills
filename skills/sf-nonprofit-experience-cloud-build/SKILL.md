@@ -238,18 +238,34 @@ If a route returns "Page not available," 95% of the time it is one of:
 - View using `siteforce:sldsOneColLayout` instead of `siteforce:dynamicLayout`
 - Community not re-published after ExperienceBundle change
 
-## Reference implementation
+## Anti-patterns
 
-This skill was distilled from building the **Arlington Donor Portal** — an Experience Cloud donor site modeled after `arlingtondiocese.org`. That repository is the canonical worked example for every pattern in this skill:
+- **Cloning another org's ExperienceBundle as a starting point.** Copied `routes/`, `views/`, and `brandingSets/` files carry stale IDs, dead component references, and layout choices that belong to a different brand. They produce a site that *looks* like the source org no matter how much you restyle. Author every JSON file fresh from the metadata schema; inspect reference bundles only to confirm file shape.
+- **Using `sf community create --template-name "Customer Service"` / "Partner Central" / "Customer Account Portal" for a new build.** These are packaged Aura templates with baked-in `siteforce:sldsTwoCol84SidebarFeaturedLayout` / `serviceBody` wrappers and forced sidebar/featured regions that no amount of theme customCSS can override. Default to `"Build Your Own (LWR)"` (or `"Microsite"` for public-only marketing). Aura templates produce noticeably lower UI/UX quality — avoid them for new builds.
+- **Picking Aura because the org uses Customer Community Plus.** The license doesn't dictate the runtime. Build Your Own (LWR) supports Customer Community Plus users. Only a *named, irreplaceable* Aura-only capability justifies Aura.
+- **Copying Arlington (or any reference repo) LWCs without re-running Phase 1 brand-mining.** The Arlington component list (`donorHeroBanner`, `givingOpportunitiesGrid`, etc.) reflects Arlington's IA. Another org's IA produces a different list. Re-derive every time; use Arlington only for the *shape* of a standard-first LWC.
+- **"Inherit the template and theme over it" as a shortcut.** Brand-mined typography, spacing, and color tokens land cleanly in LWR `themes/*.json` customCSS; they fight Aura packaged templates at every level (component-owned styles, template-enforced regions, locked layout). Build on LWR or document the blocker.
 
-- Brand-mined static resource: `staticresources/arlingtonDioceseAssets/`
-- Design system tokens: `experiences/Arlington_Donor_Portal1/themes/customerAccountPortal.json` `customCSS`
-- Homepage LWC decomposition: `lwc/donorPortalHeader`, `donorHeroBanner`, `givingOpportunitiesGrid`, `bishopQuoteBanner`, `upcomingEvents`, `donorDashboard`
-- Multi-step form: `lwc/donationForm` + `lwc/donationThankYou`
-- Custom route metadata: `experiences/Arlington_Donor_Portal1/routes/donate.json` + `views/donate.json`
-- Guest access profile: `profiles/Arlington Donor Portal Profile.profile-meta.xml`
+## Reference implementation — read for patterns, do NOT clone
 
-When adapting the patterns, treat the Arlington repo files as templates to copy-modify, not as files to reference at runtime.
+This skill was distilled from building the **Arlington Donor Portal** — an LWR donor site modeled after `arlingtondiocese.org`. Use it as a **pattern reference only**, never as a source to copy files from.
+
+**Read the Arlington repo to see:**
+
+- How a brand-mined static resource is organized: `staticresources/arlingtonDioceseAssets/`
+- How design tokens flow into theme customCSS: `experiences/Arlington_Donor_Portal1/themes/customerAccountPortal.json` `customCSS`
+- The shape of a standard-first homepage decomposition: `lwc/donorPortalHeader`, `donorHeroBanner`, `givingOpportunitiesGrid`, `bishopQuoteBanner`, `upcomingEvents`, `donorDashboard`
+- The multi-step form pattern: `lwc/donationForm` + `lwc/donationThankYou`
+- The shape of custom route metadata: `experiences/Arlington_Donor_Portal1/routes/donate.json` + `views/donate.json`
+- The shape of a guest access profile: `profiles/Arlington Donor Portal Profile.profile-meta.xml`
+
+**Do NOT:**
+
+- Copy Arlington's `routes/*.json`, `views/*.json`, or `brandingSets/*.json` into a new project. Those files carry Arlington-specific IDs, component references, and layout choices that produce a low-quality result when dropped into a different brand.
+- Copy any Aura ExperienceBundle (Customer Service, Customer Account Portal, Partner Central) as a starting point. Packaged Aura layouts (`siteforce:sldsTwoCol84SidebarFeaturedLayout`, `serviceBody`, forced sidebar/featured regions) cannot be themed away and will override your brand work.
+- Copy LWCs across organizations without first re-deriving the component list from *this* engagement's Phase 1 brand-mine. A component that served Arlington's IA may be wrong for another org.
+
+**Instead:** author every `routes/*.json`, `views/*.json`, `brandingSets/*.json`, and `themes/*.json` file fresh from the metadata schema, using the Arlington files only to confirm the shape of a valid file. LWCs are re-derived from Phase 1 brand-mining and Phase 3 standard-first composition every time.
 
 ## Additional resources
 
