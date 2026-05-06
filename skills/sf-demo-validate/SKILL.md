@@ -243,20 +243,22 @@ If a step has type `intake_simulation`, execute the guest intake form submission
 
 #### Flow Execution & Automation Chain Testing
 
-Beyond checking that flows/triggers exist and are active, the skill **fires automations and verifies their side effects**:
+Beyond checking that flows/triggers exist and are active, the skill **fires automations and verifies their side effects**. Order of preference, strongest to weakest:
 
-1. **Record-triggered flows/triggers**: Insert or update a test record that matches the trigger criteria, then query for expected side effects (new child records, field updates, Tasks, emails). Clean up afterward.
-2. **Screen flows via REST API**: Invoke the flow via `POST /services/data/v62.0/actions/custom/flow/[FlowApiName]` with test input variables, then verify outputs.
-3. **Autolaunched/invocable flows**: Call via REST API or Anonymous Apex using `Flow.Interview.createInterview()`.
-4. **Automation chain verification**: For multi-step chains (e.g., insert Applicant → trigger fires → Person Account created → Task created → Flow sends email), the simulation verifies each link in the chain, not just the final state.
+1. **Authored FlowTest (preferred)**: if the flow has a `.flowtest-meta.xml` covering the demo step's behavior, run it via `sf logic run test --tests "FlowTesting.<flow-test-name>" --target-org [alias] --synchronous --json` (or `sf flow run test --tests <name>` on older CLIs). FlowTests evaluate without committing DML, so there's no cleanup; assertions on intermediate elements (`WasVisited`, `HasError`) catch regressions side-effect inspection misses; they participate in `--code-coverage`. **If the demo step claims a flow fires and no FlowTest exists, author one** (see [sf-flow/references/flow-test-authoring.md](../sf-flow/references/flow-test-authoring.md) for schema + verified examples) before falling back to the side-effect simulation below.
+2. **Record-triggered flows/triggers (fallback when no FlowTest exists)**: insert or update a test record that matches the trigger criteria, then query for expected side effects (new child records, field updates, Tasks, emails). Clean up afterward. Use this when authoring a FlowTest is out of scope for the validation pass.
+3. **Screen flows via REST API**: invoke the flow via `POST /services/data/v62.0/actions/custom/flow/[FlowApiName]` with test input variables, then verify outputs. (FlowTest's `InputVariable` parameter type is reserved for future use, so screen flows still need this fallback.)
+4. **Autolaunched/invocable flows**: call via REST API or Anonymous Apex using `Flow.Interview.createInterview()`.
+5. **Automation chain verification**: for multi-step chains (e.g., insert Applicant → trigger fires → Person Account created → Task created → Flow sends email), the simulation verifies each link in the chain, not just the final state. Author one FlowTest per link where possible; chain-test the rest via side-effect inspection.
 
 **Example — Coordinator Status Update Chain** (Act 3):
-- Update `ApplicationForm.ApplicationStatus` to `'Approved'`
-- Verify a record-triggered flow fires (if configured)
-- Verify downstream side effects (Task created, email sent, status propagated)
-- Roll back the status change and clean up
+- **First** check whether `ApplicationForm_Approval_Test.flowtest-meta.xml` (or similar) exists — if so, run it via `sf logic run test`.
+- If no FlowTest covers the chain, author one for the record-triggered link and fall back to side-effect simulation for the rest:
+  - Update `ApplicationForm.ApplicationStatus` to `'Approved'`
+  - Verify downstream side effects (Task created, email sent, status propagated)
+  - Roll back the status change and clean up
 
-> Full flow execution patterns: [references/validation-checks.md](references/validation-checks.md)
+> Full flow execution patterns: [references/validation-checks.md](references/validation-checks.md). FlowTest authoring schema + examples: [sf-flow/references/flow-test-authoring.md](../sf-flow/references/flow-test-authoring.md).
 
 #### Coordinator Simulation (Internal User Path)
 

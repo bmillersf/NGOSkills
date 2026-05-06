@@ -349,13 +349,21 @@ sf data query --query "SELECT Name, IsValid FROM ApexClass WHERE NamespacePrefix
 
 Pass: 0 rows returned (no invalid classes). Fail: Invalid classes found — report names and investigate.
 
-### Flow Test Execution (Optional Deep Validation)
+### Flow Test Execution (Preferred — Run Before Side-Effect Simulation)
+
+If the demo step claims a flow fires (e.g. "approving the application sends a welcome email"), **run an authored FlowTest first** rather than insert-record-and-check-side-effects. FlowTests don't commit DML (no cleanup), support `--code-coverage`, and let you assert on intermediate elements (`WasVisited`, `HasError`) that side-effect inspection can't see.
 
 ```bash
-sf flow run test --tests [FlowTestName] --target-org [alias] --json
+# Unified runner (preferred, CLI v2.107+)
+sf logic run test --tests "FlowTesting.<flow-test-name>" --target-org [alias] --synchronous --code-coverage --json
+
+# Legacy runner (older CLIs)
+sf flow run test --tests <FlowTestName> --target-org [alias] --json
 ```
 
-Use only when the step explicitly requires proving the flow fires correctly, not just that it exists.
+If **no** FlowTest covers the demo's behavior, author one before validation: see [sf-flow/references/flow-test-authoring.md](../../sf-flow/references/flow-test-authoring.md) for schema + verified examples (file lives in `force-app/main/default/flowtests/<Flow>_<Test>.flowtest-meta.xml`). Fastest authoring path is Setup → Flow → Debug → Convert to Test → `sf project retrieve start --metadata FlowTest:<Flow>.<Test>` → commit. Fall back to the record-insert-and-verify-side-effects pattern only when:
+- The flow is a screen flow taking input variables (FlowTest's `InputVariable` type is still reserved).
+- The validation pass explicitly excludes authoring new test metadata.
 
 ---
 
@@ -1073,15 +1081,17 @@ System.assert(!flowTasks.isEmpty(), 'CHAIN FAIL: Flow did not create Task');
 // Cleanup in reverse dependency order
 ```
 
-### Flow Test Framework (If Available)
+### Flow Test Framework (Preferred — Run Before Side-Effect Simulation)
 
-If the project includes Flow tests (`.flowTest-meta.xml`), run them:
+The most reliable way to validate a flow is an authored `.flowtest-meta.xml`. Run them via the unified runner (preferred for CI):
 
 ```bash
-sf flow run test --tests [FlowTestName] --target-org [alias] --json
+sf logic run test --tests "FlowTesting.<flow-test-name>" --target-org [alias] --synchronous --code-coverage --json
+# or legacy runner:
+sf flow run test --tests <FlowTestName> --target-org [alias] --json
 ```
 
-Parse results for pass/fail. This is the most reliable way to test flows but requires test definitions to exist.
+Parse results for pass/fail. **If no FlowTest covers the behavior the demo step claims, author one before validation** — see [sf-flow/references/flow-test-authoring.md](../../sf-flow/references/flow-test-authoring.md) for schema + verified examples. Files live at `force-app/main/default/flowtests/<Flow>_<Test>.flowtest-meta.xml`. Authoring path: Setup → Flow → Debug → Convert to Test → `sf project retrieve start --metadata FlowTest:<Flow>.<Test>`.
 
 ---
 

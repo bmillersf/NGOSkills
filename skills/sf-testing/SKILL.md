@@ -128,25 +128,26 @@ When tests fail, the agentic loop: parses failures → reads source → identifi
 
 ### Cross-Skill: Flow Testing (GA)
 
-Flow tests are now GA and run separately from Apex tests:
+Flow tests are GA and run alongside Apex tests. **Authoring schema and verified examples** for `.flowtest-meta.xml` live in **[sf-flow/references/flow-test-authoring.md](../sf-flow/references/flow-test-authoring.md)** — read it before hand-writing a flow test. Files live at `force-app/main/default/flowtests/<Flow>_<Test>.flowtest-meta.xml`; the fastest authoring path is Setup → Flow → Debug → Convert to Test → `sf project retrieve start --metadata FlowTest:<Flow>.<Test>`.
 
 ```bash
-# Run specific flow tests
+# Legacy single-runner
 sf flow run test --tests FlowTest1,FlowTest2 --target-org [alias] --json
-
-# Run all flow tests
 sf flow run test --target-org [alias] --json
-
-# Get results for an async flow test run
 sf flow get test --test-run-id <id> --target-org [alias] --json
+
+# Unified Apex + Flow runner (preferred for CI, CLI v2.107+)
+sf logic run test --tests "FlowTesting.<flow-test-name>" --target-org [alias] --json
+sf logic run test --test-category Flow --test-level RunAllTestsInOrg --code-coverage --synchronous --target-org [alias]
+sf logic get test --test-run-id <id> --target-org [alias] --json
 ```
 
 **Key flags:**
-- `--tests` (`-t`) — comma-separated Flow test names
-- `--wait <minutes>` — wait for completion (default: async)
+- `--tests` (`-t`) — for `sf flow run test`, comma-separated test names; for `sf logic run test`, prefix with `FlowTesting.`
+- `--test-category Flow` / `--test-category Apex` — repeatable; omit both to run everything
+- `--code-coverage` — works for flow tests (same flag as Apex)
+- `--synchronous` (`-y`) — default is async; pair with `--wait` for blocking runs
 - `--json` — structured output
-
-> **Unified Test Runner [Beta]**: `sf logic run test --test-level RunLocalTests --code-coverage --target-org [alias]` (v2.107.6+). Runs both Apex and Flow tests together. For production, prefer separate `sf apex run test` and `sf flow run test`.
 
 ### Phase 5: Coverage Improvement
 
