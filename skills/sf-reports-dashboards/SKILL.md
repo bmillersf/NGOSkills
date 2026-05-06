@@ -1,46 +1,21 @@
 ---
 name: sf-reports-dashboards
 description: >
-  Native Salesforce Reports, Report Types, Dashboards, and Analytics Tab architecture with
-  120-point scoring and industry-first routing precedence.
-  TRIGGER when: user builds or troubleshoots native Salesforce reports (Tabular, Summary, Matrix,
-  Joined formats), configures Report Types (standard or custom), authors Report Filters / Logic /
-  Cross-Filters / Bucket Fields, manages Report Folders and sharing, schedules Report Subscriptions,
-  builds Dashboards with Chart / Table / Metric / Gauge / Lightning Table components, configures
-  Dynamic Dashboards, sets Dashboard Subscriptions, touches `.report-meta.xml`,
-  `.dashboard-meta.xml`, or `.reportType-meta.xml`, or asks to "build a report for X",
-  "pipeline by stage by owner", "donors who gave last year but not this year report", "matrix
-  report of cases by priority by queue", "joined report comparing Q3 vs Q4", "dashboard for the
-  VP", "donut chart of funding sources", "dynamic dashboard that shows each manager their team",
-  "subscribe me to this report weekly", "add a bucket for age ranges", "cross-filter accounts
-  without opportunities", "historical trending on forecast", "my custom object isn't showing
-  up — need a report type", "funnel chart of opportunity stage", "gauge showing how close we
-  are to goal".
-  DO NOT TRIGGER when: the analytics are in Tableau, Tableau Next, CRM Analytics (formerly
-  Einstein Analytics / Tableau CRM), Einstein Discovery, SAQL, lenses, dashboards in the
-  Analytics Studio app, Pulse metrics, or Tableau Semantic Layer views (use sf-tableau for all
-  Tableau / CRMA / Tableau Next work); the query is Data Cloud SQL, async query, calculated
-  insight, or a segment count via DC (use sf-datacloud-retrieve or sf-datacloud-segment); the
-  ask is raw CRM SOQL with no visualization (use sf-soql); the report is a Power BI / Looker /
-  third-party BI artifact (out of scope — not a Salesforce-native skill); Industry Cloud ships
-  packaged reports and dashboards on industry-owned objects and the user is asking for those —
-  FSC reports on Household / Financial Account / Life Event Moment (use sf-industry-fsc);
-  Health Cloud reports on Patient / Care Plan / Care Request (use sf-industry-health);
-  Education Cloud / EDA reports on Student / Program Enrollment / Course Connection
-  (use sf-industry-education); Public Sector Solutions reports on Benefit / License / Permit /
-  Inspection (use sf-industry-public-sector); Field Service reports on Work Order / Service
-  Appointment / Dispatcher metrics (use sf-field-service); Manufacturing Cloud reports on
-  Sales Agreement / Account Forecast / Rebate Program (use sf-industry-manufacturing); Consumer
-  Goods Cloud reports on Visit / Retail Execution / Trade Promotion (use sf-industry-consumer-goods);
-  Communications Cloud reports on Product Catalog / Order Decomposition (use sf-industry-communications);
-  Media Cloud reports on Subscriber / Billing Account (use sf-industry-media); Energy & Utilities
-  reports on Premise / Service Point / Meter (use sf-industry-energy); Nonprofit Cloud reports
-  on Gift Transaction / Program Enrollment / Funding Award (use sf-nonprofit-cloud family);
-  NPSP reports on Opportunity-as-donation / Recurring Donation / Household Account
-  (use sf-nonprofit-npsp); Revenue Cloud / CPQ reports on Quote / Order / Subscription
-  (use sf-revenue-cloud); Service Cloud Omni-Channel supervisor dashboards — those are
-  Omni-Channel's own real-time dashboards, not native Reports (use sf-service-omnichannel);
-  embedded LWC dataviz (use sf-lwc); SOQL-in-Apex for a visualization (use sf-apex / sf-soql).
+  Native Salesforce Reports, Report Types, Dashboards, and Analytics Tab.
+  Industry-first routing.
+  TRIGGER when: user builds / troubleshoots native Reports (Tabular, Summary,
+  Matrix, Joined), Report Types (standard or custom), Filters / Cross-Filters /
+  Bucket Fields / Row-Level / Summary Formulas, Folders, Subscriptions;
+  Dashboards (Chart, Table, Metric, Gauge, Funnel, Lightning Table), Dynamic
+  Dashboards, Filters; or touches `.report-meta.xml`, `.dashboard-meta.xml`,
+  `.reportType-meta.xml`.
+  DO NOT TRIGGER when: the surface is Tableau / Tableau Next / CRM Analytics /
+  Einstein Discovery / SAQL / Pulse (sf-tableau); Data Cloud SQL or segment
+  count (sf-datacloud-retrieve, sf-datacloud-segment); raw CRM SOQL with no
+  viz (sf-soql); industry-pack-owned report (defer to matching sf-industry-* /
+  sf-nonprofit-* skill); Revenue Cloud / CPQ report (sf-revenue-cloud); Service
+  Omni-Channel supervisor dashboard (sf-service-omnichannel); embedded LWC
+  dataviz (sf-lwc); third-party BI like Power BI / Looker (out of scope).
 license: MIT
 compatibility: "Available in all editions with Reports & Dashboards enabled. Dynamic Dashboards and Historical Trending require Enterprise edition or above."
 metadata:

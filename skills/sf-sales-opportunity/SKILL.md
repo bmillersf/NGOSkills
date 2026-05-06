@@ -1,50 +1,20 @@
 ---
 name: sf-sales-opportunity
 description: >
-  Sales Cloud Opportunity phase: deal modeling, pipeline management, opportunity
-  teams and splits, contact roles, stage history, Pipeline Inspection, and Deal
-  Insights, with industry-first routing precedence.
-  TRIGGER when: user is designing or fixing opportunity-centered work and says
-  things like "build the Opportunity stage model", "define Opportunity record
-  types for new vs renewal vs upsell", "configure Opportunity Splits for overlay
-  reps", "set up Opportunity Teams and default access", "populate Opportunity
-  Contact Roles automatically on conversion", "review OpportunityFieldHistory
-  / OpportunityStageHistory for pipeline velocity", "enable Pipeline Inspection",
-  "turn on Deal Insights for the AE team", "wire Opportunity territory assignment",
-  "hand Opportunity off to Quote for Quote-to-Cash", "tune probability per
-  stage", "close-date hygiene policy", "build a weighted pipeline report",
-  "forecast category mapping on each stage", "Opportunity duplicate detection",
-  or any question centered on the Opportunity object and its immediate children.
-  DO NOT TRIGGER when: the request is a multi-capability Sales Cloud design (use
-  sf-sales-cloud); the request is about Collaborative Forecasts, forecast types,
-  forecast hierarchies, adjustments, or quotas (use sf-sales-forecasting); the
-  request is about cadences, Sales Dialer, Einstein Activity Capture, or
-  prioritized work queues (use sf-sales-engagement); the org has Financial
-  Services Cloud and the Opportunity is extended with FinServ__ fields for a
-  mortgage/lending/wealth deal (use sf-industry-fsc); the org has Health Cloud
-  and the Opportunity is used for payer contracting (use sf-industry-health);
-  the org has Education Cloud / EDA and the Opportunity is used for advancement
-  giving on EDA (use sf-industry-education); the org has Public Sector
-  Solutions and Opportunity is used as a funding pursuit tied to Benefits (use
-  sf-industry-public-sector); the request is Work Order / Service Appointment
-  scheduling (use sf-field-service); the org has Nonprofit Cloud and the "deal"
-  is really a Gift Transaction or Funding Award (use sf-nonprofit-cloud); the
-  org has NPSP and the Opportunity is a donation (use sf-nonprofit-npsp); the
-  org has Manufacturing Cloud and the "deal" is a Sales Agreement (use
-  sf-industry-manufacturing); the org has Consumer Goods Cloud and the deal is
-  a Visit / Retail Execution outcome (use sf-industry-consumer-goods); the org
-  has Communications Cloud and the deal is a Cart / Offer / Order Decomposition
-  (use sf-industry-communications); the org has Media Cloud and the deal is a
-  Subscription / Entitlement (use sf-industry-media); the org has Energy &
-  Utilities Cloud and the deal is a Service Point / Work Request (use
-  sf-industry-energy); the work is Quote-to-Cash detail, CPQ rules, or
-  Subscription Management (use sf-revenue-cloud); the work is Case / Service
-  Console (use sf-service-cloud); the work is marketing campaign execution
-  (use sf-marketing-cloud-growth or sf-marketing-account-engagement); the work
-  is Apex code (use sf-apex); the work is LWC (use sf-lwc); the work is Flow
-  XML mechanics (use sf-flow); the work is Data Cloud (use sf-datacloud); the
-  work is nonprofit fundraising (use sf-nonprofit-fundraising); the work is
-  NPSP configuration (use sf-nonprofit-npsp).
+  Sales Cloud Opportunity: deal modeling, pipeline, Teams and Splits, Contact
+  Roles, stage history, Pipeline Inspection, Deal Insights. Industry-first.
+  TRIGGER when: user designs Opportunity work — stage model, record types,
+  Splits, Teams, Contact Roles, stage history / velocity, Pipeline Inspection,
+  Deal Insights, territory assignment, Opp→Quote hand-off, probability
+  tuning, or duplicate detection.
+  DO NOT TRIGGER when: scope is multi-capability Sales (sf-sales-cloud),
+  Forecasts (sf-sales-forecasting), Cadences (sf-sales-engagement); industry
+  / nonprofit pack owns the deal — Manufacturing Sales Agreement, NPC Gift
+  Transaction, NPSP donation, FSC mortgage/wealth (matching sf-industry-* /
+  sf-nonprofit-* skill); Quote-to-Cash / CPQ (sf-revenue-cloud); Service
+  (sf-service-cloud); Field Service (sf-field-service); Marketing campaign
+  (sf-marketing-cloud-growth, sf-marketing-account-engagement); code — Apex
+  (sf-apex), LWC (sf-lwc), Flow (sf-flow), Data Cloud (sf-datacloud).
 license: MIT
 compatibility: "Requires Sales Cloud edition; industry-first routing applies"
 metadata:

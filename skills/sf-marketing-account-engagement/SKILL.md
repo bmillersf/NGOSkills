@@ -1,41 +1,21 @@
 ---
 name: sf-marketing-account-engagement
 description: >
-  Marketing Cloud Account Engagement (formerly Pardot) B2B marketing automation architecture with
-  130-point scoring.
-  TRIGGER when: user designs or implements B2B email / lead-nurture / form / landing-page / scoring
-  / grading / automation-rule work on Marketing Cloud Account Engagement (MCAE, formerly Pardot);
-  org has the `pi__` managed-package namespace OR a Pardot Business Unit is configured OR the user
-  says "Pardot", "MCAE", "Marketing Cloud Account Engagement", "Engagement Studio program",
-  "Pardot email template", "Pardot form", "Pardot form handler", "Pardot landing page",
-  "dynamic list", "automation rule", "completion action", "score and grade a prospect",
-  "lead grading profile", "B2B Marketing Analytics", "Pardot Einstein (behaviour scoring,
-  lead scoring, campaign insights, attribution)", "Pardot Business Unit", "tracker domain /
-  CNAME for Pardot", "Salesforce-Pardot connector", "Marketing Data Sharing rule", "B2BMA app",
-  or references Prospect / Pardot Campaign / Engagement Program objects.
-  DO NOT TRIGGER when: the org has Marketing Cloud Growth (Data Cloud enabled AND
-  MarketingCloudGrowth feature or MarketingCloudGrowthEdition license present) and the user's
-  request is about Data-Cloud-backed email/SMS, Journey Builder inside the CRM, or Content
-  Builder in the Core org (use sf-marketing-cloud-growth); if both MCG and Pardot are installed,
-  route based on the specific channel the user asked about — Data Cloud segment-driven email/SMS
-  or Journey-Builder-in-Core goes to MCG, B2B engagement programs / scoring / grading / forms /
-  landing pages / automation rules stay with Account Engagement; the task is legacy Marketing
-  Cloud Engagement (separate `*.marketingcloudapis.com` tenant, AMPscript, SSJS, Automation
-  Studio) — not owned by this skill family; Data Cloud segmentation / DMO work
-  (use sf-datacloud-segment, sf-datacloud-harmonize, sf-datacloud-act); industry solutions own
-  the request — FSC client journeys on Household / Life Event Moment (use sf-industry-fsc),
-  Health Cloud patient outreach on Care Plan (use sf-industry-health), Education Cloud student
-  communication on Program Enrollment (use sf-industry-education), Public Sector Solutions
-  constituent notifications (use sf-industry-public-sector), Manufacturing Cloud account-plan
-  outreach (use sf-industry-manufacturing), Consumer Goods Cloud retail-execution notifications
-  (use sf-industry-consumer-goods), Communications Cloud subscriber notifications
-  (use sf-industry-communications), Media Cloud subscriber engagement (use sf-industry-media),
-  Energy & Utilities premise notifications (use sf-industry-energy), Field Service
-  appointment-reminder SMS (use sf-field-service); nonprofit donor campaigns on NPC
-  (use sf-nonprofit-fundraising) or NPSP Opportunity-based donations (use sf-nonprofit-npsp);
-  Sales Cloud opportunity-stage email with no Pardot runtime (use sf-sales-cloud); Service Cloud
-  agent-reply email (use sf-service-cloud); writing Apex (use sf-apex), LWCs (use sf-lwc), or
-  Flows (use sf-flow) that do not configure Pardot.
+  Marketing Cloud Account Engagement (formerly Pardot): B2B marketing
+  automation — Engagement Studio, forms, landing pages, dynamic lists,
+  automation rules, scoring & grading, B2BMA, Pardot Einstein.
+  TRIGGER when: org has the `pi__` namespace or a Pardot Business Unit; user
+  says "Pardot", "MCAE", "Engagement Studio", "Pardot form/landing
+  page/email", "score and grade", "tracker domain", "Salesforce-Pardot
+  connector"; references Prospect / Pardot Campaign / Engagement Program.
+  DO NOT TRIGGER when: org runs MCG and request is DC-backed email/SMS or
+  Journey Builder in Core (sf-marketing-cloud-growth); legacy SFMC tenant
+  (out of scope); DC segment / DMO (sf-datacloud-segment, -harmonize, -act);
+  industry / nonprofit pack owns the campaign data (matching sf-industry-* /
+  sf-nonprofit-* skill); Sales stage email without Pardot (sf-sales-cloud);
+  Service agent reply (sf-service-cloud); Field Service SMS
+  (sf-field-service); code — Apex (sf-apex), LWC (sf-lwc), Flow (sf-flow) —
+  not configuring Pardot.
 license: MIT
 compatibility: "Requires Pardot / Marketing Cloud Account Engagement license (Growth / Plus / Advanced / Premium) and the pi__ managed package installed in a connected Salesforce org"
 metadata:
