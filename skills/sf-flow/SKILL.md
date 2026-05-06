@@ -170,9 +170,11 @@ Score: 92/110 ⭐⭐⭐⭐ Very Good
 
 ### Phase 5: Testing & Documentation
 
-See `references/testing-guide.md` | `references/testing-checklist.md` | `references/wait-patterns.md`
+See `references/testing-guide.md` | `references/testing-checklist.md` | `references/wait-patterns.md` | **`references/flow-test-authoring.md`** (`.flowtest-meta.xml` schema + verified examples)
 
-Quick: Screen → Run + test all paths. Record-Triggered → Debug Logs + **bulk test 200+ records**. Autolaunched → Apex test class. Scheduled → Verify schedule + manual Run.
+**Default**: every record-triggered or autolaunched flow ships with at least one authored `.flowtest-meta.xml` test. Run via `sf logic run test --tests "FlowTesting.<test-name>"` (unified Apex+Flow runner) or the legacy `sf flow run test`. Author by retrieving from a UI-built test (Setup → Flow → Debug → Convert to Test → `sf project retrieve start --metadata FlowTest:<Flow>.<Test>`), then version-control. See `references/flow-test-authoring.md` for the full schema, three working examples (record-triggered with decision + field assertions, before-update with Initial+Updated snapshots, action-element `WasVisited`/`HasError` assertions), CLI usage, and the limitations that bite (no callout mocking, `InputVariable` parameter type still reserved, no `runAs` element).
+
+Quick: Screen → Run + test all paths (FlowTest doesn't yet support `InputVariable` for screen flows). Record-Triggered → authored FlowTest + Debug Logs + **bulk test 200+ records**. Autolaunched → authored FlowTest + Apex test class for the caller. Scheduled → authored FlowTest with `ScheduledPath` parameter + verify schedule + manual Run.
 
 ---
 
@@ -220,13 +222,21 @@ See `references/xml-gotchas.md` for XML-specific issues.
 
 ## Flow Testing (CLI)
 
+> **Authoring schema, file naming, and verified examples**: `references/flow-test-authoring.md`. Files live in `force-app/main/default/flowtests/<Flow>_<Test>.flowtest-meta.xml`.
+
 ```bash
+# Legacy single-runner (CLI ≥ v2.86.9)
 sf flow run test --tests FlowTest1,FlowTest2 --target-org my-sandbox
-sf flow run test --test-level RunAllFlowTests --target-org my-sandbox
+sf flow run test --test-level RunAllTestsInOrg --target-org my-sandbox
 sf flow get test --test-run-id <id> --target-org my-sandbox
+
+# Unified Apex + Flow runner (preferred for CI; CLI v2.107+)
+sf logic run test --tests "FlowTesting.<flow-test-name>" --target-org my-sandbox
+sf logic run test --test-category Flow --test-level RunAllTestsInOrg --code-coverage --synchronous --target-org my-sandbox
+sf logic get test --test-run-id <id> --target-org my-sandbox
 ```
 
-> GA since v2.86.9. For Apex tests, see `/sf-testing`. For unified runner (Beta): `sf logic run test`.
+`--code-coverage` reports flow coverage (the same flag as Apex). `--test-category Flow` / `--test-category Apex` are repeatable; omit both to run everything. For Apex tests, see `/sf-testing`.
 
 ---
 
