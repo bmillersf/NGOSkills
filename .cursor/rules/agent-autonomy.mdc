@@ -222,7 +222,7 @@ Three vendored skill packs are installed side-by-side. They are complementary, n
 |---|---|---|
 | **gsd** (get-shit-done) | Phase-based spec→plan→execute lifecycle, roadmap/milestone management, multi-phase orchestration | `/gsd-*` |
 | **superpowers** | Core engineering methodology: TDD, subagent-driven development, plan-writing, code-review hygiene | `/brainstorm`, `/write-plan`, `/execute-plan`, plus auto-triggering skills (`brainstorming`, `test-driven-development`, `executing-plans`, etc.) |
-| **gstack** | Cognitive-mode specialists: founder taste, paranoid review, browser-based QA, release mechanics | `/gstack-*` (49 skills: `/gstack-plan-ceo-review`, `/gstack-plan-eng-review`, `/gstack-review`, `/gstack-ship`, `/gstack-qa`, `/gstack-browse`, `/gstack-retro`, etc.) |
+| **gstack** | Cognitive-mode specialists: founder taste, paranoid review, browser-based QA, design exploration, release mechanics | `/gstack-*` (47 skills: `/gstack-plan-ceo-review`, `/gstack-plan-eng-review`, `/gstack-review`, `/gstack-ship`, `/gstack-qa`, `/gstack-browse`, `/gstack-design-shotgun`, `/gstack-investigate`, `/gstack-retro`, etc.) |
 
 ### Composition rule (MANDATORY)
 
@@ -247,6 +247,38 @@ Three vendored skill packs are installed side-by-side. They are complementary, n
 - **Don't use gstack-plan-ceo-review after code is already written** — its value is pre-spec; after implementation it becomes scope-creep theater.
 - **Don't use gsd alone for pure exploratory coding** — spec→plan→execute overhead isn't worth it for a one-file script. Use superpowers' `/brainstorm` and TDD directly.
 - **Don't run gstack-review AND gsd-code-review on the same diff and merge findings** — run gstack-review first (broader paranoid pass), then gsd-code-review (phase-aware, writes REVIEW.md). Sequential, not redundant.
+
+### Per-milestone demo-validate escalation (Salesforce demo work)
+
+When a milestone produces or depends on a demo-ready Salesforce org, run `sf-demo-validate` against the milestone spec **after** `/gsd-verify-work` passes. `sf-demo-validate` carries its own 200-pt rubric and autonomous self-repair for in-scope issues (missing metadata, demo-data drift, broken demo automation). If validation fails:
+
+| Failure type | Escalate to | Why |
+|---|---|---|
+| In-scope, self-repairable (metadata/data/automation gaps) | `sf-demo-validate` repairs and re-runs itself | Stay inside the skill — it owns this scope |
+| Self-repair blocked, still in-phase (touches phase artifacts, may span sessions) | `/gsd-debug` | Persistent state, integrates with `.planning/`, scientific method |
+| Out-of-scope (org-config oddity, infra, anything outside the phase) | `/gstack-investigate` | Stateless 4-phase root-cause loop, no phase overhead |
+
+**Default tiebreaker:** if you're mid-milestone in GSD, prefer `/gsd-debug` — it preserves context for the rest of the milestone. Reach for `/gstack-investigate` only when the issue is clearly outside phase scope.
+
+**Never skip the escalation.** A `sf-demo-validate` failure that isn't repaired is a milestone regression — do not advance to `/gsd-ship` with a red validate verdict.
+
+`sf-demo-validate` is **not** a generic per-milestone smoke test. For non-demo work, the right gates are `/gsd-verify-work` (UAT) plus `/gstack-qa` for UI-bearing changes — sf-demo-validate fires only when the work is demo readiness.
+
+### Demo-pipeline orchestration (org connect → presenter-ready)
+
+When the user's intent is "build me a demo from these notes" / "prep a demo" / "take me from discovery to presenter-ready", the canonical path is `sf-demo-orchestrate`, **not** an ad-hoc chain of demo-* skills. The orchestrator runs the 7-step pipeline (org connect + baseline → notes intake → product detection + cross-cloud routing → product + duration approval gate → demoscript → data seeding → validate/repair loop → Playwright pre-flight + presenter guide) and emits a single `DEMO-PIPELINE-STATUS.md` that tracks every score, decision, and artifact.
+
+**Standard entry sequence:**
+
+1. User connects an org (or `sf-demo-orchestrate` Phase 1 captures it).
+2. User dumps discovery notes / requirements.
+3. `sf-demo-orchestrate` fires automatically on demo-prep trigger phrases — Phase 3 prompts for **demo duration** (Short 15 min / Standard 30 / Deep 45-60) before authoring; the duration bounds story depth, step count, and visual count.
+4. If the discovery notes mention **Experience Cloud / portal / public-facing UI** (or any visual surface where the user benefits from seeing options before commit), proactively co-suggest `/gstack-design-shotgun` *between* product approval (Phase 3) and demoscript authoring (Phase 4). It generates multiple design variants and opens a local comparison board so the user picks a direction before sf-nonprofit-experience-cloud-build / sf-experience-cloud locks in the implementation.
+5. The validate/repair loop in Phase 6 follows the **demo-validate escalation chain** documented above — `/gsd-debug` (in-phase) or `/gstack-investigate` (out-of-scope) when self-repair is blocked.
+
+**Note on `brainstorming` vs `gstack-design-shotgun`:** brainstorming is dialogue-only (clarifying questions → design doc). It does NOT generate localhost UI previews. Design-shotgun is the variant generator with the comparison board — that's the one to reach for when "show me what this could look like" is the ask.
+
+**Don't bypass the orchestrator** by chaining demo-* skills manually for a full pipeline run. Manual chaining loses the status file, skips the duration gate, and risks running phases out of order. Use individual demo-* skills only for partial work (just author, just seed, just validate) — `sf-demo-orchestrate`'s `DO NOT TRIGGER when:` clause already routes those correctly.
 
 ### Browser-based QA note
 
