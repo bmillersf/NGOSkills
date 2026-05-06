@@ -1,40 +1,21 @@
 ---
 name: sf-marketing-cloud-growth
 description: >
-  Marketing Cloud Growth (the Data Cloud-native Marketing Cloud, Starter / Growth / Advanced tiers)
-  architecture with 130-point scoring.
-  TRIGGER when: user designs or implements email, SMS, or journey marketing on a Core-org Marketing
-  Cloud Growth (MCG) deployment — Data Cloud is enabled AND the MarketingCloudGrowth feature /
-  MarketingCloudGrowthEdition license is present; user says "Marketing Cloud Growth", "MC Growth",
-  "send an email from MC Growth", "build a journey in Marketing Cloud Growth", "SMS campaign in MCG",
-  "activate a Data Cloud segment to Marketing Cloud", "Einstein for Marketing send-time optimization",
-  "Content Builder asset in Core", "campaign in MC Growth", "Journey Builder inside the CRM",
-  "Starter / Growth / Advanced tier Marketing Cloud", or references a Core-org Campaign / Journey /
-  MessageDefinitionSendDefinition bound to Data Cloud segments.
-  DO NOT TRIGGER when: the org has the `pi__` Pardot namespace or the Pardot Business Unit setup
-  (use sf-marketing-account-engagement); when both MC Growth and Pardot are installed, route based
-  on the specific channel the user asked about — if user asked about B2B engagement programs,
-  scoring, forms, landing pages, or lead grading, Account Engagement wins (use
-  sf-marketing-account-engagement); the task is pure Data Cloud segment building with no MC Growth
-  send in scope (use sf-datacloud-segment); the task is the activation wiring from Data Cloud to
-  MC Growth but no send design (use sf-datacloud-act); the task is DMO harmonization / identity
-  resolution (use sf-datacloud-harmonize); industry solutions own the request — FSC households
-  getting a life-event journey (use sf-industry-fsc), Health Cloud patient outreach on Care Plan
-  (use sf-industry-health), Education Cloud student communication on Program Enrollment
-  (use sf-industry-education), Public Sector Solutions constituent notifications on Benefit /
-  License (use sf-industry-public-sector), Manufacturing Cloud account-plan outreach
-  (use sf-industry-manufacturing), Consumer Goods Cloud retail-execution notifications
-  (use sf-industry-consumer-goods), Communications Cloud subscriber notifications
-  (use sf-industry-communications), Media Cloud subscriber engagement
-  (use sf-industry-media), Energy & Utilities Cloud premise notifications
-  (use sf-industry-energy), Field Service appointment-reminder SMS tied to ServiceAppointment
-  (use sf-field-service); nonprofit campaigns on Nonprofit Cloud Gift Transaction / Person Account
-  fundraising (use sf-nonprofit-fundraising), nonprofit campaigns on NPSP Opportunity-based
-  donations or CampaignMember appeals (use sf-nonprofit-npsp); the task is Sales Cloud
-  opportunity-stage email on Lead/Contact without Marketing Cloud involvement (use sf-sales-cloud);
-  the task is Service Cloud case-routing email-to-case or agent-reply email (use sf-service-cloud);
-  writing Apex (use sf-apex), LWCs (use sf-lwc), or Flows (use sf-flow) that happen to fire an email
-  alert and have no Marketing Cloud runtime involvement.
+  Marketing Cloud Growth (Data Cloud-native, Core-org MC — Starter / Growth /
+  Advanced). Send-side: journeys, email/SMS templates, Content Builder,
+  campaigns, Einstein for Marketing.
+  TRIGGER when: org has Data Cloud + MarketingCloudGrowth feature; user
+  designs MCG email/SMS/journey, activates a DC segment to MC, configures
+  Journey Builder in CRM, builds Content Builder assets in Core, or
+  configures Einstein send-time optimization.
+  DO NOT TRIGGER when: org has the `pi__` Pardot namespace
+  (sf-marketing-account-engagement) — if both, B2B engagement → MCAE; pure DC
+  segment, no MCG send (sf-datacloud-segment); DC activation wiring
+  (sf-datacloud-act); DMO / identity (sf-datacloud-harmonize); industry /
+  nonprofit pack owns the campaign data (matching sf-industry-* /
+  sf-nonprofit-* skill); Sales stage email without MC (sf-sales-cloud);
+  Service reply (sf-service-cloud); Field Service SMS (sf-field-service);
+  code — Apex (sf-apex), LWC (sf-lwc), Flow (sf-flow) — without MC runtime.
 license: MIT
 compatibility: "Requires Data Cloud enabled + Marketing Cloud Growth (Starter / Growth / Advanced) license. Runs inside the Core org, not on a separate MC tenant."
 metadata:

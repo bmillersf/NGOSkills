@@ -1,39 +1,22 @@
 ---
 name: sf-lightning-app-builder
 description: >
-  Lightning App Builder architecture: record pages, app pages, home pages, FlexiPage metadata,
-  Dynamic Forms, Dynamic Actions, Dynamic Interactions, Component Visibility filters, Page
-  Layout migration, and Record Page Assignments with 120-point scoring.
-  TRIGGER when: user builds or edits Lightning record pages, app pages, home pages, or email
-  application pages in Lightning App Builder; touches `.flexipage-meta.xml`; migrates classic
-  Page Layouts to Dynamic Forms; configures Dynamic Actions on a record page (replacing the
-  static button bar); wires Dynamic Interactions between components; applies Component Visibility
-  filters (by record field, user profile, form factor, permission); assigns record pages per
-  profile / record type / app / form factor; configures pinned tabs, utility bar items, or the
-  app navigation; asks to "put a component on the record page", "hide this section unless the
-  status is X", "show this button only for admins on tablet", "replace the page layout with
-  Dynamic Forms", "migrate our Opportunity page layouts to Dynamic Forms", "make the account
-  page different for the partner channel app", "assign this record page to this profile", "add
-  a related list to the home page", "add a tab that shows this LWC only to managers", or says
-  "Lightning App Builder", "FlexiPage", "Dynamic Forms", "Dynamic Actions", "Dynamic
-  Interactions", "Component Visibility", "Record Page Assignment".
-  DO NOT TRIGGER when: authoring the LWC / Aura components themselves placed on the page
-  (use sf-lwc); authoring Apex called by a button / action (use sf-apex); authoring Flow called
-  by a quick action or screen component (use sf-flow); authoring the custom object / field /
-  validation rule that the page surfaces (use sf-metadata); permission set / FLS analysis for
-  fields on the page (use sf-permissions); Experience Cloud LWR / Aura site page authoring in
-  Experience Builder — that is a different builder (use sf-experience-cloud or
-  sf-nonprofit-experience-cloud); Mobile Publisher app shell configuration (out of scope);
-  building a Reports or Dashboards component's chart (use sf-reports-dashboards for the chart
-  itself); authoring Utility Bar LWCs (component authoring) (use sf-lwc); OmniStudio FlexCards
-  embedded on a FlexiPage — the card is authored via sf-industry-commoncore-flexcard, page
-  placement is here; industry packages that ship their own record page templates and the user
-  wants to customize those — FSC Relationship Map record page, Health Cloud Patient Card
-  record page, etc. often have industry-specific configuration on top of the FlexiPage surface
-  (route to sf-industry-fsc, sf-industry-health, sf-industry-education, sf-industry-public-sector,
-  sf-field-service, sf-nonprofit-cloud, sf-nonprofit-experience-cloud-build when the industry
-  owns the template); Slack Canvas layout — that is a Slack surface, not Lightning
-  (use sf-slack).
+  Lightning App Builder: record / app / home pages, FlexiPage, Dynamic Forms,
+  Dynamic Actions, Dynamic Interactions, Component Visibility, Record Page
+  Assignments, Utility Bar.
+  TRIGGER when: user composes Lightning pages in App Builder; touches
+  `.flexipage-meta.xml`; migrates Page Layouts to Dynamic Forms; configures
+  Dynamic Actions / Dynamic Interactions / Component Visibility; assigns
+  record pages per profile / record type / app / form factor; configures
+  utility bar or app navigation.
+  DO NOT TRIGGER when: component authoring — LWC/Aura (sf-lwc), Apex (sf-apex),
+  Flow (sf-flow); object / field metadata (sf-metadata); permissions
+  (sf-permissions); Experience Cloud site pages (sf-experience-cloud,
+  sf-nonprofit-experience-cloud); charts (sf-reports-dashboards); FlexCard
+  authoring (sf-industry-commoncore-flexcard) — placement stays here;
+  industry pack ships the record page template (matching sf-industry-* /
+  sf-nonprofit-* skill); Slack Canvas (sf-slack); Mobile Publisher (out of
+  scope).
 license: MIT
 compatibility: "Available in Lightning Experience across all editions. Dynamic Forms GA on all standard and custom objects as of Spring '24."
 metadata:

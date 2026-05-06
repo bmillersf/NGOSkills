@@ -1,57 +1,20 @@
 ---
 name: sf-sales-cloud
 description: >
-  Salesforce Sales Cloud product orchestrator for lead-to-cash, pipeline, forecasting,
-  and sales engagement workflows, with industry-first routing precedence.
-  TRIGGER when: user designs or troubleshoots a Sales Cloud implementation across
-  multiple capabilities and says things like "set up lead management end-to-end",
-  "design lead routing and assignment", "build the pipeline stage model", "configure
-  opportunity team selling", "stand up collaborative forecasts for this org",
-  "enable pipeline inspection and deal insights", "turn on Einstein for Sales /
-  Einstein Opportunity Scoring / Einstein Lead Scoring", "configure campaign
-  influence and campaign member statuses", "design product and price book strategy",
-  "wire up quote-to-order hand-off", "set up territory management / enterprise
-  territory management", "roll out sales engagement cadences", "activate Sales
-  Dialer and Einstein Activity Capture", "review our Sales Cloud data model", or
-  any multi-capability Sales Cloud initiative that needs a routing decision across
-  Opportunity, Forecasting, Engagement, Territory, and Revenue Intelligence.
-  DO NOT TRIGGER when: the request is narrowly about Opportunity modeling, splits,
-  teams, pipeline inspection, or deal insights (use sf-sales-opportunity);
-  narrowly about Collaborative Forecasts, forecast types, forecast hierarchies,
-  adjustments, or quotas (use sf-sales-forecasting); narrowly about Sales
-  Engagement, cadences, Sales Dialer, Einstein Activity Capture, or prioritized
-  work queues (use sf-sales-engagement); the org has Financial Services Cloud and
-  the request touches Households, Financial Accounts, Life Events, ARC, or
-  FinServ__ objects (use sf-industry-fsc); the org has Health Cloud and touches
-  Patient, Care Plan, Care Request, or HealthCloudGA__ objects (use
-  sf-industry-health); the org has Education Cloud or EDA and touches Student,
-  Course, Affiliation, Term, or hed__ objects (use sf-industry-education); the
-  org has Public Sector Solutions and touches Benefit, License, Permit, or
-  Inspection (use sf-industry-public-sector); the request involves Work Orders,
-  Service Appointments, Service Territories, or dispatcher scheduling (use
-  sf-field-service); the org has Nonprofit Cloud and touches Gift Transaction,
-  Funding Award, Program Enrollment, or Case Plan (use sf-nonprofit-cloud); the
-  org has NPSP and treats Opportunity as a donation or uses Recurring Donation,
-  Household Account, or Allocation (use sf-nonprofit-npsp); the org has
-  Manufacturing Cloud and touches Sales Agreement, Account Forecast, or Rebate
-  Program (use sf-industry-manufacturing); the org has Consumer Goods Cloud and
-  touches Retail Store, Visit, or Trade Promotion (use sf-industry-consumer-goods);
-  the org has Communications Cloud and touches Product Catalog, Offer, Cart, or
-  Order Decomposition (use sf-industry-communications); the org has Media Cloud
-  and touches Subscriber, Billing Account, or Entitlement (use sf-industry-media);
-  the org has Energy & Utilities Cloud and touches Premise, Service Point, Meter,
-  or Work Request (use sf-industry-energy); the request involves Quote-to-Cash,
-  CPQ product rules, Subscription Management, Billing Schedules, or Order Products
-  as revenue (use sf-revenue-cloud); the request is a Service Cloud Case lifecycle,
-  entitlement, milestone, or omni-channel routing question (use sf-service-cloud);
-  the request is a Marketing Cloud Growth / Account Engagement (Pardot) campaign
-  execution, journey, or email-send question (use sf-marketing-cloud-growth or
-  sf-marketing-account-engagement); the work is Apex code quality (use sf-apex);
-  the work is LWC components (use sf-lwc); the work is Flow XML mechanics (use
-  sf-flow); the work is Data Cloud ingestion, harmonization, segmentation, or
-  activation (use sf-datacloud); the work is nonprofit fundraising (use
-  sf-nonprofit-fundraising); the work is nonprofit NPSP configuration (use
-  sf-nonprofit-npsp).
+  Sales Cloud orchestrator for lead-to-cash, pipeline, forecasting, engagement —
+  industry-first routing precedence.
+  TRIGGER when: user designs multi-capability Sales Cloud (lead routing +
+  opportunity + forecast + engagement together), cross-feature Sales initiatives,
+  territory management rollout, product/price-book strategy, quote-to-order
+  hand-off, or a Sales Cloud data-model review.
+  DO NOT TRIGGER when: scope is one feature — Opportunity (sf-sales-opportunity),
+  Forecasts (sf-sales-forecasting), Cadences/Dialer/EAC (sf-sales-engagement); the
+  org has an industry or nonprofit pack that owns the data (defer to the matching
+  sf-industry-* or sf-nonprofit-* skill — industry-first precedence); the request
+  is Quote-to-Cash/CPQ (sf-revenue-cloud), Service Cloud (sf-service-cloud),
+  Marketing (sf-marketing-cloud-growth, sf-marketing-account-engagement),
+  Field Service (sf-field-service); or it is code-level — Apex (sf-apex), LWC
+  (sf-lwc), Flow (sf-flow), Data Cloud (sf-datacloud).
 license: MIT
 compatibility: "Requires Sales Cloud edition; industry-first routing applies"
 metadata:

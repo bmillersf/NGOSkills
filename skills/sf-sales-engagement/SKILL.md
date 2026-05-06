@@ -1,58 +1,19 @@
 ---
 name: sf-sales-engagement
 description: >
-  Sales Cloud Sales Engagement (formerly High Velocity Sales): cadences, cadence
-  steps, work queues, Sales Dialer, Sales Calls, Einstein Activity Capture,
-  Lightning email templates and tracking, call dispositions, auto-call logging,
-  prioritized work queue, and Sales Email Capture, with industry-first routing
-  precedence.
-  TRIGGER when: user designs or troubleshoots outbound / inbound sales motions
-  and says things like "build an SDR cadence for inbound MQLs", "design a
-  multi-touch cadence with email + call + LinkedIn", "turn on Sales Engagement",
-  "migrate from High Velocity Sales to Sales Engagement", "auto-add leads to
-  this cadence", "configure Sales Dialer for the AE team", "provision dialer
-  numbers for North America", "wire up call disposition picklist", "auto-log
-  calls to the right contact", "enable Einstein Activity Capture", "why isn't
-  my EAC syncing Gmail / Outlook activity", "build a prioritized work queue
-  for SDRs", "Sales Email Capture for the inbox", "track email open / click /
-  reply", "design email templates for sequence step 1 through 7", "cadence
-  target is a lead vs contact", "assign cadences from a flow on Lead conversion",
-  or any other cadence / dialer / activity-capture question.
-  DO NOT TRIGGER when: the request is a multi-capability Sales Cloud design
-  (use sf-sales-cloud); the request is about Opportunity modeling, splits,
-  teams, Pipeline Inspection, or Deal Insights (use sf-sales-opportunity); the
-  request is about Collaborative Forecasts, forecast types, quotas, or
-  adjustments (use sf-sales-forecasting); the org has Financial Services Cloud
-  and the cadence is tied to FSC Interaction Summaries, Life Events, or ARC
-  touch plans (use sf-industry-fsc); the org has Health Cloud and the cadence
-  is a patient outreach / care-gap campaign (use sf-industry-health); the org
-  has Education Cloud or EDA and the cadence is a recruiter / admissions /
-  advancement outreach on EDA (use sf-industry-education); the org has Public
-  Sector Solutions and the cadence is a constituent outreach on Benefit /
-  Application (use sf-industry-public-sector); the request is Field Service
-  technician dispatch or scheduling (use sf-field-service); the org has
-  Nonprofit Cloud and the cadence is a donor stewardship or grantee comms
-  journey (use sf-nonprofit-cloud and children); the org has NPSP and the
-  cadence is a donor Engagement Plan in NPSP (use sf-nonprofit-npsp); the org
-  has Manufacturing Cloud and the outreach is tied to a Sales Agreement
-  renewal cycle (use sf-industry-manufacturing); the org has Consumer Goods
-  Cloud and the cadence is a Visit plan on retail accounts (use
-  sf-industry-consumer-goods); the org has Communications Cloud and the cadence
-  is tied to subscription churn / upsell flows (use sf-industry-communications);
-  the org has Media Cloud and the cadence is subscriber retention outreach
-  (use sf-industry-media); the org has Energy & Utilities Cloud and the cadence
-  is meter-to-cash or outage communication (use sf-industry-energy); the
-  request is Revenue Cloud quote-follow-up cadence tied to Billing Schedule
-  (use sf-revenue-cloud); the request is Service Cloud Omni-Channel Routing,
-  Case escalation, or entitlement-milestone notification (use sf-service-cloud);
-  the request is Marketing Cloud Growth Journey Builder email / SMS sends
-  (use sf-marketing-cloud-growth); the request is Account Engagement (Pardot)
-  Engagement Studio program (use sf-marketing-account-engagement); the work
-  is Apex code (use sf-apex); the work is LWC (use sf-lwc); the work is Flow
-  XML mechanics (use sf-flow); the work is Data Cloud ingestion / activation
-  (use sf-datacloud); the work is nonprofit fundraising (use
-  sf-nonprofit-fundraising); the work is NPSP configuration (use
-  sf-nonprofit-npsp).
+  Sales Engagement (formerly HVS): cadences, work queues, Sales Dialer, EAC,
+  Sales Email Capture. Industry-first routing.
+  TRIGGER when: user designs SDR/AE motions — multi-touch cadences, dialer
+  provisioning, call dispositions, auto-call logging, EAC sync, email
+  tracking, cadence targeting, HVS→Sales Engagement migration.
+  DO NOT TRIGGER when: scope is multi-capability Sales (sf-sales-cloud),
+  Opportunity (sf-sales-opportunity), Forecasts (sf-sales-forecasting);
+  industry / nonprofit pack owns the cadence data (matching sf-industry-* /
+  sf-nonprofit-* skill); Marketing sends (sf-marketing-cloud-growth,
+  sf-marketing-account-engagement); Service Omni-Channel (sf-service-cloud);
+  Field Service dispatch (sf-field-service); Revenue Cloud quote follow-up
+  (sf-revenue-cloud); code — Apex (sf-apex), LWC (sf-lwc), Flow (sf-flow),
+  Data Cloud (sf-datacloud).
 license: MIT
 compatibility: "Requires Sales Engagement PSL (formerly HVS); industry-first routing applies"
 metadata:

@@ -1,39 +1,21 @@
 ---
 name: sf-flow-orchestration
 description: >
-  Salesforce Flow Orchestration (multi-user, multi-step orchestrated flows), Approval Processes,
-  Work Queue, and Work Guide architecture with 130-point scoring.
-  TRIGGER when: user designs or implements multi-user orchestrated work with Flow Orchestration
-  (Stages, Steps, Decisions, Interactive Steps, Background Steps, Async Path), migrates legacy
-  Approval Processes to Flow Orchestration or modern Approvals-in-Flow, configures Work Guide on
-  a record page, builds a Work Queue item pipeline, troubleshoots Orchestration Runs / Orchestration
-  Events / Orchestration Logs, touches `.flow-meta.xml` whose `<processType>` is
-  `Orchestrator` (or `RecordBeforeSave` wrapping Orchestrator stages), sets up a human-in-the-loop
-  workflow that spans multiple assignees, or says "orchestrate this across teams", "multi-step
-  approval", "route this work through review then legal then finance", "assign this to the
-  manager then the director", "work queue for underwriters", "interactive step for the user to
-  complete", "background step to call an API then wait", "async path after save", "orchestration
-  run failed at stage 2", "migrate my Approval Process to Flow", "approvals in Flow", "parallel
-  approval", "conditional approval routing", "escalation on timeout", "reassign the step",
-  "pause the orchestration until external event".
-  DO NOT TRIGGER when: the task is a single record-triggered / screen / scheduled / autolaunched
-  flow with no multi-user orchestration (use sf-flow); Apex implementation, triggers, batch or
-  queueable jobs (use sf-apex); LWC components, Jest tests, wire service (use sf-lwc); Agentforce
-  agents, Agent Script DSL, PromptTemplates (use sf-ai-agentforce / sf-ai-agentscript); Field
-  Service dispatching and Service Appointment scheduling (use sf-field-service); Nonprofit Cloud
-  or NPSP nonprofit-specific orchestrations driven by Gift Transaction, Program Enrollment,
-  Funding Award review lifecycles (use sf-nonprofit-cloud and descendants); Public Sector
-  Solutions benefit / license / permit review workflows — these have industry-owned
-  orchestration templates (use sf-industry-public-sector); FSC loan / mortgage / wealth onboarding
-  review (use sf-industry-fsc); Health Cloud care request / utilization management review
-  (use sf-industry-health); generic object-level metadata XML such as creating the custom objects
-  or fields the orchestration reads from (use sf-metadata); permission set / profile work for
-  the assignees (use sf-permissions); Omni-Channel work routing for service agents — that is
-  Omni-Channel, not Orchestration (use sf-service-omnichannel); the task is a single Approval
-  Process still intended to stay on the legacy Approval Process engine with no orchestration
-  migration in scope (use sf-flow if paired with flow triggers, else stay declarative);
-  Marketing Cloud journey steps — Journey Builder in MC Growth is a different product
-  (use sf-marketing-cloud-growth).
+  Flow Orchestration (multi-user, multi-step), Approvals in Flow / legacy
+  Approval Processes, Work Queue, Work Guide.
+  TRIGGER when: user designs Orchestrator flows (Stages, Steps, Decisions,
+  Interactive/Background Steps, Async Path); migrates Approval Processes to
+  Approvals-in-Flow; configures Work Guide / Work Queue; touches
+  `.flow-meta.xml` with `<processType>Orchestrator</processType>`; or designs
+  multi-assignee workflows with parallel/conditional approvals or timeout
+  escalation.
+  DO NOT TRIGGER when: single record-triggered / screen / scheduled /
+  autolaunched flow (sf-flow); industry / nonprofit pack owns the
+  orchestration (matching sf-industry-* / sf-nonprofit-* skill); Omni-Channel
+  routing (sf-service-omnichannel); Field Service dispatch
+  (sf-field-service); Marketing Journey (sf-marketing-cloud-growth); code —
+  Apex (sf-apex), LWC (sf-lwc), Agentforce (sf-ai-agentforce), metadata
+  (sf-metadata), permissions (sf-permissions).
 license: MIT
 compatibility: "Requires Flow Orchestration enabled on the org (Unlimited / Enterprise with the Flow Orchestration SKU, or Platform with the add-on). Available in Lightning Experience only."
 metadata:

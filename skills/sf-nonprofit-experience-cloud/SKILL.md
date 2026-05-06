@@ -1,15 +1,17 @@
 ---
 name: sf-nonprofit-experience-cloud
 description: >
-  Nonprofit Experience Cloud architecture with 120-point scoring. TRIGGER when:
-  user builds donor portals, volunteer portals, client portals, grantee portals,
-  community sites, self-service portals, or configures sharing rules, guest
-  access, LWR sites, or Aura sites for nonprofit constituents on Experience
-  Cloud. Also triggers when user asks about "portal strategy", "portal
-  architecture", or "portal sharing model". DO NOT TRIGGER when: portal
-  UX/UI design (use sf-nonprofit-experience-cloud-ux), if user wants to
-  hands-on build LWCs/pages inside the portal (use sf-nonprofit-experience-cloud-build),
-  generic LWC components (use sf-lwc), or non-nonprofit Experience Cloud work.
+  Nonprofit Experience Cloud architecture (120-point scoring). Default runtime
+  is Aura "Build Your Own" + custom-LWC composition; never a packaged Aura
+  template; LWR only with a named blocker.
+  TRIGGER when: user builds donor / volunteer / client / grantee portals,
+  community sites, or self-service portals; configures sharing rules, guest
+  access, or site authentication for nonprofit constituents; asks about
+  "portal strategy", "portal architecture", or "portal sharing model".
+  DO NOT TRIGGER when: portal UX/UI design (sf-nonprofit-experience-cloud-ux);
+  hands-on LWC / page build inside the portal
+  (sf-nonprofit-experience-cloud-build); generic LWC components (sf-lwc);
+  non-nonprofit Experience Cloud (sf-experience-cloud).
 license: MIT
 metadata:
   version: "1.0.0"
@@ -36,13 +38,13 @@ upstream_release_notes:
 
 # sf-nonprofit-experience-cloud: Nonprofit Portal Architect
 
-Expert Salesforce architect specializing in Experience Cloud for nonprofits: constituent portals (donor, volunteer, client, grantee), sharing and access architecture, LWR site configuration, self-service workflows, and community engagement.
+Expert Salesforce architect specializing in Experience Cloud for nonprofits: constituent portals (donor, volunteer, client, grantee), sharing and access architecture, Aura "Build Your Own" site configuration with custom-LWC composition, self-service workflows, and community engagement.
 
 ## Core Responsibilities
 
 1. **Portal Strategy**: Design portal types for nonprofit constituent segments
 2. **Sharing Architecture**: Sharing sets, sharing rules, guest user access, record visibility
-3. **Site Configuration**: LWR vs Aura sites, templates, navigation, authentication
+3. **Site Configuration**: Aura "Build Your Own" runtime + custom-LWC composition (default), navigation, authentication
 4. **Self-Service Workflows**: Forms, record creation, status tracking, document upload
 5. **Security & Access**: Permission sets, profile configuration, object/field visibility
 6. **Validation & Scoring**: Score designs against 6 categories (0-120 points)
@@ -71,16 +73,16 @@ Expert Salesforce architect specializing in Experience Cloud for nonprofits: con
 
 ## Architecture Patterns
 
-### Site Type Decision
+### Runtime Decision
 
-| Factor | LWR (Build Your Own) | Aura (Template-Based) |
-|--------|---------------------|----------------------|
-| **Customization** | Full control, modern framework | Template-driven, less flexible |
-| **Performance** | Faster page loads, modern rendering | Heavier, legacy rendering |
-| **Components** | LWC only | LWC + Aura |
-| **Recommended** | New builds (default) | Legacy sites, AppExchange dependencies |
+| Factor | Aura — Build Your Own (default) | Aura — Packaged Templates | LWR — Build Your Own |
+|--------|--------------------------------|---------------------------|----------------------|
+| **Use** | Default for all new nonprofit portals | Never as scaffolding | Only with named blocker |
+| **Customization** | Full layout control via Aura regions; UI delivered as custom LWCs | Forced regions and `siteforce:serviceBody` wrappers fight branding | Full control but with weaker layout primitives in practice |
+| **Component layer** | Custom LWCs in Aura regions | Packaged Aura/LWC components baked in | LWC only |
+| **Visual outcome** | Strongest in practice for nonprofit-branded portals | Looks like stock Salesforce regardless of branding effort | Themeable but consistently less visually appealing than Aura BYO + LWCs |
 
-**Default**: Use LWR for all new nonprofit portals.
+**Default**: Aura "Build Your Own" + custom-LWC composition for every new nonprofit portal. Never clone a packaged Aura template (Customer Service / Partner Central / Customer Account Portal). LWR is permitted only with a named, irreplaceable blocker — confirm with the user before proceeding.
 
 ### Authentication Model
 
@@ -166,7 +168,7 @@ Setup → Digital Experiences → Settings → Enable Digital Experiences
 
 ### 2. Create Site
 
-Setup → Digital Experiences → All Sites → New → Build Your Own (LWR)
+Setup → Digital Experiences → All Sites → New → **Build Your Own** (the Aura BYO template). Do not select a packaged template (Customer Service, Partner Central, Customer Account Portal) and do not select Build Your Own (LWR) unless a named blocker has been documented and confirmed.
 
 ### 3. Configure Network
 
@@ -212,7 +214,7 @@ In Experience Builder → Settings → Object Pages → Toggle on objects that n
 Score: XX/120
 ├─ Sharing Architecture: XX/25   (Sets, rules, guest access, OWD)
 ├─ Security & Access: XX/25      (Permissions, profiles, FLS, CRUD)
-├─ Site Configuration: XX/20     (LWR setup, navigation, auth, branding)
+├─ Site Configuration: XX/20     (Aura BYO + custom-LWC composition, navigation, auth, branding)
 ├─ Self-Service Flows: XX/20     (Forms, status tracking, documents)
 ├─ Performance: XX/15            (Caching, lazy load, component efficiency)
 └─ Best Practices: XX/15         (Testing as user, mobile, accessibility)
@@ -254,7 +256,9 @@ Score: XX/120
 ## Terminology
 
 - **Experience Cloud** — Salesforce platform for external-facing sites and portals
-- **LWR** — Lightning Web Runtime (modern site framework, "Build Your Own")
+- **Build Your Own (Aura)** — the default scaffold for new nonprofit portals; Aura runtime that hosts custom LWCs in Aura regions
+- **Build Your Own (LWR)** — Lightning Web Runtime alternative; permitted only with a named, irreplaceable blocker
+- **Packaged Aura templates** (Customer Service, Partner Central, Customer Account Portal) — never used as scaffolding; baked-in regions and CSS fight branding
 - **Sharing Set** — Maps portal user Contact to records via lookup field
 - **Guest User** — Unauthenticated site visitor
 - **Network** — Experience Cloud site configuration (members, branding, settings)

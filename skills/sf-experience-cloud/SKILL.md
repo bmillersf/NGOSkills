@@ -1,47 +1,21 @@
 ---
 name: sf-experience-cloud
 description: >
-  General (non-nonprofit) Experience Cloud architecture: LWR and Aura sites, Experience Builder,
-  Audiences, Branding Sets, Navigation, CMS, external user licenses, Sharing Sets, Share Groups,
-  Account Relationships, and guest user access, with 140-point scoring and industry-first routing
-  precedence.
-  TRIGGER when: user builds, brands, or troubleshoots a general Experience Cloud site — customer
-  community, partner community, self-service portal, microsite, help center, or public marketing
-  site — on LWR (Lightning Web Runtime) or Aura templates; touches `.site-meta.xml`,
-  `.experienceBundle`, `.networks-meta.xml`; configures Audiences, Branding Sets, Site Navigation,
-  CMS channels and content, Topics / Navigational Topics, Guest user profile, Partner / Customer
-  Community / Customer Community Plus licenses, Sharing Sets, Share Groups, Account Relationships,
-  external account hierarchies, or external user permission sets; or says "build a customer
-  portal", "partner portal", "help center site", "self-service community", "public-facing LWR
-  site", "brand the site", "set up audiences for targeting", "configure guest access", "set up
-  a Customer Community user license", "partner user account relationship", "sharing set for
-  external users", "share group for partner accounts", "CMS channel for the site", "navigation
-  menu for my site", "topics for articles in the community", "site performance is slow",
-  "LWR vs Aura template choice".
-  DO NOT TRIGGER when: the site is on Nonprofit Cloud / NPSP for donors, volunteers, grantees,
-  program participants, or clients — route to the nonprofit trio (use sf-nonprofit-experience-cloud
-  for architecture, sf-nonprofit-experience-cloud-ux for UX / UI, sf-nonprofit-experience-cloud-build
-  for brand-mining and LWC decomposition build methodology); the site is an FSC client portal
-  for households / financial advisors and FSC owns the data model and sharing patterns
-  (use sf-industry-fsc); the site is a Health Cloud patient portal, provider portal, or member
-  engagement site on CareRequest / Patient / Care Plan (use sf-industry-health); the site is an
-  Education Cloud student portal on Program Enrollment / Course Connection (use sf-industry-education);
-  the site is a Public Sector constituent portal on Benefit / License / Permit / Application
-  (use sf-industry-public-sector); the site is a Field Service customer-scheduling portal on
-  ServiceAppointment / WorkOrder (use sf-field-service); the site is a Manufacturing Cloud partner
-  portal on Sales Agreement / Account Forecast (use sf-industry-manufacturing); the site is a
-  Consumer Goods Cloud distributor portal on Trade Promotion / Retail Store (use sf-industry-consumer-goods);
-  the site is a Communications Cloud self-service / partner portal on Offer / Cart (use sf-industry-communications);
-  the site is a Media Cloud subscriber portal on Subscriber / Billing Account (use sf-industry-media);
-  the site is an Energy & Utilities Cloud customer portal on Premise / Service Point / Meter
-  (use sf-industry-energy); the task is authoring the LWC components placed on the site
-  (use sf-lwc); the task is authoring Apex called from the site (use sf-apex); the task is
-  authoring Flows on the site (use sf-flow); the task is the metadata XML for underlying objects
-  and fields (use sf-metadata); the task is permission set / sharing analysis deep dive
-  (use sf-permissions); the task is Mobile Publisher app shell / native app wrapper of the site
-  (out of scope); the task is Slack Connect for external collaboration (use sf-slack); the task
-  is Marketing Cloud Growth landing pages — those are MC surfaces, not Experience Cloud
-  (use sf-marketing-cloud-growth).
+  General (non-nonprofit) Experience Cloud: LWR/Aura sites, Experience Builder,
+  Audiences, Branding, Navigation, CMS, external user licenses, Sharing Sets,
+  Share Groups, Account Relationships, guest access. Industry-first.
+  TRIGGER when: user builds / brands / troubleshoots a customer community,
+  partner community, self-service portal, help center, or public microsite on
+  LWR or Aura; touches `.site-meta.xml`, `.experienceBundle`, or
+  `.networks-meta.xml`; configures Audiences, Branding, Navigation, CMS,
+  Topics, Guest user profile, Customer/Partner Community licenses, Sharing
+  Sets, Share Groups, or Account Relationships.
+  DO NOT TRIGGER when: nonprofit donors/volunteers/grantees/clients
+  (sf-nonprofit-experience-cloud, -ux, -build); industry-pack-owned site
+  (matching sf-industry-* skill); component authoring on the site — LWC
+  (sf-lwc), Apex (sf-apex), Flow (sf-flow), metadata (sf-metadata), permissions
+  (sf-permissions); Slack Connect (sf-slack); Marketing landing pages
+  (sf-marketing-cloud-growth).
 license: MIT
 compatibility: "Experience Cloud licenses required for external users (Customer Community, Customer Community Plus, Partner Community, External Apps). Available in Lightning Experience with Experience Cloud enabled."
 metadata:
@@ -146,7 +120,7 @@ Then STOP generic Experience Cloud workflow and return control. The industry or 
 
 Before producing any site design, establish:
 
-- **Site template.** LWR (Lightning Web Runtime — modern, fast, limited component library, best for public marketing and self-service) vs Aura (legacy, full component library, slower, still required for some packaged templates). LWR is the default for new builds; only choose Aura if a packaged Aura-only template is required.
+- **Site runtime.** Aura with **Build Your Own (Aura)** is the default scaffold for new builds — composed with custom LWCs dropped into Aura regions, this combination has consistently produced more visually appealing sites than LWR Build Your Own in practice. LWR is permitted only with a named, irreplaceable blocker (e.g., a customer specifically requires an LWR-only feature). Packaged Aura templates (Customer Service, Partner Central, Customer Account Portal) are never used as scaffolding — their baked-in layouts and forced regions can't be themed away.
 - **Audience personas.** Who are the external users? Customers (B2C self-service), customers with account hierarchy (B2B self-service), partners (resellers, brokers, dealers), public / unauthenticated visitors, or a mix.
 - **External user license types.** Customer Community (simple read-mostly), Customer Community Plus (delegated admin, Roles, full sharing rules), Partner Community (full partner enablement, opportunity sharing, multi-role), External Apps Starter / Plus (flexible, consumption-based). License choice drives cost and capabilities.
 - **Data scope per persona.** Which objects does each persona need to see / edit? Which fields? What level of account hierarchy is relevant (parent / child accounts, account relationships)?
@@ -158,9 +132,9 @@ Before producing any site design, establish:
 - **Authentication model.** Self-registration enabled? Single Sign-On (SAML, OIDC, social sign-on)? MFA requirement? Passwordless? Login branding?
 - **Integration surface.** What does the site call into — Salesforce internal records (via Apex / LWC wire), external APIs (via Named Credentials), Data Cloud (for personalization)? Delegate code layers to the right skills.
 - **Compliance posture.** GDPR / CCPA / CASL / accessibility (WCAG 2.1 AA minimum typically), cookie consent, data residency.
-- **Performance target.** Time-to-Interactive < 3s on public pages; LWR typically outperforms Aura 2–3x.
+- **Performance target.** Time-to-Interactive < 3s on public pages. Aura is heavier than LWR on raw runtime metrics, so lazy-load images, defer non-critical LWCs, audit unused packaged Aura components, and keep the home page composition lean.
 
-Missing the template, license type, or audience persona is a design-blocking gap. Do not guess.
+Missing the runtime, license type, or audience persona is a design-blocking gap. Do not guess.
 
 ---
 
@@ -168,18 +142,18 @@ Missing the template, license type, or audience persona is a design-blocking gap
 
 Run in order. Phase 0 (industry pre-check) has already executed.
 
-### Phase 1 — Template Choice
+### Phase 1 — Runtime Choice
 
-**LWR is mandatory for new builds.** Aura is permitted only with an explicit, named blocker documented in the plan before any metadata is authored.
+**Build Your Own (Aura) is the default for new builds**, composed entirely from custom LWCs. Packaged templates are never the starting point. LWR is permitted only with a named, irreplaceable blocker.
 
-1. **LWR (default, required).** Create with `sf community create --template-name "Build Your Own (LWR)"` (or `"Microsite"` for public marketing-only). All new customer / partner / help-center / self-service sites start here. Faster load, better SEO, LWC-native, themeable — the only runtime where brand tokens translate cleanly to the composed result.
-2. **Aura is permitted only when a named blocker exists** — and the blocker must be written into the plan:
-   - An Aura-only packaged component the customer explicitly requires that has no LWR equivalent and is irreplaceable.
-   - The engagement is extending (not rebuilding) an existing Aura site, and migrating to LWR is out of scope.
-   - A licensing / edition constraint blocks LWR (rare; name the exact edition).
-   - "Heavy Chatter" and "legacy migration" are NOT blockers by themselves — evaluate LWR-native alternatives (custom discussion LWC, one-time content migration) first.
-3. **Never clone a packaged Aura template** ("Customer Service", "Partner Central", "Customer Account Portal") as a starting point for a new build. Their baked-in layouts, forced regions, and `siteforce:serviceBody` wrappers cannot be themed away and produce sites that look like stock Salesforce regardless of branding effort.
-4. If Aura is forced by a named blocker, halt and confirm with the user: *"Aura is required because <blocker>. Aura sites produce noticeably lower UI/UX quality than LWR. Proceed anyway?"* Wait for explicit confirmation before authoring Aura metadata.
+1. **Aura — Build Your Own (default).** Create with `sf community create --template-name "Build Your Own"` (the Aura BYO template). All new customer / partner / help-center / self-service sites start here. The page surface is Aura; every meaningful UI element is a custom LWC dropped into Aura regions. This combination has produced visually stronger sites than LWR BYO in practice — Aura's region model gives more layout control while LWCs deliver the modern component layer.
+2. **Never clone a packaged Aura template** — "Customer Service", "Partner Central", "Customer Account Portal", or any other pre-built template. Their baked-in layouts, forced sidebar/featured/hidden regions, `siteforce:serviceBody` wrappers, and opinionated CSS fight the theme layer at every level and cannot be themed away. Build Your Own (Aura) is the only Aura starting point.
+3. **Never clone another org's ExperienceBundle as scaffolding.** Copied `routes/`, `views/`, and `brandingSets/` files carry stale IDs and layout choices that belong elsewhere. Author fresh from the metadata schema.
+4. **LWR is permitted only when a named blocker exists** — and the blocker must be written into the plan:
+   - The customer specifically requires an LWR-only feature with no Aura+LWC equivalent.
+   - The engagement is extending (not rebuilding) an existing LWR site.
+   - A regulatory or contractual constraint mandates LWR.
+5. If LWR is forced by a named blocker, halt and confirm with the user: *"LWR is required because <blocker>. Default methodology is Aura BYO + custom LWCs. Proceed with LWR?"* Wait for explicit confirmation before authoring LWR metadata.
 
 ### Phase 2 — Network Creation and License Strategy
 
@@ -211,7 +185,7 @@ Run in order. Phase 0 (industry pre-check) has already executed.
 
 ### Phase 4 — Experience Builder: Pages, Navigation, CMS
 
-1. **Pages** — Home, Login, Error, 404, Search, Topic, Article, Object (record) pages. Use standard templates; customize with LWC components.
+1. **Pages** — Home, Login, Error, 404, Search, Topic, Article, Object (record) pages. Compose every page from custom LWCs in Aura regions; do not adopt packaged-template page layouts as scaffolding.
 2. **Navigation** — Site Navigation menu: hierarchical items, external URLs, Topics, Data Categories, internal pages. Per-audience navigation variants for members-only vs guest.
 3. **CMS Channels** — connect the site to a CMS Workspace (News, Articles, Image Gallery). Channels control which workspaces publish to this site.
 4. **Topics** — Chatter Topics promoted as Navigational Topics; surface articles, discussions, and files under a named topic.
@@ -242,7 +216,7 @@ Guest user misconfiguration is the #1 security incident in Experience Cloud. Har
 
 ### Phase 7 — Performance, SEO, Compliance
 
-1. **Performance** — LWR baseline < 3s TTI for public pages; Aura typically 2–3x slower. Lazy-load images, optimize CSS, avoid heavy LWCs on first render.
+1. **Performance** — Aura BYO has heavier baseline runtime than LWR; offset with aggressive optimization. Target < 3s TTI on public pages: lazy-load images, defer non-critical LWCs, audit and remove unused packaged Aura components, optimize CSS, avoid heavy LWCs on first render, prefer @wire over imperative SOQL where caching helps.
 2. **SEO** — sitemap.xml auto-generated; robots.txt; meta tags per page; structured data (Schema.org) for Articles; canonical URLs; hreflang for localization.
 3. **Analytics** — Google Analytics / Adobe Analytics / first-party analytics LWC; cookie consent banner for jurisdictions requiring it.
 4. **Accessibility** — WCAG 2.1 AA: contrast, keyboard navigation, screen reader labels, ARIA landmarks, focus management. Audit with axe / WAVE.
@@ -276,12 +250,12 @@ Apply to any Experience Cloud site design or build deliverable. Minimum passing:
 
 | Category | Max | Passing | What "passing" looks like |
 |---|---|---|---|
-| **Template and license choice** | 15 | 11 | LWR (Build Your Own or Microsite) for every new build, or Aura with a named blocker documented in the plan and user-confirmed; no packaged Aura template cloned as scaffolding; no cross-org bundle copying; external license type matches persona (not over-licensed with Partner Community when Customer Community suffices) |
+| **Runtime and license choice** | 15 | 11 | Aura "Build Your Own" for every new build (composed with custom LWCs in Aura regions), or LWR with a named blocker documented in the plan and user-confirmed; no packaged Aura template cloned as scaffolding; no cross-org bundle copying; external license type matches persona (not over-licensed with Partner Community when Customer Community suffices) |
 | **Sharing architecture** | 25 | 19 | OWD explicit per object; Sharing Sets map each external profile to its data scope; Share Groups pool internal-external as needed; Account Relationships used for B2B hierarchies; no reliance on manual sharing as primary strategy |
 | **Guest user hardening** | 25 | 19 | Guest OWD Private by default; FLS audited per field; guest Apex reviewed for `WITH SECURITY_ENFORCED`; guest LWCs audited; no guest `View All` on any object; pre-deploy guest scan run |
 | **Experience Builder composition** | 20 | 15 | Pages, Navigation, CMS Channels, Topics, Search scope all configured; standard templates used; LWC customization where justified, not gratuitous |
 | **Audiences and Branding Sets** | 15 | 11 | Audiences defined per persona; Branding Sets per audience if multi-brand; per-audience navigation where appropriate; end-to-end tested |
-| **Performance, SEO, accessibility** | 20 | 15 | TTI < 3s on LWR public pages; sitemap / meta tags / Schema.org present; WCAG 2.1 AA verified; cookie consent where jurisdiction requires |
+| **Performance, SEO, accessibility** | 20 | 15 | TTI < 3s on public pages (Aura BYO needs aggressive optimization to hit this — lazy-load, defer non-critical LWCs); sitemap / meta tags / Schema.org present; WCAG 2.1 AA verified; cookie consent where jurisdiction requires |
 | **Deployment and activation** | 10 | 7 | Experience Bundle deployed with dependencies; site activated; custom domain live with SSL; staging smoke test passed |
 | **Testing and audit** | 10 | 7 | Persona × page matrix executed; guest audit run pre-production; authentication paths tested; accessibility and performance benchmarks logged |
 
@@ -289,9 +263,10 @@ Apply to any Experience Cloud site design or build deliverable. Minimum passing:
 
 ## 6. Anti-Patterns
 
-- **Defaulting to Aura for new sites.** LWR is mandatory for new builds — faster, SEO-friendlier, LWC-native, and themeable. Aura is permitted only with a named, irreplaceable blocker (Aura-only packaged component with no LWR equivalent, or extending an existing Aura site). "Customer Community Plus license", "heavy Chatter", and "legacy migration" are not blockers by themselves. Building new on Aura means you will migrate later, at cost, and ship a visibly lower-quality UI in the meantime.
-- **Cloning a packaged Aura template as the starting point** (Customer Service, Partner Central, Customer Account Portal). These templates ship with baked-in layouts (`siteforce:sldsTwoCol84SidebarFeaturedLayout`, `serviceBody`), forced sidebar/featured/hidden regions, and opinionated CSS that fight the theme layer at every level. Theme customCSS cannot override template-enforced structure. Always create with `"Build Your Own (LWR)"` and compose from standard + custom components.
+- **Defaulting to LWR for new sites.** Aura "Build Your Own" + custom LWCs in Aura regions is the methodology default — it has consistently produced more visually appealing sites in practice. LWR is permitted only with a named, irreplaceable blocker (a customer-required LWR-only feature, an existing LWR site being extended). Defaulting to LWR without that blocker means shipping a visibly weaker UI baseline.
+- **Cloning a packaged Aura template as the starting point** (Customer Service, Partner Central, Customer Account Portal). These templates ship with baked-in layouts (`siteforce:sldsTwoCol84SidebarFeaturedLayout`, `serviceBody`), forced sidebar/featured/hidden regions, and opinionated CSS that fight the theme layer at every level. Theme customCSS cannot override template-enforced structure. Always create with `"Build Your Own"` (Aura) and compose from custom LWCs.
 - **Copying another org's ExperienceBundle as scaffolding.** Copied `routes/`, `views/`, and `brandingSets/` files carry stale IDs, dead component references, and layout choices that belong to a different brand. The result looks like the source org no matter how much restyling happens downstream. Author every JSON file fresh from the metadata schema; inspect reference bundles only to confirm file shape.
+- **Filling Aura regions with packaged Aura components instead of custom LWCs.** The methodology is *Aura runtime + custom LWC component layer*. Dropping `forceCommunity:` and `siteforce:` packaged components into regions reintroduces the stock-Salesforce look the runtime choice was meant to escape. Use packaged Aura components only when no LWC equivalent is feasible.
 - **Over-licensing external users.** Assigning Partner Community to users who only need Customer Community is a recurring cost that adds up fast. License match personas precisely.
 - **Cloning an internal profile for external users.** Internal profiles have dozens of permissions irrelevant or dangerous for externals (Setup access, data export, impersonation). Always start from an External base profile and add only what is needed.
 - **Relying on manual sharing as the primary access mechanism for external users.** Manual sharing doesn't scale, isn't auditable, and breaks when records are re-owned. Use Sharing Sets + Account Relationships as the architecture; manual sharing is only for rare exceptions.
@@ -301,7 +276,7 @@ Apply to any Experience Cloud site design or build deliverable. Minimum passing:
 - **Navigation menu hard-coded instead of per-Audience.** One giant navigation with everything-visible means partners see customer links, guests see member-only links, etc. Per-Audience nav cleanly separates intent.
 - **Skipping the custom domain + SSL setup.** A site hosted at `whatever.force.com` looks unprofessional and is flagged as "not first-party" by browsers. Always provision a custom domain before go-live.
 - **Ignoring the industry / nonprofit pre-check.** The #1 routing mistake. Building a generic customer portal in an org running FSC / Health / EDU / PSS / NPC means you are reinventing a data model the industry already ships. Route first.
-- **Using Chatter as the primary engagement mechanism on LWR.** Chatter is Aura-native; LWR has limited Chatter component support. For LWR sites that need discussion, evaluate alternatives (custom discussion LWC, external tool, or accept the Aura downgrade knowingly).
+- **Reaching for packaged Chatter components by default.** Chatter is Aura-native, so the runtime is fine — but packaged Chatter UI fights the brand layer the same way packaged templates do. For new builds, evaluate a custom LWC discussion component first; only drop in packaged Chatter when a custom build isn't budget-feasible.
 - **Deploying without activating.** Deploying the Experience Bundle puts the metadata in place; it does not make the site live. Activation is a separate step, and the #1 post-deploy "my site isn't up" cause.
 
 ---
@@ -359,17 +334,18 @@ Apply to any Experience Cloud site design or build deliverable. Minimum passing:
 | `.permissionset-meta.xml` | External user permission set |
 | `.sharingRules-meta.xml` | Sharing rules (internal + external) |
 
-### Template chooser
+### Runtime chooser
 
-LWR is mandatory for new builds. Aura only with a named blocker (see Phase 1).
+Aura "Build Your Own" + custom LWCs is the default for new builds. LWR is permitted only with a named, irreplaceable blocker (see Phase 1).
 
-| Use case | Template | Notes |
+| Use case | Scaffold | Notes |
 |---|---|---|
-| Public marketing / help center | LWR Build Your Own | Preferred |
-| Marketing-only public site | LWR Microsite | Lightweight LWR variant |
-| B2C self-service | LWR Build Your Own | Compose with Record Detail + Flow + Case Deflection LWC |
-| Partner portal | LWR Build Your Own | License: Partner Community; do NOT start from "Partner Central" packaged template |
-| Help / Knowledge-heavy | LWR Build Your Own + Knowledge components | — |
+| Public marketing / help center | Build Your Own (Aura) + custom LWCs | Default |
+| B2C self-service | Build Your Own (Aura) + custom LWCs | Compose with custom LWCs in Aura regions; embed Screen Flow for guided forms |
+| Partner portal | Build Your Own (Aura) + custom LWCs | License: Partner Community; do NOT start from "Partner Central" packaged template |
+| Help / Knowledge-heavy | Build Your Own (Aura) + custom LWCs + Knowledge components | Custom LWCs handle article surfaces; package only when no LWC alternative |
+| Customer-required LWR-only feature | Build Your Own (LWR) | Document the named blocker; user-confirm before scaffolding |
+| Extending existing LWR site | Stay on LWR (scope-limited) | Do NOT clone another bundle; inspect and author fresh |
 | Extending existing Aura site | Stay on Aura (scope-limited) | Do NOT clone another bundle; inspect and author fresh |
 
 ### License chooser

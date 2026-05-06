@@ -47,6 +47,8 @@ upstream_release_notes:
 
 Build Experience Cloud sites that feel like the organization's real marketing website, not a generic Salesforce template. This skill codifies a methodology that has produced Experience Cloud sites with measurably better UI/UX than default builds.
 
+**Default runtime: Aura "Build Your Own" + custom LWCs in Aura regions.** Never clone a packaged Aura template; never default to LWR without a named, irreplaceable blocker. See Phase 0 for the runtime gate.
+
 The core insight: **the reference website already solved the IA and brand problems — mine it, don't reinvent it.**
 
 ## When to apply
@@ -104,9 +106,30 @@ Every page composition, branding change, route, guest access toggle, navigation 
 
 The only legitimate UI-only steps are (a) visually previewing a theme and (b) troubleshooting when a metadata-only deploy isn't reflecting — both rare. Even `sf community publish` usually replaces the Builder's Publish button.
 
-## Phase 0 — Detect the site runtime (Aura vs LWR)
+## Phase 0 — Scaffold fresh on Aura "Build Your Own" + custom LWCs (never clone a template)
 
-Authoring rules diverge sharply between Aura and LWR sites. Get the flavor right before copying any template, or gotchas compound.
+The methodology default is **Aura "Build Your Own" with custom LWCs in the regions**. Aura's region model gives stronger layout control while LWCs deliver the modern component layer; this combination has consistently produced more visually appealing nonprofit portals than LWR Build Your Own. Get the runtime right before authoring any routes or views, and never clone an existing bundle — not a packaged template, not another org's bundle, not a reference repo.
+
+### Why packaged Aura templates produce bad UI/UX
+
+Packaged Aura templates (Customer Service, Partner Central, Customer Account Portal) ship with baked-in layouts, forced sidebar/featured regions, `siteforce:serviceBody` wrappers, and opinionated CSS that fight theme-layer branding. Cloning these bundles inherits every constraint and produces sites that *look* like stock Salesforce regardless of how much customCSS is bolted on. The only Aura starting point is **Build Your Own (Aura)** — empty regions, populated entirely by your custom LWCs, branded by the theme layer.
+
+### Runtime choice — Aura BYO + custom LWCs by default; LWR only with a named blocker
+
+1. **Default to Aura "Build Your Own".** Create with `sf community create --template-name "Build Your Own"` (the Aura BYO template). This is the required default for every new nonprofit portal / donor / member / volunteer site. Compose every page from custom LWCs in the Aura regions; reach for packaged Aura components only when no LWC equivalent is feasible.
+
+2. **LWR is permitted only when at least one of these is true** — and the blocker must be named in the plan before Phase 1:
+   - The customer specifically requires an LWR-only feature with no Aura+LWC equivalent.
+   - The engagement is *extending* (not rebuilding) an existing LWR site, and converting to Aura is out of scope.
+   - A regulatory or contractual constraint mandates LWR.
+
+3. **"LWR is faster" is NOT a blocker by itself.** Aura BYO + custom LWCs produces stronger visual results in practice; performance gaps are closed via lazy-loading, deferred component hydration, and removing unused packaged Aura components. Treat performance as an optimization, not a runtime selector.
+
+4. **If LWR is forced by a blocker, halt and confirm with the user** before proceeding. State: *"LWR is required because <named blocker>. Default methodology is Aura BYO + custom LWCs. Proceed with LWR?"* Wait for explicit confirmation before authoring LWR metadata.
+
+### Discover an existing site's runtime (when extending, not rebuilding)
+
+If the engagement is to extend an existing site, identify and inspect — do not clone:
 
 1. **Identify the ExperienceBundle name** — it's often NOT the Network name. Run:
 
@@ -286,14 +309,15 @@ If a route returns "Page not available," 95% of the time it is one of:
 ## Anti-patterns
 
 - **Cloning another org's ExperienceBundle as a starting point.** Copied `routes/`, `views/`, and `brandingSets/` files carry stale IDs, dead component references, and layout choices that belong to a different brand. They produce a site that *looks* like the source org no matter how much you restyle. Author every JSON file fresh from the metadata schema; inspect reference bundles only to confirm file shape.
-- **Using `sf community create --template-name "Customer Service"` / "Partner Central" / "Customer Account Portal" for a new build.** These are packaged Aura templates with baked-in `siteforce:sldsTwoCol84SidebarFeaturedLayout` / `serviceBody` wrappers and forced sidebar/featured regions that no amount of theme customCSS can override. Default to `"Build Your Own (LWR)"` (or `"Microsite"` for public-only marketing). Aura templates produce noticeably lower UI/UX quality — avoid them for new builds.
-- **Picking Aura because the org uses Customer Community Plus.** The license doesn't dictate the runtime. Build Your Own (LWR) supports Customer Community Plus users. Only a *named, irreplaceable* Aura-only capability justifies Aura.
-- **Copying Arlington (or any reference repo) LWCs without re-running Phase 1 brand-mining.** The Arlington component list (`donorHeroBanner`, `givingOpportunitiesGrid`, etc.) reflects Arlington's IA. Another org's IA produces a different list. Re-derive every time; use Arlington only for the *shape* of a standard-first LWC.
-- **"Inherit the template and theme over it" as a shortcut.** Brand-mined typography, spacing, and color tokens land cleanly in LWR `themes/*.json` customCSS; they fight Aura packaged templates at every level (component-owned styles, template-enforced regions, locked layout). Build on LWR or document the blocker.
+- **Using `sf community create --template-name "Customer Service"` / "Partner Central" / "Customer Account Portal" for a new build.** These are packaged Aura templates with baked-in `siteforce:sldsTwoCol84SidebarFeaturedLayout` / `serviceBody` wrappers and forced sidebar/featured regions that no amount of theme customCSS can override. Default to `"Build Your Own"` (the Aura BYO template) and compose pages from custom LWCs in the empty Aura regions. Packaged Aura templates are never the starting point.
+- **Defaulting to `"Build Your Own (LWR)"` for a new build.** LWR is permitted only with a named, irreplaceable blocker (a customer-required LWR-only feature, an existing LWR site being extended, a regulatory mandate). Defaulting to LWR without that blocker means shipping a visibly weaker UI baseline than Aura BYO + custom LWCs.
+- **Filling Aura regions with packaged Aura components instead of custom LWCs.** The runtime choice is *Aura page-host + custom-LWC component layer*. Dropping `forceCommunity:` and `siteforce:` packaged components into regions reintroduces the stock-Salesforce look the runtime choice was meant to escape. Use packaged components only when no LWC equivalent is feasible.
+- **Copying any reference repo's LWCs without re-running Phase 1 brand-mining.** A reference component list reflects that org's IA. Another org's IA produces a different list. Re-derive every time; use a reference only for the *shape* of a standard-first LWC.
+- **"Inherit the template and theme over it" as a shortcut.** Brand-mined typography, spacing, and color tokens land cleanly in `themes/*.json` customCSS over Aura BYO regions; they fight packaged Aura templates at every level (component-owned styles, template-enforced regions, locked layout). Build on Aura BYO with custom LWCs, or document the LWR blocker.
 
 ## Reference implementation — read for patterns, do NOT clone
 
-This skill was distilled from building the **Arlington Donor Portal** — an LWR donor site modeled after `arlingtondiocese.org`. Use it as a **pattern reference only**, never as a source to copy files from.
+This skill was originally distilled from building the **Arlington Donor Portal**, modeled after `arlingtondiocese.org`. Use it as a **pattern reference only**, never as a source to copy files from. (The Arlington site shipped on LWR; the methodology has since shifted to Aura "Build Your Own" + custom LWCs as the stronger visual baseline. The brand-mining, decomposition, and standard-first patterns transfer cleanly to Aura BYO; the route/view/profile gotchas differ — see Phase 0 for the runtime gate.)
 
 **Read the Arlington repo to see:**
 

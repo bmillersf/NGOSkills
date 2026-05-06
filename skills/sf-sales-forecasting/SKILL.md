@@ -1,53 +1,22 @@
 ---
 name: sf-sales-forecasting
 description: >
-  Sales Cloud Collaborative Forecasts: forecast types (Revenue, Quantity, Custom),
-  forecast categories, forecast hierarchies, adjustments, submissions, cumulative
-  rollups, quotas, partner forecasts, and forecast sharing, with industry-first
-  routing precedence.
-  TRIGGER when: user sets up or troubleshoots Collaborative Forecasts and says
-  things like "enable Collaborative Forecasts", "set up forecast types for
-  Revenue and Quantity", "build a custom forecast type on OpportunityLineItem",
-  "configure the forecast hierarchy with role-based managers", "override the
-  forecast hierarchy because the role hierarchy doesn't match sales management",
-  "load quotas for Q3", "allow managers to submit adjustments", "show me
-  cumulative forecast rollups", "configure partner forecasts for channel",
-  "turn on forecast sharing with Sales Ops", "submit a forecast for this period",
-  "why does my forecast show zero", "map stage to forecast category", "split
-  revenue into forecast types by product family", or any other Collaborative
-  Forecasts / quota / adjustment question.
-  DO NOT TRIGGER when: the request is a multi-capability Sales Cloud design (use
-  sf-sales-cloud); the request is about Opportunity modeling, stages, splits,
-  teams, contact roles, Pipeline Inspection, or Deal Insights (use
-  sf-sales-opportunity); the request is about cadences, Sales Dialer, EAC, or
-  prioritized work (use sf-sales-engagement); the org has Financial Services
-  Cloud and the forecast is AUM-based or advisor book-of-business (use
-  sf-industry-fsc); the org has Health Cloud and the forecast is a payer /
-  provider network pipeline (use sf-industry-health); the org has Education
-  Cloud or EDA and the forecast is an advancement / giving forecast on EDA
-  (use sf-industry-education); the org has Public Sector Solutions and the
-  forecast is a grant funding pursuit (use sf-industry-public-sector); the
-  request is Field Service capacity forecasting on Service Appointments
-  (use sf-field-service); the org has Nonprofit Cloud and the "forecast" is a
-  pledged-gift or grant-award pipeline on NPC (use sf-nonprofit-cloud); the
-  org has NPSP and the "forecast" is a donation pipeline on NPSP (use
-  sf-nonprofit-npsp); the org has Manufacturing Cloud and the forecast is an
-  Account Forecast / Advanced Account Forecast / Sales Agreement forecast
-  (use sf-industry-manufacturing); the org has Consumer Goods Cloud and the
-  forecast is a Trade Promotion volume forecast (use sf-industry-consumer-goods);
-  the org has Communications Cloud and the forecast is MRR / ARR on
-  subscription carts (use sf-industry-communications); the org has Media Cloud
-  and the forecast is subscription revenue / entitlement (use sf-industry-media);
-  the org has Energy & Utilities Cloud and the forecast is load / service-point
-  revenue (use sf-industry-energy); the request is Revenue Cloud Advanced
-  revenue waterfall, Billing Schedule, or Subscription Management revenue
-  recognition (use sf-revenue-cloud); the request is Service Cloud KPI
-  dashboards (use sf-service-cloud); the request is marketing pipeline-source
-  reporting (use sf-marketing-cloud-growth or sf-marketing-account-engagement);
-  the work is Apex code quality (use sf-apex); the work is LWC (use sf-lwc);
-  the work is Flow XML mechanics (use sf-flow); the work is Data Cloud (use
-  sf-datacloud); the work is nonprofit fundraising (use sf-nonprofit-fundraising);
-  the work is NPSP configuration (use sf-nonprofit-npsp).
+  Collaborative Forecasts: forecast types, categories, hierarchies,
+  adjustments, submissions, cumulative rollups, quotas, partner forecasts,
+  sharing. Industry-first routing.
+  TRIGGER when: user enables Collaborative Forecasts, defines forecast types
+  (incl. custom on OpportunityLineItem), configures forecast hierarchy or
+  quotas, troubleshoots cumulative rollups, enables partner forecasts, or
+  maps stage→category.
+  DO NOT TRIGGER when: scope is multi-capability Sales (sf-sales-cloud),
+  Opportunity (sf-sales-opportunity), Cadences (sf-sales-engagement); industry
+  / nonprofit pack owns the forecast — Manufacturing Account Forecast, FSC
+  AUM, NPC pledged gifts, NPSP donation pipeline (matching sf-industry-* /
+  sf-nonprofit-* skill); Revenue waterfall (sf-revenue-cloud); Field Service
+  capacity (sf-field-service); Service KPIs (sf-service-cloud); Marketing
+  pipeline-source reporting (sf-marketing-cloud-growth,
+  sf-marketing-account-engagement); code — Apex (sf-apex), LWC (sf-lwc), Flow
+  (sf-flow), Data Cloud (sf-datacloud).
 license: MIT
 compatibility: "Requires Sales Cloud edition with Collaborative Forecasts; industry-first routing applies"
 metadata:
