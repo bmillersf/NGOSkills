@@ -11,20 +11,91 @@ What this collection makes possible:
 - **Fully automated demo generation** — hand Cursor a set of raw discovery notes from a client meeting and it produces a complete, presentation-ready demo: a structured narrative with named personas, a verbatim step-by-step click path, seeded Salesforce data matched to the story, and a Playwright test suite that runs as an automated pre-flight check before you walk into the room. What used to take days of prep now takes minutes.
 - **Autonomous demo validation and repair** — `sf-demo-validate` reads your demo script and simulates delivering the demo end-to-end: it walks every click path step, takes Playwright screenshots to visually verify the UI matches what you expect, executes the full demo flow as the specific named demo user (shift sign-ups, intake form submissions), and loads the Experience Cloud portal as both a guest and a logged-in member. Anything that fails, it fixes: missing metadata gets generated and deployed, stale data gets re-seeded, broken flows get repaired, permission gaps get patched. Then it re-validates and gives you a scored pass/fail report -- all without a human touching the org.
 - **Integration storytelling and "art of the possible" simulation** — for demo environments where a live integration doesn't exist, the agent can show what an integration *would* look like: a Mermaid sequence diagram with a verbatim presenter talking track and a prepared answer for "is this live?", or Anonymous Apex that simulates the integration as real data (fake inbound payloads, records stamped as if they arrived from an external system, Platform Events fired as if triggered by third-party software). The audience sees the capability. No external system required.
-- **Deep Salesforce domain expertise on demand** — 88 skills covering every layer of the Salesforce platform: Apex, LWC, Flow, Metadata, SOQL, Deployment, Data Operations, Permissions, Integration, Connected Apps; Data Cloud (all 5 phases); Agentforce (build, test, observe, persona, script); OmniStudio (OmniScript, Integration Procedure, Data Mapper, FlexCard); Sales Cloud (opportunity, forecasting, engagement); Service Cloud (case, omnichannel, knowledge); Marketing (MC Growth, Account Engagement); Revenue Cloud; Tableau; MuleSoft; Slack; Industry Clouds (FSC, Health, Education, Public Sector, Field Service, Manufacturing, CG, Comms, Media, Energy); and the full Nonprofit Cloud stack (fundraising, grants, program management, Experience Cloud). Industry-first routing ensures industry skills win over generic cloud skills when detected. Each skill encodes the standards, patterns, and scoring rubrics I use -- so the agent produces production-quality output, not generic boilerplate.
+- **Deep Salesforce domain expertise on demand** — 83 `sf-*` skills covering every layer of the Salesforce platform: Apex, LWC, Flow, Metadata, SOQL, Deployment, Data Operations, Permissions, Integration, Connected Apps; Data Cloud (all 5 phases); Agentforce (build, test, observe, persona, script); OmniStudio (OmniScript, Integration Procedure, Data Mapper, FlexCard); Sales Cloud (opportunity, forecasting, engagement); Service Cloud (case, omnichannel, knowledge); Marketing (MC Growth, Account Engagement); Revenue Cloud; Tableau; MuleSoft; Slack; Industry Clouds (FSC, Health, Education, Public Sector, Field Service, Manufacturing, CG, Comms, Media, Energy); and the full Nonprofit Cloud stack (fundraising, grants, program management, Experience Cloud). Industry-first routing ensures industry skills win over generic cloud skills when detected. Each skill encodes the standards, patterns, and scoring rubrics I use -- so the agent produces production-quality output, not generic boilerplate.
 - **End-to-end nonprofit-specific intelligence** — from NPSP migration guidance and NPC data modeling to donor lifecycle management, grant pipelines, volunteer intake, program enrollment, and the portal experiences that serve constituents -- the agent knows the nonprofit platform the way a specialized architect does.
 
 These skills encode my approach to Salesforce architecture, coding standards, and demo delivery into reusable instructions that give any AI agent the domain knowledge to work the way I would -- with the depth, precision, and nonprofit context that generic AI assistance can't provide. The skills are written in standard markdown and work identically in **Cursor** (native skill system, auto-triggered), **Claude Code** (native skill system via `~/.claude/skills/`, auto-triggered), and **Claude.ai** (via Claude Projects or direct conversation). See [CLAUDE.md](CLAUDE.md) for Claude-specific setup.
 
 ### Three-pack composition (what changed)
 
-The 88 `sf-*` skills are the *domain knowledge* layer. A complete development workflow also needs a **project lifecycle**, **engineering methodology**, and **cognitive-gear specialists**. Rather than reinvent those, NGOSkills now vendors three upstream skill packs at pinned SHAs and composes them on top of the `sf-*` track:
+The 83 `sf-*` skills are the *domain knowledge* layer. A complete development workflow also needs a **project lifecycle**, **engineering methodology**, and **cognitive-gear specialists**. Rather than reinvent those, NGOSkills now vendors three upstream skill packs at pinned SHAs and composes them on top of the `sf-*` track:
 
-- **[get-shit-done (gsd)](https://github.com/gsd-build/get-shit-done)** — phase-based spec→plan→execute→verify→ship lifecycle, invoked as `/gsd-*`
-- **[superpowers](https://github.com/obra/superpowers)** — TDD, subagent-driven development, systematic debugging, auto-triggering skills that fire on pattern match
-- **[gstack](https://github.com/garrytan/gstack)** — Y Combinator–grade cognitive specialists (founder taste, paranoid review, browser-based QA, release mechanics), invoked as `/gstack-*`
+- **[get-shit-done (gsd)](https://github.com/gsd-build/get-shit-done)** — phase-based spec→plan→execute→verify→ship lifecycle, invoked as `/gsd-*` (65 commands, 33 phase agents)
+- **[superpowers](https://github.com/obra/superpowers)** — TDD, subagent-driven development, systematic debugging, plus 14 auto-triggering skills that fire on pattern match (e.g., `brainstorming`, `test-driven-development`, `executing-plans`)
+- **[gstack](https://github.com/garrytan/gstack)** — Y Combinator–grade cognitive specialists invoked as `/gstack-*` (≈47 skills: founder taste, paranoid review, browser-based QA via Chromium, design-variant exploration, release mechanics)
 
 Pin bumps land as one-line diffs in `vendor-pins.txt`, reviewable before they ship to the team. Per-vendor post-install hooks handle builds (e.g., gstack rebuilds its Chromium binary). Read the full composition model in [**Vendored skill packs: gsd × superpowers × gstack**](#vendored-skill-packs-gsd--superpowers--gstack) below.
+
+### How the four layers compose for a typical demo build
+
+The simplest mental model: **gsd drives the lifecycle, superpowers enforces methodology inside every phase, gstack is the optional rigor layer for specific phases, and `sf-*` skills auto-fire from the work content** regardless of which phase you're in.
+
+For an end-to-end nonprofit demo build the canonical flow is:
+
+1. User connects an org and dumps discovery notes → `sf-demo-orchestrate` fires (one of the `sf-*` skills) and drives the 7-step demo pipeline. This is *not* a gsd phase — `sf-demo-orchestrate` is its own self-contained workflow.
+2. If the demo includes a portal / Experience Cloud surface, the orchestrator co-suggests `/gstack-design-shotgun` between product approval and demoscript authoring so the user picks a visual direction from local-host previews before the build commits.
+3. For deeper engineering work *inside* the demo (custom Apex, LWC, flow orchestration, data model changes), use the gsd phase loop: `/gsd-spec-phase` → `/gsd-discuss-phase` → `/gsd-plan-phase` → `/gsd-execute-phase` → `/gsd-code-review` → `/gsd-verify-work` → `/gsd-ship`. The relevant `sf-*` skill auto-routes inside each phase.
+4. After all milestones are built, `sf-demo-validate` runs a final 200-pt org-readiness check against the demoscript. If self-repair is blocked, escalate to `/gsd-debug` (in-phase) or `/gstack-investigate` (out-of-scope).
+5. `/gstack-retro` closes the milestone with a commit-history retrospective that feeds the next `/gsd-new-milestone`.
+
+See [**How It Works: End-to-End Demo Workflow**](#how-it-works-end-to-end-demo-workflow) and [**Vendored skill packs: gsd × superpowers × gstack**](#vendored-skill-packs-gsd--superpowers--gstack) for the full diagrams.
+
+```mermaid
+flowchart TB
+    USER["User intent<br/>(discovery notes / feature ask / bug)"]
+
+    subgraph DEMO["Demo track (Salesforce-specific overlay)"]
+        DO["sf-demo-orchestrate<br/>7-step pipeline"]
+        DS["/gstack-design-shotgun<br/>(if Experience Cloud / portal UI)"]
+        DV["sf-demo-validate<br/>200-pt + add-ons"]
+        DO --> DS --> DV
+    end
+
+    subgraph GSD["Engineering track (gsd phase loop)"]
+        SPEC["/gsd-spec-phase<br/>+ brainstorming"]
+        DISC["/gsd-discuss-phase<br/>+ /gstack-plan-eng-review"]
+        PLAN["/gsd-plan-phase<br/>+ writing-plans + TDD"]
+        EXEC["/gsd-execute-phase<br/>+ executing-plans + sf-* skills auto-route"]
+        REV["/gsd-code-review<br/>+ /gstack-review (run first)"]
+        VER["/gsd-verify-work<br/>+ /gstack-qa (UI work)"]
+        SHIP["/gsd-ship"]
+        SPEC --> DISC --> PLAN --> EXEC --> REV --> VER --> SHIP
+    end
+
+    subgraph SF["sf-* skills (auto-route by content, fire inside any phase)"]
+        SFAPEX["sf-apex / sf-lwc / sf-flow / sf-soql"]
+        SFDATA["sf-datacloud-* / sf-ai-agentforce-*"]
+        SFIND["sf-industry-* / sf-nonprofit-*"]
+        SFOPS["sf-permissions / sf-deploy / sf-debug"]
+    end
+
+    subgraph ESC["Escalation"]
+        DBG["/gsd-debug<br/>(in-phase, persistent)"]
+        INV["/gstack-investigate<br/>(out-of-scope, stateless)"]
+    end
+
+    USER -->|"demo prep"| DEMO
+    USER -->|"build / refactor"| GSD
+    EXEC -.uses.-> SF
+    DV -.failure.-> DBG
+    DV -.failure.-> INV
+    EXEC -.failure.-> DBG
+    SHIP --> RETRO["/gstack-retro<br/>(after milestone)"]
+
+    classDef demo fill:#FED7AA,stroke:#9A3412,stroke-width:2px,color:#111827
+    classDef gsd fill:#A7F3D0,stroke:#065F46,stroke-width:2px,color:#111827
+    classDef sf fill:#DDD6FE,stroke:#5B21B6,stroke-width:2px,color:#111827
+    classDef esc fill:#FECACA,stroke:#991B1B,stroke-width:2px,color:#111827
+    classDef user fill:#F9FAFB,stroke:#374151,stroke-width:2px,color:#111827
+
+    class USER user
+    class DO,DS,DV demo
+    class SPEC,DISC,PLAN,EXEC,REV,VER,SHIP,RETRO gsd
+    class SFAPEX,SFDATA,SFIND,SFOPS sf
+    class DBG,INV esc
+```
+
+**Reading the diagram:** the **Demo track** (orange) is its own self-contained pipeline driven by `sf-demo-orchestrate` — it does not advance gsd phase state. The **Engineering track** (green) is the gsd phase loop for any non-trivial build, with superpowers skills auto-firing inside each phase and gstack gears running as targeted rigor passes. The `sf-*` skills (purple) auto-route based on the content being produced and fire *inside* whatever phase is active. The escalation chain (red) catches any failure in either track that the active skill cannot self-repair.
 
 ## Getting Started
 
@@ -74,7 +145,7 @@ Then run scripts/sync-skills.sh --check and confirm drift is 0. If the repo is
 already cloned, just git pull and re-run --fix.
 ```
 
-Claude Code will handle the clone, symlinks, and health check autonomously. Restart Claude Code once it finishes and all 88 skills are available, matched automatically by their `TRIGGER when` descriptions, with the always-apply autonomy and parallel-delegation policy already loaded.
+Claude Code will handle the clone, symlinks, and health check autonomously. Restart Claude Code once it finishes and all 83 `sf-*` skills (plus the gsd / superpowers / gstack packs) are available, matched automatically by their `TRIGGER when` descriptions, with the always-apply autonomy and parallel-delegation policy already loaded.
 
 **Install (manual shell alternative)** — if you'd rather run it yourself:
 
@@ -168,9 +239,13 @@ Here are my notes from the Acme discovery call:
 - Interested in AI for matching volunteers to programs
 ```
 
-### Step 3: Approve product recommendations
+### Step 3: Approve products and confirm demo duration
 
 Based on your notes and the org baseline, the agent recommends which Salesforce products to include in the demo. It switches to plan mode and presents a structured list -- products already enabled in the org, products it recommends adding (with setup effort estimates), and products it's not recommending. You approve or reject each one before anything gets built. This prevents scope creep and ensures the demo stays focused on what the audience actually wants to see.
+
+The agent also asks for the **demo duration** at this gate: Short (15 min, ~5–7 steps), Standard (30 min, ~10–12 steps), or Deep (45–60 min, ~15–18 steps). Duration bounds story depth, step density, and visual count for the rest of the pipeline. Default is Short if you don't specify.
+
+If the discovery notes mention an **Experience Cloud / portal / public-facing UI**, the agent will proactively co-suggest `/gstack-design-shotgun` between this step and Step 4. It generates multiple AI design variants and opens a local-host comparison board so you pick a visual direction *before* the demoscript locks in the click path. This is what people sometimes remember as "the localhost UI preview" — it's a gstack skill, not the brainstorming skill (which is dialogue-only).
 
 ### Step 4: Demo script generated
 
@@ -182,7 +257,9 @@ The agent reads the personas and data requirements from the demoscript and gener
 
 ### Step 6: Validated and repaired
 
-`sf-demo-validate` reads the demoscript and systematically walks every step against the live org. It checks platform prerequisites, metadata, data quality, permissions, automations, UI rendering, Experience Cloud sites, and end-to-end user simulations (actually submitting forms, signing up for shifts, creating records as specific demo personas). When something fails -- a missing field, a stale record, a broken flow, a permission gap -- it delegates the fix to the appropriate skill, applies it, and re-validates. This loop runs up to 3 times before escalating anything it can't fix. The result is a scored pass/fail report across all validation categories.
+`sf-demo-validate` reads the demoscript and systematically walks every step against the live org. It checks platform prerequisites, metadata, data quality, permissions, automations, UI rendering, Experience Cloud sites, and end-to-end user simulations (actually submitting forms, signing up for shifts, creating records as specific demo personas). When something fails -- a missing field, a stale record, a broken flow, a permission gap -- it delegates the fix to the appropriate skill, applies it, and re-validates. This loop runs up to 3 times before escalating.
+
+If self-repair is blocked after 3 attempts, the escalation chain kicks in: `/gsd-debug` for in-phase issues (preserves context across sessions, scientific method, integrates with `.planning/`), `/gstack-investigate` for out-of-scope issues (stateless 4-phase root-cause loop, no phase overhead). Never advance to Step 7 with a red verdict. The result is a scored pass/fail report across all validation categories.
 
 ### Step 7: Ready to present
 
@@ -206,6 +283,7 @@ skills/                          # Salesforce-domain skills (83 sf-* skills)
 skills-cursor/                   # Cursor-ecosystem utilities (babysit, create-hook,
                                  #   statusline, update-cli-config) + sf-skill-maintenance
                                  #   meta-skill (authoring contract + 4-layer auto-refresh)
+                                 #   + sf-skill-learning (continuous learning system)
 references/
   industry-precheck.md           # MANDATORY Phase 0 pre-check for every generic cloud skill —
                                  #   detects industry license/namespace/object and forwards
@@ -270,13 +348,13 @@ references/
 
 ## Vendored skill packs: gsd × superpowers × gstack
 
-NGOSkills owns the 88 `sf-*` domain skills, but a complete development workflow needs more than just domain knowledge — it needs a project lifecycle (spec → plan → execute → verify), engineering methodology (TDD, brainstorming, code review), and cognitive-gear specialists (founder taste, paranoid review, browser-based QA). Rather than reinvent those, NGOSkills vendors three upstream skill packs at pinned SHAs and composes them with the `sf-*` track.
+NGOSkills owns the 83 `sf-*` domain skills, but a complete development workflow needs more than just domain knowledge — it needs a project lifecycle (spec → plan → execute → verify), engineering methodology (TDD, brainstorming, code review), and cognitive-gear specialists (founder taste, paranoid review, browser-based QA, design exploration). Rather than reinvent those, NGOSkills vendors three upstream skill packs at pinned SHAs and composes them with the `sf-*` track.
 
 | Pack | Owns | Invocation |
 |---|---|---|
-| **[get-shit-done (gsd)](https://github.com/gsd-build/get-shit-done)** | Phase-based spec→plan→execute lifecycle, roadmap/milestone management, multi-phase orchestration, verification gates, context-window monitoring | `/gsd-*` (≈65 slash commands: `spec-phase`, `plan-phase`, `execute-phase`, `verify-work`, `ship`, `code-review`, etc.) |
+| **[get-shit-done (gsd)](https://github.com/gsd-build/get-shit-done)** | Phase-based spec→plan→execute lifecycle, roadmap/milestone management, multi-phase orchestration, verification gates, context-window monitoring | `/gsd-*` (65 slash commands + 33 phase agents: `spec-phase`, `plan-phase`, `execute-phase`, `verify-work`, `ship`, `code-review`, `debug`, etc.) |
 | **[superpowers](https://github.com/obra/superpowers)** | Core engineering methodology: TDD red/green, subagent-driven development, plan-writing, systematic debugging, verification-before-completion | `/brainstorm`, `/write-plan`, `/execute-plan`, plus 14 auto-triggering skills (fire on pattern match without explicit invocation) |
-| **[gstack](https://github.com/garrytan/gstack)** | Cognitive-mode specialists — Y Combinator "founder taste" pressure-test, paranoid-staff-engineer review, browser-based QA via Playwright, release-engineer shipping mechanics, engineering retrospectives | `/gstack-*` (≈45 slash commands: `plan-ceo-review`, `plan-eng-review`, `review`, `ship`, `qa`, `browse`, `retro`, etc.) |
+| **[gstack](https://github.com/garrytan/gstack)** | Cognitive-mode specialists — Y Combinator "founder taste" pressure-test, paranoid-staff-engineer review, browser-based QA via Chromium, design-variant exploration, release-engineer shipping mechanics, engineering retrospectives | `/gstack-*` (≈47 slash commands: `plan-ceo-review`, `plan-eng-review`, `review`, `ship`, `qa`, `browse`, `design-shotgun`, `investigate`, `retro`, etc.) |
 
 ### Composition rule (MANDATORY)
 
@@ -294,6 +372,20 @@ NGOSkills owns the 88 `sf-*` domain skills, but a complete development workflow 
 | `/gsd-verify-work` (UAT) | `verification-before-completion` | `/gstack-qa` or `/gstack-qa-only` | Browser-based diff-aware verification — reads the diff, spins up Chromium, tests every affected page |
 | `/gsd-ship` (PR creation) | `finishing-a-development-branch` | `/gstack-ship` (optional) | gsd-ship handles planning-aware PRs; use gstack-ship only when operating outside a gsd phase |
 | After milestone completion | — | `/gstack-retro` | Data-driven retrospective from commit history; feeds into next `/gsd-new-milestone` |
+
+### Demo-track integration (Salesforce-specific overlay)
+
+The phase table above describes generic engineering work. For Salesforce **demo work**, two `sf-*` skills overlay the lifecycle:
+
+| Demo lifecycle moment | Skill | What fires |
+|---|---|---|
+| User dumps discovery notes ("prep a demo from these notes") | `sf-demo-orchestrate` | Runs the 7-step pipeline end-to-end (org connect → notes intake → product detection → product + duration approval gate → demoscript → data seed → validate/repair → Playwright). Owns its own status file (`DEMO-PIPELINE-STATUS.md`) — does **not** advance gsd phase state. |
+| Product approval just confirmed, demo includes Experience Cloud / portal / public UI | `/gstack-design-shotgun` (proactive co-suggestion) | Generates multiple AI design variants, opens a local-host comparison board so the user picks a visual direction *before* `sf-demo-author` writes the click path or `sf-nonprofit-experience-cloud-build` locks in the implementation. |
+| Final org-readiness check before ship | `sf-demo-validate` | Reads the demoscript, runs a 200-pt + add-on rubric across 10 categories, executes self-repair loop (up to 3x). |
+| `sf-demo-validate` self-repair blocked, in-phase | `/gsd-debug` | Persistent state across sessions, integrates with `.planning/`, scientific method. |
+| `sf-demo-validate` self-repair blocked, out-of-scope | `/gstack-investigate` | Stateless 4-phase root-cause loop for issues outside the phase scope (org-config oddities, infra). |
+
+**Important distinction:** `brainstorming` (superpowers) is dialogue-only — clarifying questions and a design doc. `/gstack-design-shotgun` is the variant generator with the local comparison board. They are *not* the same skill; reach for design-shotgun when the user wants to *see what it could look like*.
 
 ### When NOT to use a pack
 
@@ -325,7 +417,7 @@ Read [`references/vendor-policy.md`](references/vendor-policy.md) before bumping
 After `scripts/setup.sh` runs (or after `auto-update-skills.sh` applies a pending update):
 
 - `~/.claude/skills/sf-*` → `NGOSkills/skills/` (83 domain skills)
-- `~/.claude/skills/gstack-*` → `NGOSkills/.vendor/gstack/<name>/SKILL.md` (45 cognitive-gear skills)
+- `~/.claude/skills/gstack-*` → `NGOSkills/.vendor/gstack/<name>/SKILL.md` (≈47 cognitive-gear skills)
 - `~/.claude/skills/<superpowers-skill>` → `NGOSkills/.vendor/superpowers/skills/` (14 auto-triggering skills)
 - `~/.claude/agents/gsd-*.md` → `NGOSkills/.vendor/gsd/agents/` (33 phase subagents)
 - `~/.claude/commands/gsd/` → `NGOSkills/.vendor/gsd/commands/gsd/` (65 phase commands)
@@ -370,7 +462,7 @@ Every user request flows through the **Phase 0 industry pre-check** before any s
 
 ![NGO Salesforce Skills — Domain Architecture](assets/images/domain-architecture.png)
 
-The 88 skills organize into five tiers that mirror the routing decision above:
+The 83 skills organize into five tiers that mirror the routing decision above:
 
 - **Tier 1 — Vertical / Industry (11)** — FSC, Health, Education, Public Sector, Field Service, Manufacturing, Consumer Goods, Communications, Media, Energy, Nonprofit NPC/NPSP. *First line of defense; wins over generic clouds when detected.*
 - **Tier 2 — Horizontal / Generic clouds (14)** — Sales (×4), Service (×4), Marketing (×2), Revenue, Experience, Reports/Dashboards. *Runs Phase 0 industry pre-check before emitting output; halts and forwards to Tier 1 on detection.*
@@ -752,9 +844,63 @@ Default rule of thumb baked into the skill: if the work is *generative + paralle
 
 ### Demo Workflow
 
-These four skills form the front half of the demo pipeline -- taking you from raw notes all the way to a validated, presenter-ready demo with automated pre-flight checks. `sf-demo-orchestrate` is the single-trigger entry point that runs the whole pipeline; the other three are the phase workers it delegates to.
+These six skills form the demo pipeline -- taking you from raw notes all the way to a validated, presenter-ready demo with automated pre-flight checks. `sf-demo-orchestrate` is the single-trigger entry point that runs the whole pipeline; the others are the phase workers it delegates to.
 
 ![Demo Workflow Pipeline](assets/images/demo-workflow.png)
+
+```mermaid
+flowchart TB
+    NOTES["Discovery notes /<br/>requirements"]
+    P1["Phase 1<br/>Org connect + baseline"]
+    P2["Phase 2<br/>Notes intake"]
+    P25["Phase 2.5<br/>Product detection<br/>+ skill routing"]
+    P3["Phase 3 (HARD STOP)<br/>Product approval<br/>+ duration gate (15/30/45-60 min)"]
+    DSG{{"Experience Cloud /<br/>portal UI in scope?"}}
+    SHOTGUN["/gstack-design-shotgun<br/>local-host comparison board<br/>(user picks visual direction)"]
+    P4["Phase 4 — sf-demo-author<br/>demoscript.md + personas + click path"]
+    P5["Phase 5 — sf-nonprofit-demo-data /<br/>sf-demo-data<br/>seed Salesforce records"]
+    P6["Phase 6 — sf-demo-validate<br/>200-pt rubric + repair loop (3x)"]
+    SELFREPAIR{"Self-repair<br/>blocked?"}
+    DBG["/gsd-debug<br/>(in-phase)"]
+    INV["/gstack-investigate<br/>(out-of-scope)"]
+    P7["Phase 7 — sf-demo-playwright<br/>preflight.spec.js + PRESENTER-GUIDE.md"]
+    READY["Presenter-ready<br/>DEMO-PIPELINE-STATUS.md"]
+    UIFB["sf-ui-fallback-playwright<br/>(reactive, mid-pipeline<br/>for CLI dead-ends)"]
+
+    NOTES --> P1 --> P2 --> P25 --> P3 --> DSG
+    DSG -->|yes| SHOTGUN --> P4
+    DSG -->|no| P4
+    P4 --> P5 --> P6 --> SELFREPAIR
+    SELFREPAIR -->|in-phase| DBG --> P6
+    SELFREPAIR -->|out-of-scope| INV --> P6
+    SELFREPAIR -->|repaired or pass| P7 --> READY
+
+    P5 -.CLI dead-end.-> UIFB
+    P6 -.CLI dead-end.-> UIFB
+    UIFB -.resume.-> P5
+    UIFB -.resume.-> P6
+
+    classDef notes fill:#F9FAFB,stroke:#374151,stroke-width:2px,color:#111827
+    classDef phase fill:#A7F3D0,stroke:#065F46,stroke-width:2px,color:#111827
+    classDef gate fill:#FEF3C7,stroke:#B45309,stroke-width:3px,color:#111827
+    classDef gstack fill:#FED7AA,stroke:#9A3412,stroke-width:2px,color:#111827
+    classDef esc fill:#FECACA,stroke:#991B1B,stroke-width:2px,color:#111827
+    classDef done fill:#BFDBFE,stroke:#1D4ED8,stroke-width:2px,color:#111827
+
+    class NOTES notes
+    class P1,P2,P25,P4,P5,P6,P7 phase
+    class P3,DSG,SELFREPAIR gate
+    class SHOTGUN,UIFB gstack
+    class DBG,INV esc
+    class READY done
+```
+
+**Where the pieces wire in:**
+
+- **Phase 3 duration gate** — orchestrator asks for Short (15 min) / Standard (30 min) / Deep (45-60 min). Bounds story depth, step count, and visual count downstream. Default is Short if the user doesn't specify.
+- **`/gstack-design-shotgun` co-suggestion** — fires *only* when discovery notes mention Experience Cloud / portal / public UI. Generates multiple AI design variants and opens a local comparison board so the user picks a visual direction *before* `sf-demo-author` writes the click path. This is the skill people remember as "the localhost UI preview thing" — `brainstorming` (superpowers) is dialogue-only and does not produce previews.
+- **Phase 6 self-repair escalation** — if `sf-demo-validate` cannot self-repair an issue in 3 attempts, escalate: `/gsd-debug` for in-phase issues (preserves context across sessions), `/gstack-investigate` for out-of-scope (stateless 4-phase root-cause loop). Never advance to Phase 7 with a red verdict.
+- **`sf-ui-fallback-playwright` reactive fallback** — fires mid-pipeline for any CLI dead-end (Agent Builder publish, Prompt Builder activation, Experience Builder drag-drop, Setup toggles). Auths via SFDX session, generates a Playwright script on the fly, executes it, saves it for replay.
 
 | Skill | Description |
 |---|---|
