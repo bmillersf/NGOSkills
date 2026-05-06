@@ -92,7 +92,7 @@ Nonprofit audiences are diverse. Design for screen readers, low bandwidth, mobil
 | **Hero imagery** | Mission-aligned photography | Authentic, not stock |
 | **Favicon** | 32x32px icon | Brand recognition in tabs |
 
-### CSS Custom Properties (LWR)
+### CSS Custom Properties (theme layer for Aura BYO + custom LWCs)
 
 ```css
 :root {
@@ -305,7 +305,9 @@ Score: XX/100
 
 ## Terminology
 
-- **LWR** — Lightning Web Runtime (modern Experience Cloud site framework)
+- **Build Your Own (Aura)** — the default Experience Cloud scaffold for new nonprofit portals; Aura runtime hosting custom LWCs in Aura regions
+- **Build Your Own (LWR)** — Lightning Web Runtime alternative; permitted only with a named, irreplaceable blocker (see sf-nonprofit-experience-cloud-build Phase 0)
+- **Packaged Aura templates** (Customer Service, Partner Central, Customer Account Portal) — never used as scaffolding; baked-in regions and CSS fight branding
 - **Theme Layout** — Controls header, footer, and navigation wrapper for all pages
 - **Hero Banner** — Large visual section at top of home page with mission messaging
 - **Card Pattern** — Content container with icon, title, description, and action
