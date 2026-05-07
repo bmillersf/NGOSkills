@@ -8,26 +8,41 @@ description: >
   keyed by intent + org-shape, and replays the spec on subsequent invocations.
   Captured flows are committed to NGOSkills as `learn(sf-ui-autonomous): ...`
   so every user benefits from every other user's discovered scripts.
-  TRIGGER when: user asks to "automate a Lightning flow without writing the
-  script", "have an agent figure out the click path", "capture a UI flow
-  autonomously", "build a reusable demo step without recording", "find an
-  existing UI script for X", "replay a captured Lightning flow", "share a
-  captured flow with the team", or "drive the Salesforce UI without manual
-  clicking".
-  DO NOT TRIGGER when: user already has a `demoscript.md` and wants the full
-  pre-flight test suite (use sf-demo-playwright — that's deterministic
-  spec generation from a written click path, this is autonomous discovery
-  followed by spec generation), reactive one-shot UI fallback for a CLI
-  dead-end (use sf-ui-fallback-playwright — single-use, not library-bound),
-  full demo orchestration from notes (use sf-demo-orchestrate — composes this
-  skill at Phase 6/7), generic web QA outside Salesforce (use gstack-qa or
-  gstack-browse), seeding demo data (use sf-nonprofit-demo-data or
-  sf-demo-data), or writing production LWC Jest tests (use sf-lwc).
+  PRECONDITION (must be true before triggering): the task has been confirmed
+  UI-only — either (a) sf CLI / Metadata API / Tooling API / Apex / Flow /
+  Data Loader cannot accomplish it, (b) the demoscript or use case explicitly
+  requires a *visual* outcome (screenshot, presenter walkthrough, end-user
+  click path), or (c) the user has explicitly said "we have to do this in
+  the UI". If a CLI/metadata path exists, that path is preferred — this
+  skill exists to capture flows that genuinely cannot be automated any
+  other way, not as a faster route to the same outcome.
+  TRIGGER when (UI-only confirmed): user asks to "capture this UI-only flow",
+  "autonomously walk the UI for this demo step", "replay a captured
+  Lightning flow from the shared library", "find an existing UI script for
+  <intent>", "share this captured flow with the team", "build a UI-only
+  demo step without me clicking through it", or "the CLI path doesn't
+  exist, drive it through Lightning". Also triggers when sf-demo-orchestrate
+  Phase 6/7 routes a step here after confirming no CLI/metadata path.
+  DO NOT TRIGGER when: any CLI/metadata/Apex/Flow path can accomplish the
+  same outcome (use sf-deploy, sf-metadata, sf-apex, sf-flow, sf-data, etc.
+  — UI automation is a last resort, not a default), user already has a
+  `demoscript.md` and wants the full pre-flight test suite (use
+  sf-demo-playwright — deterministic generation from a written click path),
+  reactive one-shot UI fallback for a CLI dead-end (use
+  sf-ui-fallback-playwright — single-use, not library-bound), full demo
+  orchestration from notes (use sf-demo-orchestrate — composes this skill
+  at Phase 6/7 *after* CLI viability is ruled out), generic web QA outside
+  Salesforce (use gstack-qa or gstack-browse), seeding demo data (use
+  sf-nonprofit-demo-data or sf-demo-data — never click through record
+  creation), configuring Setup / Experience Builder / Agent Builder /
+  Flow Builder (those are metadata edits — use sf-metadata, sf-experience-cloud,
+  sf-ai-agentforce, sf-flow respectively, *never* this skill), or writing
+  production LWC Jest tests (use sf-lwc).
 license: MIT
 metadata:
-  version: "0.1.0"
+  version: "0.2.0"
   author: "Brian Miller"
-  scoring: "150 points across 6 categories"
+  scoring: "170 points across 7 categories"
   status: "bootstrap — library awaiting first captured flows"
 release_pinned: "Spring '26"
 docs_last_verified: 2026-05-07
@@ -77,18 +92,21 @@ The fix is to **discover the path once with an agent, lock it down with a script
 
 ---
 
-## Scoring Rubric (150 points)
+## Scoring Rubric (170 points)
 
 | Category | Points | What's Evaluated |
 |---|---|---|
+| **UI-only precondition** | **20** | **Phase 0 gate explicitly run; CLI/metadata alternatives ruled out and documented in the capture metadata. -20 if skipped.** |
 | Discovery success | 30 | Agent completed the intent end-to-end without human help |
 | Spec compilation | 25 | Generated `.spec.ts` runs cleanly from cold cache |
 | Selector resilience | 25 | Locators use role/text/testid, not deep CSS or XPath |
-| Library indexing | 25 | `library.json` entry has correct intent, org_profile, fragility, last_verified |
+| Library indexing | 25 | `library.json` entry has correct intent, org_profile, fragility, last_verified, and `precondition_reason` |
 | Replay reliability | 25 | Captured spec replays green twice in a row |
 | Sharing hygiene | 20 | Auto-commit follows `learn(sf-ui-autonomous): ...` convention; no PII / org-specific IDs leaked |
 
-**Thresholds**: ✅ 120+ (Ship it) | ⚠️ 90–119 (Review) | ❌ <90 (Recapture)
+**Thresholds**: ✅ 136+ (Ship it) | ⚠️ 102–135 (Review) | ❌ <102 (Recapture)
+
+A capture that scores well everywhere except the precondition gate is **still a fail**. UI automation that should have been a CLI call is a worse outcome than no automation at all — it adds maintenance burden without value.
 
 ---
 
@@ -107,7 +125,33 @@ The fix is to **discover the path once with an agent, lock it down with a script
 
 ---
 
-## Workflow (5-Phase Pattern)
+## Workflow (6-Phase Pattern)
+
+### Phase 0: UI-Only Precondition Check (MANDATORY GATE)
+
+Before any browser is opened, confirm the task genuinely requires UI manipulation. This skill is a **last resort**, not a default — the global policy is to automate via metadata/CLI/Apex first.
+
+Run through this checklist. The skill **aborts** unless at least one box is checked:
+
+- [ ] **No CLI/metadata path exists.** The user's intent cannot be expressed as `sf project deploy`, `sf data create`, `sf apex run`, a Tooling API call, a Metadata API deploy, or a Flow invocation. (Examples that *do* have CLI paths and should NOT use this skill: creating records → `sf data create record`; deploying metadata → `sf project deploy`; activating a flow → Tooling API; configuring an agent → Agent API / metadata; seeding demo data → `sf-nonprofit-demo-data`.)
+- [ ] **The visual outcome is the deliverable.** A screenshot, presenter walkthrough, end-user click path, or visual proof is what the user is asking for — not the underlying state change.
+- [ ] **The user has explicitly said it's UI-only.** They've stated "we have to do this in the UI" or have already confirmed no CLI path exists.
+- [ ] **An upstream skill is routing here after ruling out CLI.** `sf-demo-orchestrate` Phase 6/7 has confirmed no CLI/metadata path is viable for this step.
+
+If none of the above are true, the skill emits:
+
+> ⚠️  This task may not require UI automation. Before proceeding, consider:
+> - `sf-deploy` for metadata deployment
+> - `sf-data` / `sf-nonprofit-demo-data` for record creation
+> - `sf-apex` for behavior changes
+> - `sf-flow` / `sf-ai-agentforce` for declarative configuration
+> - `sf-metadata` for Setup-equivalent changes
+>
+> Confirm UI-only or route to one of the above. Aborting capture.
+
+This gate exists because UI captures are slow to produce, brittle to maintain, and bypass the audit trail metadata changes get. They should only exist when no alternative does.
+
+---
 
 ### Phase 1: Intent Resolution
 
@@ -212,9 +256,16 @@ Append to `library/library.json`:
   "last_verified": "2026-05-07T15:48:00Z",
   "salesforce_release": "Spring '26",
   "fragility_score": 0.2,
+  "precondition_reason": {
+    "category": "visual-deliverable",
+    "rationale": "Demo requires the presenter to show the contact creation flow visually for a 'first day with the platform' narrative — the resulting record could be created via sf-data, but the on-screen filling is the deliverable.",
+    "alternatives_considered": ["sf-data create record", "sf-nonprofit-demo-data"]
+  },
   "tags": ["nonprofit", "core-data", "contact"]
 }
 ```
+
+The `precondition_reason` block is populated by Phase 0 and is **required**. The capture compiler refuses to write the entry without it — that's the data-layer enforcement of the precondition gate.
 
 `fragility_score` is computed from selector mix — pure-role specs score < 0.3; specs that fall back to CSS score > 0.5 and trigger a follow-up TODO.
 
@@ -299,6 +350,9 @@ The orchestrator queries `library.json` before each phase and routes accordingly
 
 ## Anti-patterns
 
+- **Skipping Phase 0.** Using this skill because it's *available* rather than because the task is *UI-only*. UI captures must be a last resort. If `sf data create record`, `sf project deploy`, `sf apex run`, a Tooling API call, or a Flow invocation can do it, do *that* instead.
+- **Capturing record creation as a UI flow.** Almost never correct — record creation has well-defined CLI/API paths. The exception is when the *act of creating a record visually* is the demo (e.g., showing a user filling out a form). In that case, document the reason in the capture metadata.
+- **Capturing Setup / Builder configuration as a UI flow.** Setup, Experience Builder, Agent Builder, and Flow Builder are metadata edits in disguise. Use `sf-metadata`, `sf-experience-cloud`, `sf-ai-agentforce`, `sf-flow`. If a config "can only be done via UI", that's a Salesforce platform gap to file, not a capture target.
 - **Capturing a flow with hardcoded record IDs.** Every record ID must be templated or looked up at replay time via SOQL.
 - **Skipping the org-profile field.** A spec captured against NPSP and replayed in NPC will fail in confusing ways.
 - **Letting the agent log in.** Always pre-establish session state. The login flow itself is brittle and not the value of the capture.

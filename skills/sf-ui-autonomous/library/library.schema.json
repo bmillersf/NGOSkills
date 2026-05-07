@@ -22,7 +22,8 @@
           "captured_at",
           "last_verified",
           "salesforce_release",
-          "fragility_score"
+          "fragility_score",
+          "precondition_reason"
         ],
         "properties": {
           "id": {
@@ -55,6 +56,30 @@
             "minimum": 0,
             "maximum": 1,
             "description": "0 = pure role/label/testid selectors. >0.5 = relies on CSS/XPath; recapture recommended"
+          },
+          "precondition_reason": {
+            "type": "object",
+            "required": ["category", "rationale"],
+            "description": "Documents why this flow is in the library instead of being a CLI/metadata call. Phase 0 of the workflow populates this; commit is rejected if missing.",
+            "properties": {
+              "category": {
+                "enum": [
+                  "no-cli-path",
+                  "visual-deliverable",
+                  "user-confirmed-ui-only",
+                  "upstream-skill-routed"
+                ]
+              },
+              "rationale": {
+                "type": "string",
+                "description": "One-sentence justification — e.g., 'Demo requires showing the user filling out the form on screen', 'No Tooling API endpoint exists for activating this Setup feature in Spring 26', etc."
+              },
+              "alternatives_considered": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "Skills/CLI commands that were evaluated and ruled out, e.g., ['sf-data create record', 'sf-flow invoke']"
+              }
+            }
           },
           "replay_failures": {
             "type": "integer",
