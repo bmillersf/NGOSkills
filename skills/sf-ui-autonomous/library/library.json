@@ -1,0 +1,7 @@
+{
+  "$schema": "./library.schema.json",
+  "version": "0.1.0",
+  "description": "Intent-keyed manifest of autonomously-captured Lightning UI flows. Every entry compiles to a Playwright spec under flows/. See SKILL.md for capture and sharing protocol.",
+  "org_profiles": ["NPSP", "NPC", "NPC+EDA", "vanilla"],
+  "flows": []
+}
