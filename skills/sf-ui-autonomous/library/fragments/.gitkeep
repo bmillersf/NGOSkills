@@ -1,0 +1,2 @@
+# Reusable sub-flow fragments shared across specs (App Launcher open, global search, etc.)
+# Promoted from flows/ when the same trace appears in 3+ captured specs.

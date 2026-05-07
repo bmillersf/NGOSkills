@@ -1,0 +1,78 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "sf-ui-autonomous flow library",
+  "type": "object",
+  "required": ["version", "flows"],
+  "properties": {
+    "version": { "type": "string" },
+    "description": { "type": "string" },
+    "org_profiles": {
+      "type": "array",
+      "items": { "enum": ["NPSP", "NPC", "NPC+EDA", "vanilla"] }
+    },
+    "flows": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "intent",
+          "org_profile",
+          "spec_path",
+          "captured_at",
+          "last_verified",
+          "salesforce_release",
+          "fragility_score"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]+$",
+            "description": "kebab-case unique identifier matching the spec filename"
+          },
+          "intent": {
+            "type": "string",
+            "description": "Plain-language description of what this flow accomplishes; used for semantic matching"
+          },
+          "org_profile": {
+            "enum": ["NPSP", "NPC", "NPC+EDA", "vanilla"]
+          },
+          "spec_path": {
+            "type": "string",
+            "description": "Path to the .spec.ts relative to the skill root"
+          },
+          "inputs": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Names of template variables the spec expects in FLOW_INPUTS"
+          },
+          "captured_by": { "type": "string" },
+          "captured_at": { "type": "string", "format": "date-time" },
+          "last_verified": { "type": "string", "format": "date-time" },
+          "salesforce_release": { "type": "string" },
+          "fragility_score": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "0 = pure role/label/testid selectors. >0.5 = relies on CSS/XPath; recapture recommended"
+          },
+          "replay_failures": {
+            "type": "integer",
+            "minimum": 0,
+            "default": 0
+          },
+          "quarantined": {
+            "type": "boolean",
+            "default": false,
+            "description": "True if 3+ replay failures in 30 days; require human review before re-enabling"
+          },
+          "tags": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "notes": { "type": "string" }
+        }
+      }
+    }
+  }
+}
