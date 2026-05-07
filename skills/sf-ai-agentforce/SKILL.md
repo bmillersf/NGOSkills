@@ -447,6 +447,95 @@ sf-metadata → sf-apex → sf-flow → sf-ai-agentforce → sf-deploy
 
 ---
 
+## Common Failure Modes + Remediation
+
+### Symptom: "Agent never replies in MIAW; runtime config endpoint says authMode=Auth even though channel.IsAuthenticated=false"
+
+`embeddedServiceMessagingChannel.authMode` is **snapshotted at deployment-creation time** and is not refreshed by re-publish or by `PATCH MessagingChannel.IsAuthenticated`. If the deployment was created in `Auth` state, no amount of re-publishing flips it. Fix: delete the ESC + channel and re-create via `Setup → Messaging → Channels → New Channel` (the wizard, NOT `Setup → Embedded Service Deployments → New Deployment`), choosing **Allow guest users** at creation time. The channel-creation wizard writes a hidden snapshot row that the deployment then snapshots from.
+
+### Symptom: "Customer chats with my Agentforce agent but no response ever arrives"
+
+Check `BotDefinition.AgentType`. `AgentforceEmployeeAgent` / `Type=InternalCopilot` agents are for **internal users in the Salesforce console only** — the runtime silently refuses to engage them in customer-facing MIAW sessions, even when the channel and flow route to them correctly. Customer-facing MIAW requires `AgentType=EinsteinServiceAgent` (or `AgentforceServiceAgent`) / `Type=ExternalCopilot`. `AgentType` is `updateable=false`; you must clone the bot, not flip it. See *Cheat sheet: cloning an Employee agent into a Service agent*.
+
+### Symptom: "I changed the channel's bot wiring or branding, but the live site still uses the old config"
+
+`/embeddedservice/v1/embedded-service-config` snapshots wiring at the moment you click **Publish** in `Setup → Embedded Service Deployments → <ESC> → Publish`. A `sf project deploy` of the channel/ESC metadata is **not enough**. Re-publish the ESC after every wiring change. (See `scripts/publish-esc.spec.ts` for the supported automation.)
+
+### Symptom: "MIAW launcher renders but the message I send is swallowed; bot's welcome arrives after"
+
+Service Agents post a welcome before they accept routable input. Tests must wait for the welcome ("Hi, I'm an AI service assistant…" or your custom system message) before sending the first user message. Otherwise the user's message arrives in a not-yet-routable state and is dropped silently.
+
+### Symptom: "PATCH BotVersion.Status=Active returns INVALID_FIELD_FOR_INSERT_UPDATE"
+
+Activation is **UI-only** as of API v66. `BotVersion.Status` is read-only; the metadata schema has no `<status>` element on `BotVersion`; `/connect/einstein-bot/...` and `/connect/copilots/...` endpoints return 404. The supported automation is the Setup UI flow: row → **Open in Builder** → **Activate** → **Ignore & Activate** modal. See `scripts/activate-service-agent.spec.ts`.
+
+### Symptom: "ESW SCRT2 trust site is deployed but bootstrap.min.js returns 501"
+
+The ESC was created but never **Published**, or has been edited since the last publish. Re-publish via `Setup → Embedded Service Deployments → <ESC> → Publish` (or `scripts/publish-esc.spec.ts`). Bootstrap returns 501 with full content (the JS body is still served) — the status code is the only signal that the deployment is unpublished.
+
+---
+
+## CLI / Operational Cheat Sheet
+
+### Cheat sheet: cloning an Employee agent into a Service agent
+
+`BotDefinition.AgentType` cannot be flipped. To customer-facing-ize an internal agent:
+
+1. Retrieve a known-good Service agent as a template:
+   `sf project retrieve start --metadata Bot:<existing_service_agent>`
+2. String-substitute name + label + description; **regenerate every UUID** in the bot file
+   (`re.sub(r'\b[0-9a-f]{8}-...-[0-9a-f]{12}\b', ..., src)`) to avoid collisions with the template.
+3. Reuse the existing standalone `<GenAiPlugin>` topics if their actions are Apex
+   (`invocationTargetType=apex`) — Apex actions work in both Employee and Service contexts.
+   `EmployeeCopilot__*` standard actions do **not** transfer to Service agents — replace with
+   Service-side analogues or omit.
+4. Write a thin `<GenAiPlannerBundle>` that references the standalone plugin via
+   `<genAiPlugins><genAiPluginName>YourPlugin</genAiPluginName></genAiPlugins>`. No need to
+   inline-bundle topics like Employee Copilots do.
+5. Deploy `Bot` + `GenAiPlannerBundle`. Activate via Playwright (see scripts/).
+
+### Cheat sheet: activating a Service agent (Playwright-only)
+
+```bash
+TARGET_ORG=<alias> BOT_DEV_NAME=<DeveloperName> \
+  npx playwright test scripts/activate-service-agent.spec.ts
+```
+
+The script handles: Setup list → click name (target=_blank popup) → Open in Builder (second
+popup → Lightning app `/AiCopilot/copilotStudio.app`) → click Activate → click "Ignore &
+Activate" in the Configuration Issues modal → poll `BotVersion.Status` until Active.
+
+### Cheat sheet: wiring a MIAW channel directly to a Service agent (no flow)
+
+`MessagingChannel.SessionHandlerId` is a polymorphic reference. Set it to a BotDefinition Id
+(`0Xx...`) to bypass flow + queue routing and route the conversation directly to the agent.
+The metadata XML has no element for this — only Tooling/REST PATCH:
+
+```bash
+TARGET_ORG=<alias> CHANNEL_DEV_NAME=<name> BOT_DEV_NAME=<name> \
+  ESC_DEV_NAME=<esc_name> \
+  ./scripts/wire-channel-to-service-agent.sh
+```
+
+After wiring, **always re-publish the ESC**. Live runtime config caches wiring.
+
+### Cheat sheet: validating Service-agent end-to-end on Experience Cloud
+
+```bash
+# After publish:
+curl -s "<scrt2-url>/embeddedservice/v1/embedded-service-config?orgId=<orgId>&esConfigName=<esc>&language=en_US" \
+  | python3 -c 'import sys,json; d=json.load(sys.stdin)["embeddedServiceConfig"]["embeddedServiceMessagingChannel"]; print("authMode:",d.get("authMode"))'
+# Expected: authMode: UnAuth   (Auth means the wizard fix is still needed)
+```
+
+Then drive a real chat session via Playwright — see `inspect_chat_flow.spec.ts` style: open
+the site, click `#embeddedMessagingConversationButton`, wait for the welcome message in the
+chat iframe, then send a question. The chat iframe is `iframe#embeddedMessagingFrame` (note:
+its visibility check via `offsetParent` returns null because the wrapper is `position:fixed` —
+use `state: 'attached'` not `state: 'visible'`).
+
+---
+
 ## Scoring System (100 Points)
 
 ### Categories
