@@ -293,6 +293,58 @@ Fail gates: Phase 0 skipped = automatic fail. Routing Field Service WorkOrder/Se
 - **Root cause:** Named Credential / OAuth misconfigured; Connected App missing the `omni_channel_api` scope; the partner's payload doesn't match the Omni-Channel API contract.
 - **Fix:** Re-validate OAuth (route to [sf-connected-apps](../sf-connected-apps/SKILL.md)) and Named Credential (route to [sf-integration](../sf-integration/SKILL.md)); inspect the payload against Omni-Channel API docs.
 
+### Symptom: "MIAW chat shows 'Donor Support Agent joined → Transferring…' then hangs forever"
+
+The flow's `routeWork` action is pushing the conversation to a queue, but no human or agent
+in that queue is `Available`. Two valid fixes depending on intent:
+- **Want a human-handoff queue:** check `ServicePresenceStatusAccess` and `UserServicePresence`
+  — at least one queue member must have a presence status mapped to the `LiveMessage`
+  ServiceChannel and be `Online`. Use `Setup → Omni-Channel → Routing → <queue's Routing Config>`
+  to confirm `RoutingModel`.
+- **Want an Agentforce ServiceAgent:** bypass the queue + flow entirely. Route the channel
+  directly to the bot via `MessagingChannel.SessionHandlerId` (see "Direct ServiceAgent
+  routing" below). The `routingType=AgentforceEmployeeAgent` value in the standard MIAW flow
+  template only engages **internal** Agentforce Employee agents — it will not engage a
+  customer-facing ServiceAgent and will not route to a human.
+
+### Symptom: "MIAW deployment was created but bootstrap.min.js returns 501"
+
+Deployment exists but is unpublished. Re-publish via Setup or `scripts/publish-esc.spec.ts`
+in [sf-ai-agentforce](../sf-ai-agentforce/scripts/) — the script is reusable for any ESC,
+not just Agentforce-fronted ones.
+
+### Symptom: "MIAW deployment's runtime config returns authMode=Auth even though channel.IsAuthenticated=false"
+
+`embeddedServiceMessagingChannel.authMode` is snapshotted at **deployment-creation** and is
+not refreshed by re-publish or by `PATCH MessagingChannel.IsAuthenticated`. Re-create the
+channel via `Setup → Messaging → Channels → New Channel` (the wizard with the "Allow guest
+users" toggle), NOT via `Setup → Embedded Service Deployments → New Deployment`.
+
+---
+
+## Direct ServiceAgent routing (no flow + queue)
+
+When the MIAW conversation should go to an Agentforce ServiceAgent, skip the flow + queue
+indirection entirely. `MessagingChannel.SessionHandlerId` is a polymorphic reference field
+that accepts either a `FlowDefinition` Id (`300...`) or a `BotDefinition` Id (`0Xx...`); the
+runtime branches on the prefix. The metadata XML schema does **not** expose this — only
+sObject PATCH does:
+
+```bash
+SID=$(sf org display -o <alias> --json | jq -r .result.accessToken)
+INST=$(sf org display -o <alias> --json | jq -r .result.instanceUrl)
+curl -X PATCH -H "Authorization: Bearer $SID" -H "Content-Type: application/json" \
+  -d '{"SessionHandlerId":"<botDefinitionId>"}' \
+  "$INST/services/data/v66.0/sobjects/MessagingChannel/<channelId>"
+# Expected: HTTP 204
+```
+
+After this, **re-publish the EmbeddedServiceConfig** — the runtime endpoint
+`/embeddedservice/v1/embedded-service-config` snapshots wiring at publish time. A metadata
+deploy is not enough.
+
+Reusable script: [`sf-ai-agentforce/scripts/wire-channel-to-service-agent.sh`](../sf-ai-agentforce/scripts/wire-channel-to-service-agent.sh).
+
 ---
 
 ## CLI / Metadata Cheat Sheet
