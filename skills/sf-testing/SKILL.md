@@ -30,11 +30,74 @@ upstream_refs:
 upstream_release_notes:
   - release: "Spring '26"
     url: https://help.salesforce.com/s/articleView?id=release-notes.rn_apex_test.htm
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "120-pt rubric inline (6 categories: Test Coverage 25, Assertion Quality 25, Bulk Testing 20, Test Data 20, Isolation 15, Documentation 15), mapped onto the 4-dimension default rubric from skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  testing_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 15
+      description: "Tests assert what they claim. Maps to Assertion Quality (25). Every test method must have at least one assertion that proves the production code did what it said. Tests with no Asserts pass meaningless conditions."
+      automatic_hard_fail_rules:
+        - "Any @isTest method with no Assert.* / System.assertEquals / System.assertNotEquals calls (test that asserts nothing)"
+        - "Any test that asserts only on System exceptions thrown (testing that bad input throws, but not testing the happy path)"
+        - "Any try/catch that swallows the assertion (catch (Exception e) { return; } — test passes by hiding failures)"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 12
+      description: "Tests cover bulk + edge cases + isolation. Maps to Bulk Testing (20) + Isolation (15). 200+ record bulk path tested. Tests don't depend on org state (use Test Data Factory). Each test is independent."
+      automatic_hard_fail_rules:
+        - "Any class with public methods callable in bulk that has no 200+ record bulk test method"
+        - "Any test using SeeAllData=true on a class touching production data (test isolation broken; passes locally, fails in CI)"
+        - "Any test depending on a hardcoded record Id (00*) that won't exist in scratch orgs"
+    - name: Fit
+      max: 25
+      hard_fail_below: 10
+      description: "Tests use platform conventions + Test Data Factory. Maps to Test Data (20) + Documentation (15). Test data created via factory class, ApexDoc on test methods explains the scenario."
+      automatic_hard_fail_rules:
+        - "Any test creating records inline (insert new Account(Name='Test')) instead of via Test Data Factory (causes drift across tests)"
+        - "Any test class without ApexDoc on @testSetup or test methods (future maintainer can't tell what's being tested)"
+    - name: Performance
+      max: 25
+      hard_fail_below: 12
+      description: "Tests achieve coverage and run efficiently. Maps to Test Coverage (25). 90%+ coverage on the production class under test (Salesforce floor is 75%; production-grade is 90%). Tests don't time out or exceed governor limits."
+      automatic_hard_fail_rules:
+        - "Any production class with <75% coverage (Salesforce will block deploy)"
+        - "Any test that takes >30 seconds to run (test inefficiency or missing Test.startTest/stopTest boundaries)"
+  test_rubric:
+    unit:
+      required: true
+      criteria: "Test methods cover positive, negative, AND bulk scenarios. Each test has a clear assertion. ≥90% coverage on the class under test."
+    integration:
+      required: true
+      criteria: "Test class deploys to a connected org and runs to completion. sf apex run test --tests <ClassName> returns Outcome=Pass."
+    smoke:
+      required: true
+      criteria: "Bulk test (200+ records) passes without governor limit errors. Test runs within Salesforce's 10-minute synchronous test cap."
 ---
 
 # sf-testing: Salesforce Test Execution & Coverage Analysis
 
 Expert testing engineer specializing in Apex test execution, code coverage analysis, mock frameworks, and agentic test-fix loops. Execute tests, analyze failures, and automatically fix issues.
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). Three subagents (planner / implementer / evaluator) loop against the 120-pt rubric in fresh context.
+
+**Why test code needs the harness:** the most damaging test failures are tests that pass but don't prove anything. Empty assertions, silenced exceptions, hardcoded record Ids that vanish in scratch orgs, missing 200+ record bulk paths. These pass deploy and CI but mask production bugs that ship to customers. Self-eval doesn't catch them — the test reports "Pass". Adversarial eval reads the test class and grades whether the assertions are meaningful.
+
+**Composition:** rubric inline below (120 pts, 6 categories). Frontmatter `testing_dimensions` block maps onto 4 SPEC dimensions with hard-fail floors. Tests-with-no-assertions is automatic Correctness hard-fail.
+
+**Disabling:** set `eval_harness.enabled: false` in frontmatter.
+
+---
 
 ## Core Responsibilities
 
