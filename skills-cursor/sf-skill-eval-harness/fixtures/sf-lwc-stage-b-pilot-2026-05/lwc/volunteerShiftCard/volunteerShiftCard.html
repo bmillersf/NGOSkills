@@ -1,0 +1,107 @@
+<template>
+    <lightning-card title={cardTitle} icon-name="standard:event">
+        <div class="card-body slds-p-horizontal_medium slds-p-bottom_medium">
+
+            <template lwc:if={hasError}>
+                <div
+                    class="error-region slds-p-around_small"
+                    role="alert"
+                    aria-live="assertive"
+                >
+                    <lightning-icon
+                        icon-name="utility:error"
+                        alternative-text="Error"
+                        size="x-small"
+                        variant="error"
+                    ></lightning-icon>
+                    <span class="slds-m-left_x-small">{errorMessage}</span>
+                </div>
+            </template>
+
+            <template lwc:if={hasRecord}>
+                <dl class="shift-meta">
+                    <div class="meta-row">
+                        <dt class="slds-text-title">When</dt>
+                        <dd class="slds-text-body_regular">
+                            <lightning-formatted-date-time
+                                value={startDateTime}
+                                year="numeric"
+                                month="short"
+                                day="2-digit"
+                                hour="2-digit"
+                                minute="2-digit"
+                            ></lightning-formatted-date-time>
+                            <span class="slds-m-horizontal_xx-small" aria-hidden="true">&ndash;</span>
+                            <span class="slds-assistive-text">to</span>
+                            <lightning-formatted-date-time
+                                value={endDateTime}
+                                hour="2-digit"
+                                minute="2-digit"
+                            ></lightning-formatted-date-time>
+                        </dd>
+                    </div>
+
+                    <div class="meta-row">
+                        <dt class="slds-text-title">Site</dt>
+                        <dd class="slds-text-body_regular">{siteName}</dd>
+                    </div>
+
+                    <div class="meta-row">
+                        <dt class="slds-text-title">Capacity</dt>
+                        <dd class="slds-text-body_regular">
+                            <template lwc:if={isFull}>
+                                <span class="capacity-full" aria-live="polite">
+                                    <lightning-icon
+                                        icon-name="utility:close"
+                                        alternative-text="Shift full"
+                                        size="x-small"
+                                        variant="error"
+                                    ></lightning-icon>
+                                    <span class="slds-m-left_xx-small">Full</span>
+                                </span>
+                            </template>
+                            <template lwc:else>
+                                <span class="capacity-available">{spotsLabel}</span>
+                            </template>
+                        </dd>
+                    </div>
+                </dl>
+
+                <template lwc:if={showDescription}>
+                    <div
+                        class="description slds-m-top_small slds-text-body_regular"
+                        data-id="description"
+                    >
+                        <lightning-formatted-rich-text
+                            value={description}
+                        ></lightning-formatted-rich-text>
+                    </div>
+                </template>
+
+                <template lwc:if={canSignUp}>
+                    <div class="actions slds-m-top_medium">
+                        <lightning-button
+                            label="Sign Up"
+                            title="Sign up for this volunteer shift"
+                            variant="brand"
+                            disabled={signUpDisabled}
+                            onclick={handleSignUpClick}
+                            data-id="signup-button"
+                        ></lightning-button>
+                    </div>
+                </template>
+            </template>
+
+            <template lwc:if={hasRecord} lwc:else>
+                <template lwc:if={hasError} lwc:else>
+                    <div class="loading slds-p-around_medium" role="status">
+                        <lightning-spinner
+                            alternative-text="Loading shift"
+                            size="small"
+                        ></lightning-spinner>
+                    </div>
+                </template>
+            </template>
+        </div>
+    </lightning-card>
+</template>
