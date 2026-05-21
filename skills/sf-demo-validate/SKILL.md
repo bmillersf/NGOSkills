@@ -35,6 +35,18 @@ upstream_refs:
 upstream_release_notes:
   - release: "Spring '26"
     url: https://help.salesforce.com/s/articleView?id=release-notes.rn_summary.htm
+eval_harness:
+  enabled: true
+  pilot: true
+  rubric_ref: "200-pt rubric in this SKILL.md (Scoring Rubric section)"
+  hard_fail_dimensions: [Correctness, Robustness]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  harness_dir: ".eval-harness/"
+  scripts_dir: "skills/sf-demo-validate/eval-harness/scripts/"
+  prompts_dir: "skills/sf-demo-validate/eval-harness/prompts/"
 ---
 
 # sf-demo-validate: Autonomous Demo Script Validation & Repair
@@ -65,6 +77,7 @@ Expert Salesforce demo environment engineer specializing in end-to-end validatio
 | **Fix strategies** | [references/fix-strategies.md](references/fix-strategies.md) | Fix patterns per issue type, cross-skill delegation rules |
 | **Starter template** | [assets/demoscript-template.md](assets/demoscript-template.md) | Blank demoscript.md users can copy and fill in |
 | **Screenshot script** | [scripts/screenshot.js](scripts/screenshot.js) | Playwright utility for headless page screenshots |
+| **Eval harness (pilot)** | [eval-harness/README.md](eval-harness/README.md) | Three-agent adversarial loop wrapping the 7-phase workflow. See "Eval Harness Wrap" section below. |
 
 ---
 
@@ -102,6 +115,124 @@ Each step may include a `type` hint to direct the validation strategy:
 | `omnistudio` | OmniScripts, FlexCards, Integration Procedures, Data Mappers deployed and active |
 
 When no type is given, the skill infers the appropriate strategy from the step description.
+
+---
+
+## Eval Harness Wrap (pilot — Stage 1 of `content/specs/skill-eval-harness-SPEC.md`)
+
+When `eval_harness.enabled: true` is set in frontmatter, this skill runs inside an adversarial three-agent loop. The 7-phase workflow below is what the **implementer** subagent executes; a separate **evaluator** subagent re-grades the result in a fresh subagent context, and a **planner** subagent owns the SPEC.md the implementer builds against.
+
+The 7-phase workflow is **unchanged** by the harness — only the surrounding evaluation flow changes.
+
+### Why this exists
+
+Self-evaluation drifts. The same agent that ran 7 phases of validation + repair tends to rate its own output favorably. Fresh-context evaluation against the same 200-pt rubric catches gaps the producing agent silently glossed over.
+
+### Three-agent flow
+
+```
+planner ──► implementer ──► evaluator ──► (SHIP | ITERATE | SPEC-DEFECT)
+                ▲                              │
+                └──── EVAL-FEEDBACK ◄──────────┘
+```
+
+| Role | What it does | Subagent prompt |
+|---|---|---|
+| **Planner** | Reads user request + any upstream `requirements.json` / `value-moments.json`. Writes `.eval-harness/SPEC.md` with falsifiable ACs and a test plan. On re-plan, reads `SPEC-DEFECT.md` and revises. | [eval-harness/prompts/planner.md](eval-harness/prompts/planner.md) |
+| **Implementer** | Runs the 7-phase workflow below. Reuses the existing 200-pt rubric internally as a working draft. Writes contract files (`requirement-coverage.json`, `data-requirements.json`, `click-path.json`, `wow-moment-delivery.json`) and `IMPL-NOTES.md`. Does NOT see rubric weights or hard-fail floors. | [eval-harness/prompts/implementer.md](eval-harness/prompts/implementer.md) |
+| **Evaluator** | Fresh subagent context per iteration — never sees prior `EVAL-REPORT-*.md`. Re-runs validation in read-only mode. Independently rebuilds the coverage matrix and POV ratio from prose; divergence from implementer's claims = `SPEC-DEFECT`. Writes `EVAL-REPORT-{iter}.md` with evidence-quoted scores. | [eval-harness/prompts/evaluator.md](eval-harness/prompts/evaluator.md) |
+
+### Loop control (per SPEC §6)
+
+| Verdict | Action |
+|---|---|
+| `SHIP` | Quality ≥80%, all hard-fail floors met, all test rubric required = pass. Done. |
+| `ITERATE` | Implementer runs again with `EVAL-FEEDBACK.md` (gaps only — no rubric weights). Cap: 3 iterations. |
+| `SPEC-DEFECT` | Planner re-plans against `SPEC-DEFECT.md`. Per-loop replan budget: 1. Beyond that, escalate. |
+| Hard-fail breach | Always escalates to user — no autonomous retries on critical dimensions (per SPEC §6.3). |
+
+### Files in the harness directory
+
+The harness writes to `.eval-harness/` at the project root (or, when invoked inside `sf-demo-orchestrate`, at `.planning/demo-pipeline/<phase>/.eval-harness/`):
+
+| File | Written by | Read by |
+|---|---|---|
+| `SPEC.md` | planner | implementer, evaluator |
+| `IMPL-NOTES.md` | implementer | evaluator |
+| `EVAL-REPORT-{iter}.md` | evaluator | user |
+| `EVAL-FEEDBACK.md` | evaluator | next-iteration implementer |
+| `SPEC-DEFECT.md` | evaluator | planner (on re-plan) |
+| `TRACE.md` | all roles (append-only) | user, debugging |
+| 6× contract `*.json` | implementer (or upstream phase) | evaluator, downstream phases |
+
+### Invocation
+
+When this skill is invoked and `eval_harness.enabled: true`:
+
+1. **Spawn planner subagent** with `eval-harness/prompts/planner.md` as the system prompt + the user's request + any existing upstream contract files. Done criterion: `.eval-harness/SPEC.md` exists with all sections populated.
+
+2. **Spawn implementer subagent** with `eval-harness/prompts/implementer.md` + the SPEC + (on iter ≥2) `EVAL-FEEDBACK.md`. The implementer follows this skill's existing 7-phase workflow. Done criterion: artifacts produced + contracts validated via:
+   ```bash
+   python3 -m scripts.cli validate-contracts --harness-dir .eval-harness --strict
+   ```
+
+3. **Spawn evaluator subagent** (fresh context — must not see prior EVAL-REPORTs) with `eval-harness/prompts/evaluator.md` + SPEC + IMPL-NOTES + access to artifacts. The evaluator re-runs the 200-pt rubric (this SKILL.md's "Scoring Rubric" section) in read-only mode and computes the verdict via:
+   ```bash
+   python3 -m scripts.cli score < scores.json
+   ```
+
+4. **Apply loop decision** via:
+   ```bash
+   python3 -m scripts.cli loop-decide < state-and-result.json
+   ```
+   Branch on: `SHIP` (done), `ITERATE_IMPLEMENTER` (back to step 2), `REPLAN` (back to step 1), `ESCALATE` (surface to user with full TRACE.md).
+
+5. **Append TRACE.md row** after each subagent completes. The trace is the primary debugging loop (per SPEC principle #4).
+
+### Standalone invocation (no orchestrator)
+
+When invoked outside `sf-demo-orchestrate`:
+
+- `.eval-harness/` lives at the project root or current working directory
+- Per-loop replan budget only (no global pool)
+- Hard-fail breaches surface directly to user
+
+### Inside `sf-demo-orchestrate` (Phase 6)
+
+When invoked as Phase 6 of the orchestrator:
+
+- `.eval-harness/` lives at `.planning/demo-pipeline/phase-6-validate/.eval-harness/`
+- Re-plan budget consumes from the orchestrator-global pool of 3
+- TRACE.md aggregates into `DEMO-PIPELINE-STATUS.md`
+- Hard-fail breaches surface to the orchestrator, which surfaces to user
+
+### What the harness does NOT change
+
+- The 7-phase workflow below (Parse → Connect → Validate → Report → Fix → Re-Validate → Summary) is unchanged. The implementer follows it exactly.
+- The 200-pt scoring rubric (and cross-cloud add-ons) is unchanged. The evaluator scores against the *same* rubric — only *who* scores it (fresh subagent vs producing agent) is different.
+- The fix strategies, cross-skill delegation rules, and CLI commands are unchanged.
+
+### Tests + sample run
+
+- `eval-harness/tests/` — 49 pytest tests, runs in <1s, must be green before this harness is invoked
+- `eval-harness/SAMPLE-RUN.md` — deterministic 2-iteration walkthrough proving the machinery works end-to-end
+- `eval-harness/fixtures/simple-volunteer-demo/` — Helping Hands NGO 30-min volunteer demo with all 6 contract files populated
+
+### Pilot success criteria (SPEC §8)
+
+After 3-5 real demo prep cycles using the harness, evaluate:
+
+1. Did the adversarial evaluator find ≥1 gap that self-eval rated as passing?
+2. Did the loop converge in ≤3 iterations on average?
+3. Did TRACE.md make a real debugging session faster?
+4. Did the user prefer harness output over current output?
+
+≥3 yes → extract to `skills-cursor/sf-skill-eval-harness/` and roll out per SPEC §14 Stage 3.
+<3 yes → revert and document why in skill-learning anti-patterns.
+
+### Disabling the harness
+
+Set `eval_harness.enabled: false` in frontmatter. The 7-phase workflow runs as it did before, no harness wrap. The harness scaffolding stays on disk (no rot risk — tests keep it honest), but no subagents are spawned.
 
 ---
 
