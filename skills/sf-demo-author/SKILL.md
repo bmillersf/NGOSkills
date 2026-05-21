@@ -35,6 +35,33 @@ upstream_refs:
 upstream_release_notes:
   - release: "Spring '26"
     url: https://help.salesforce.com/s/articleView?id=release-notes.rn_summary.htm
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "150-pt rubric in this SKILL.md (Scoring Rubric section), mapped onto the 4-dimension Phase 4 rubric from skill-eval-harness-SPEC.md §16"
+  hard_fail_dimensions: [Requirement_Coverage_And_Depth, Wow_Moment_Delivery, End_User_POV_Ratio, Click_Path_Fidelity_And_Data_Contract]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  phase4_dimensions:
+    - name: Requirement_Coverage_And_Depth
+      max: 25
+      hard_fail_below: 18
+      description: "Every must_demo requirement is demonstrated AND each one meets the min_steps from value-moments.json. No drops, no shallow coverage."
+    - name: Wow_Moment_Delivery
+      max: 25
+      hard_fail_below: 12
+      description: "Every wow moment from value-moments.json is delivered with all four narrative beats (pain context, watch this, moment, narration), correctly ordered in the click path."
+    - name: End_User_POV_Ratio
+      max: 25
+      hard_fail_below: 12
+      description: "Click-path steps tagged pov: end_user >= 60%; pov: admin <= 20%. Independently re-tagged by evaluator for divergence detection."
+    - name: Click_Path_Fidelity_And_Data_Contract
+      max: 25
+      hard_fail_below: 13
+      description: "Every UI step uses real Salesforce labels and selectors; data-requirements.json validates against schema; FK integrity holds across all 6 contract files."
 ---
 
 # sf-demo-author: Demo Script Authoring from Raw Notes
@@ -76,6 +103,56 @@ Expert demo narrative architect. Transforms raw discovery notes, meeting transcr
 | **Persona templates** | [references/persona-templates.md](references/persona-templates.md) | Nonprofit role archetypes: donor, volunteer, program staff, fundraiser, admin |
 | **Click path guide** | [references/click-path-guide.md](references/click-path-guide.md) | Rules for writing verbatim, unambiguous click paths |
 | **Output template** | [assets/demoscript-template.md](assets/demoscript-template.md) | Blank demoscript.md to populate |
+| **Eval harness (pilot)** | [skills-cursor/sf-skill-eval-harness/SKILL.md](../../skills-cursor/sf-skill-eval-harness/SKILL.md) | Three-agent adversarial loop wrapping the 6-phase workflow. See "Eval Harness Wrap" section below. |
+
+---
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (set in frontmatter above), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md) — a separate skill that owns the orchestration of planner / implementer / evaluator subagents and grades the resulting demoscript in fresh context.
+
+**This skill provides the rubric (the 150-pt scoring section below, mapped onto the 4-dimension Phase 4 rubric in `skill-eval-harness-SPEC.md` §16) and the implementer playbook (the 6-phase workflow below). The harness skill provides the loop control and adversarial evaluation.**
+
+The 6-phase workflow is **unchanged** by the harness — it's what the implementer subagent executes. Only the surrounding evaluation flow changes:
+
+- The harness skill spawns a fresh evaluator subagent (no memory of prior iterations) to re-grade the demoscript against the same rubric, catching shallow-demo and half-baked-demo failures that self-evaluation tends to gloss over.
+- Two **independent reconstructions** fire on every evaluator pass:
+  1. **Coverage matrix** — evaluator independently builds the requirement → step coverage map from `requirements.json` + the demoscript prose, compares to `requirement-coverage.json`. Divergence = `SPEC-DEFECT`.
+  2. **POV ratio rebuild** — evaluator re-tags every step's `pov` from prose, recomputes the end-user / admin / mixed / narrative ratio, compares to claimed ratio. >5% divergence = `SPEC-DEFECT`.
+- Hard-fail floors (declared in frontmatter) block SHIP regardless of total score. Coverage drops, missing wow moments, and POV-ratio drift are exactly the failures these floors guard against — the four hard-fail dimensions encode the SPEC's "shallow-demo prevention checklist" (§18).
+- The harness skill writes structured handoffs in `.eval-harness/` so artifacts can't drift between iterations.
+
+### How the harness composes with this skill
+
+| What | Owned by |
+|---|---|
+| 150-pt scoring rubric | This skill ("Scoring Rubric" section below) |
+| 4-dimension Phase 4 rubric mapping | This skill's frontmatter `phase4_dimensions` block |
+| 6-phase implementer workflow (Notes Intake → Persona Design → Click-Path Build → Contract Output → Self-Check → Output) | This skill ("Workflow" section below) |
+| Story-arc patterns, persona templates, anti-shallow tactics | This skill (existing references) |
+| Three-agent loop control (SHIP / ITERATE / SPEC-DEFECT verdicts, hard-fail floors, replan budget) | sf-skill-eval-harness |
+| Subagent prompts (planner / implementer / evaluator) | sf-skill-eval-harness/prompts/ |
+| JSON Schemas for cross-phase contracts | sf-skill-eval-harness/schemas/ |
+| Independent coverage matrix + POV ratio reconstruction (§16) | sf-skill-eval-harness/prompts/evaluator.md |
+| Append-only TRACE.md primary debugging loop | sf-skill-eval-harness |
+
+When the implementer subagent completes the 6-phase workflow, it emits seven artifacts:
+
+1. `demoscript.md` — the artifact itself
+2. `requirements.json` — extracted from notes (Phase 2 input contract)
+3. `value-moments.json` — designed per requirement with persona pain + outcome + wow moment + anti-demo list (Phase 3 input contract)
+4. `click-path.json` — POV-tagged 15-30 step click path
+5. `requirement-coverage.json` — implementer's coverage claim
+6. `wow-moment-delivery.json` — pain → watch this → moment → narration beats per value moment
+7. `data-requirements.json` — records the demoscript references
+
+All seven validate against schemas in `sf-skill-eval-harness/schemas/`. The evaluator subagent reads them in fresh context, grades the demoscript against the rubric, and runs the two independent reconstructions.
+
+### Disabling the harness
+
+Set `eval_harness.enabled: false` in this skill's frontmatter (or remove the `eval_harness:` block entirely). The 6-phase workflow runs as before with no harness wrap.
+
+See [the harness skill's SKILL.md](../../skills-cursor/sf-skill-eval-harness/SKILL.md) for the full orchestration playbook.
 
 ---
 
