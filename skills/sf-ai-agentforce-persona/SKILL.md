@@ -40,9 +40,69 @@ upstream_refs:
 upstream_release_notes:
   - release: "Spring '26"
     url: https://help.salesforce.com/s/articleView?id=release-notes.rn_agentforce.htm
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "50-pt rubric inline (5 categories /10: Identity Coherence, Dimension Consistency, Behavioral Specificity, Phrase Book Quality, Sample Quality), mapped onto the 4-dimension default rubric from skill-eval-harness-SPEC.md §5.1. Subjective-quality grading is the entire challenge here — fresh-context evaluation prevents the persona author from rationalizing their own work."
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  persona_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 15
+      description: "Persona traits are distinct, non-contradictory, and behaviorally defined. Maps to Identity Coherence (10) + Behavioral Specificity (10). Each trait generates specific, observable agent behaviors — not vague aspirations like 'helpful' or 'friendly'."
+      automatic_hard_fail_rules:
+        - "Any persona trait that is purely an adjective without a concrete behavior example ('warm', 'professional', 'helpful' alone — no example of what that looks like)"
+        - "Any contradictory trait pairing without explicit reconciliation (e.g., 'highly formal' AND 'uses emoji liberally' without a register-shift rule)"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 12
+      description: "Persona handles boundary scenarios + uncertainty. Maps to Sample Quality (10). Sample interactions cover happy path, uncertainty, AND persona boundary scenarios (where the persona says no, redirects, or admits ignorance)."
+      automatic_hard_fail_rules:
+        - "Any persona with no sample interactions covering uncertainty or boundary scenarios (only happy-path samples = brittle persona)"
+    - name: Fit
+      max: 25
+      hard_fail_below: 10
+      description: "Persona settings cohere with archetype + Interaction Model. Maps to Dimension Consistency (10). Upstream-downstream constraint alignment respected (Register → Voice → Brevity → Tone → Humor → Chatting Style). Tone Boundaries consistent with Tone archetype."
+      automatic_hard_fail_rules:
+        - "Any setting that contradicts an upstream archetype (e.g., Register=Formal + Brevity=Conversational — that's a fit defect)"
+        - "Any persona referencing an Interaction Model setting that the imported IM doesn't define"
+    - name: Performance
+      max: 25
+      hard_fail_below: 12
+      description: "Persona phrase book delivers consistent voice across uses. Maps to Phrase Book Quality (10). Phrases consistent with Voice + Tone + Brevity + Humor + Chatting Style. Variety in acknowledgements (no robotic repetition). Register-appropriate language."
+      automatic_hard_fail_rules:
+        - "Any acknowledgement bank with <3 variants (robotic repetition risk)"
+        - "Any phrase that breaks the declared Register (formal persona using 'lol' = production breakage)"
+  test_rubric:
+    unit:
+      required: true
+      criteria: "Persona document validates against persona-encoding-template structure. All required fields populated (Identity, Register, Voice, Brevity, Tone, Humor, Chatting Style, Tone Boundaries, Phrase Book, Sample Interactions)."
+    integration:
+      required: true
+      criteria: "Persona encoded into Agent Builder fields (system_message, welcome_message, error_message) without truncation. Length budget (typically <2000 chars per field) respected."
+    smoke:
+      required: true
+      criteria: "Sample interactions read aloud sound like the same agent (consistent voice). A blind reader could identify which persona produced each sample."
 ---
 
 # Agent Persona Design
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). Three subagents (planner / implementer / evaluator) loop against the 50-pt rubric in fresh context.
+
+**Why persona design specifically needs the harness:** subjective quality is the entire challenge. The author of a persona cannot reliably grade whether the traits are "distinct enough" or whether sample interactions sound like "the same agent" — that's exactly the self-evaluation trap. Fresh-context evaluation by a different subagent reads the persona blind and tests whether a reader could identify which persona produced each sample.
+
+**Composition:** rubric stays inline below (5 categories /10). Frontmatter `persona_dimensions` block maps onto 4 SPEC dimensions. The hard-fail rules encode common persona failure modes: pure-adjective traits with no behavior, contradictory archetype + setting pairings, samples that only cover happy path.
+
+**Disabling:** set `eval_harness.enabled: false` in frontmatter.
+
+---
 
 ## How to Use
 

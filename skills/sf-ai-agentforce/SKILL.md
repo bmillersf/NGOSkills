@@ -33,6 +33,57 @@ upstream_refs:
 upstream_release_notes:
   - release: "Spring '26"
     url: https://help.salesforce.com/s/articleView?id=release-notes.rn_agentforce.htm
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "100-pt rubric inline in this SKILL.md (6 categories: Agent Configuration 20, Topic & Action Design 25, Metadata Quality 20, Integration Patterns 15, PromptTemplate Usage 10, Deployment Readiness 10), mapped onto the 4-dimension default rubric from skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  agentforce_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 15
+      description: "Agent does what it claims at the topic + action level. Maps to Topic & Action Design (25). Topic descriptions are unambiguous so the agent routes correctly. Action capability text matches the action's actual behavior."
+      automatic_hard_fail_rules:
+        - "Any topic with empty or generic description ('Handles cases', 'Processes requests') that won't route reliably"
+        - "Any action with capability text that contradicts the action's actual input/output schema"
+        - "Any GenAiPlugin XML with invalid topicVersionPackage or unresolved topicReference"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 12
+      description: "Agent survives ambiguous user input + bad data. Maps to Agent Configuration (20). Welcome message clear, error messages graceful, agent user properly permissioned, fallback behavior defined for off-topic queries."
+      automatic_hard_fail_rules:
+        - "Any agent with no error message configured (default 'Something went wrong' breaks user trust)"
+        - "Any agent missing welcome message (silent agent confuses users)"
+        - "Any agent user missing required permission set assignments for invoked actions"
+    - name: Fit
+      max: 25
+      hard_fail_below: 10
+      description: "Agent matches Agentforce metadata conventions + cross-skill integration. Maps to Metadata Quality (20) + Integration Patterns (15). Valid .genAiFunction / .genAiPlugin / .promptTemplate XML, correct target types, proper deployment dependency order."
+      automatic_hard_fail_rules:
+        - "Any GenAiFunction XML missing required <invocationTarget> or with invalid type"
+        - "Any cross-skill delegation that bypasses sf-ai-agentforce-persona (persona work belongs in that skill)"
+    - name: Performance
+      max: 25
+      hard_fail_below: 12
+      description: "Agent deploys cleanly + responds efficiently. Maps to PromptTemplate Usage (10) + Deployment Readiness (10). Variable bindings correct, template types appropriate, validation passes, dependencies deployed in order, package.xml correct."
+      automatic_hard_fail_rules:
+        - "Any PromptTemplate with unbound merge field that will render literal {!variable} in production"
+        - "Any deployment that references metadata not in package.xml (deploy fails with missing-dependency error)"
+  test_rubric:
+    unit:
+      required: true
+      criteria: "Each Apex action invoked by the agent has unit test coverage (≥75% per Salesforce's deploy floor). PromptTemplate variable bindings exercised."
+    integration:
+      required: true
+      criteria: "Agent metadata bundle (GenAiFunction + GenAiPlugin + PromptTemplate + supporting Apex/Flow) deploys to a connected org without errors. Agent appears in Agent Builder."
+    smoke:
+      required: true
+      criteria: "Agent invocation with a representative user query routes to the correct topic, invokes the correct action, and returns a non-error response. Verified via sf-ai-agentforce-testing or Agentforce session trace."
 ---
 
 <!-- TIER: 1 | ENTRY POINT -->
@@ -44,6 +95,18 @@ upstream_release_notes:
 Expert Agentforce developer specializing in the **Setup UI / Agentforce Builder** approach to agent development. Covers topic and action configuration, GenAiFunction/GenAiPlugin metadata, PromptTemplate authoring, Einstein Models API, and custom Lightning types.
 
 > **Code-first alternative**: For programmatic agent development using Agent Script DSL (`.agent` files), use **sf-ai-agentscript** instead. This skill covers the declarative, UI-driven approach.
+
+---
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). Three subagents (planner / implementer / evaluator) loop against the 100-pt rubric in fresh context.
+
+**Why Agentforce needs the harness:** the most damaging failures are silent: empty topic descriptions that won't route, action capability text that contradicts the action's actual behavior, agent users missing perm sets for invoked actions, unbound merge fields in PromptTemplates rendering as literal `{!variable}` in production. These deploy clean and break in front of customers. Self-eval misses them; adversarial eval probes the metadata XML deterministically.
+
+**Composition:** rubric stays inline below (Scoring System, 100pt, 6 categories). Frontmatter `agentforce_dimensions` block maps onto 4 SPEC dimensions with hard-fail floors. Persona design stays in [sf-ai-agentforce-persona](../sf-ai-agentforce-persona/SKILL.md); testing in [sf-ai-agentforce-testing](../sf-ai-agentforce-testing/SKILL.md).
+
+**Disabling:** set `eval_harness.enabled: false` in frontmatter.
 
 ---
 
