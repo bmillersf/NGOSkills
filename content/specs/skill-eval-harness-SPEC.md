@@ -1,11 +1,12 @@
 # SPEC: Adversarial Skill Eval Harness (Pilot in sf-demo-validate)
 
-**Status:** Draft v2 — orchestrator integration added
+**Status:** Draft v3 — full-orchestrator wrap + opt-in extension to other skills
 **Author:** Brian Miller (drafted with Claude)
 **Date:** 2026-05-21
-**Pilot target:** `sf-demo-validate` (Phase 6 of `sf-demo-orchestrate`)
-**Generalization target:** Extract reusable harness into `skills-cursor/sf-skill-eval-harness/` after pilot, then wrap Phases 4, 5, 7 of `sf-demo-orchestrate`
-**End-state goal:** `sf-demo-orchestrate` runs end-to-end autonomously with adversarial eval on every artifact-producing phase
+**Pilot target:** `sf-demo-validate` (Phase 6 of `sf-demo-orchestrate`) — lowest-risk wrap because rubric already exists
+**Stage 2 target:** Extract reusable harness into `skills-cursor/sf-skill-eval-harness/`, then wrap **all 7 phases** of `sf-demo-orchestrate`
+**Stage 3 target:** Opt-in extension to other artifact-producing skills via `eval_harness: enabled` SKILL.md frontmatter (`sf-apex`, `sf-lwc`, `sf-nonprofit-experience-cloud-build`, etc.)
+**End-state goal:** Every artifact-producing skill in the stack runs adversarial eval. `sf-demo-orchestrate` runs end-to-end autonomously with per-phase adversarial verdicts.
 
 ---
 
@@ -391,20 +392,115 @@ After acceptance, implementation work is ~1-2 days:
 
 ## 14. Implementation roadmap (post-acceptance)
 
-End-state: `sf-demo-orchestrate` runs autonomously end-to-end with adversarial eval on every artifact-producing phase. Roadmap to get there:
+End-state: every artifact-producing skill in the stack can run adversarial eval. `sf-demo-orchestrate` runs autonomously with per-phase verdicts. Roadmap to get there:
 
 | Stage | Work | Decision gate |
 |---|---|---|
 | **1. Pilot** | Build three-agent loop inside `sf-demo-validate` (Phase 6 of orchestrator). Reuse existing 200-pt rubric. Add `.eval-harness/` artifacts and TRACE.md. | After 3-5 real demo prep cycles, evaluate against §8 success metrics. Keep / extract / kill. |
-| **2. Extract** | If pilot passes: extract reusable orchestration glue + handoff schema into `skills-cursor/sf-skill-eval-harness/`. Refactor `sf-demo-validate` to consume it. | Drift check via `sync-skills.sh --check`. Manual review of extracted abstractions for over-generalization. |
-| **3. Wrap orchestrator phases** | Apply harness to Phase 4 (demoscript authoring), Phase 5 (data seeding), Phase 7 (presenter guide) of `sf-demo-orchestrate`. | Each phase wrapping is independent — gate on per-phase success metrics matching §8. |
-| **4. Orchestrator integration** | Update `sf-demo-orchestrate` to: (a) track global re-plan budget across phases, (b) aggregate phase TRACE.md into `DEMO-PIPELINE-STATUS.md`, (c) honor §6.3 escalation rules. | Final acceptance: a full `/sf-demo-orchestrate` run from notes to presenter-ready completes autonomously without user intervention on a clean test org. |
-| **5. Roll out beyond demo pipeline** | Apply harness to other high-value skills (`sf-ai-agentforce-persona`, `sf-ai-agentforce-testing`). | One skill at a time. Same §8 success metric per skill. |
+| **2. Extract** | Pilot passes → extract reusable orchestration glue + handoff schema into `skills-cursor/sf-skill-eval-harness/`. Refactor `sf-demo-validate` to consume it. | Drift check via `sync-skills.sh --check`. Manual review of extracted abstractions for over-generalization (principle #5 check — anything not battle-tested in pilot stays out). |
+| **3. Wrap all orchestrator phases** | Apply harness to **all 7 phases** of `sf-demo-orchestrate` (org connect, notes intake, product recs, demoscript, data seeding, validate, Playwright). Each phase gets a per-phase rubric per §16. Phases run in parallel where independent. | Each phase has its own §8-style success metric. A phase wrap that doesn't catch ≥1 real defect in 3 cycles gets killed for that phase. |
+| **4. Orchestrator integration** | Update `sf-demo-orchestrate` to: (a) track global re-plan budget across phases, (b) aggregate phase TRACE.md into `DEMO-PIPELINE-STATUS.md`, (c) honor §6.3 escalation rules, (d) propagate hard-fail breaches up the orchestrator chain. | Final acceptance: a full `/sf-demo-orchestrate` run from notes to presenter-ready completes autonomously on a clean test org with all 7 per-phase verdicts captured. |
+| **5. Opt-in extension to other skills** | Add `eval_harness: enabled` SKILL.md frontmatter convention. Skills opt in by declaring their per-skill rubric (§5.3). Roll out to high-value artifact-producing skills first: `sf-apex`, `sf-lwc`, `sf-nonprofit-experience-cloud-build`, `sf-ai-agentforce-persona`. | One skill at a time. Same §8 success metric per skill. **Do not retrofit all 60+ skills automatically** — opt-in only, as each skill's rubric matures. |
 
 **Stop conditions at any stage:**
 - Frontier model update makes the harness redundant (principle #5) — measure self-eval vs adversarial-eval gap; if gap closes, kill the harness
 - Pilot data shows blind-spot convergence between implementer and evaluator (same model, same blind spots) — mitigate via different model for evaluator, or kill if mitigation fails
+- Stage 3 catches no defects across 3 demo cycles for a given phase — kill the harness wrap for that phase, leave others in place
 
 ## 15. Open questions for the user
 
 None at this time — proceed to implementation when ready.
+
+---
+
+## 16. Per-phase rubrics for `sf-demo-orchestrate` (Stage 3)
+
+Each phase needs its own four-dimension quality rubric. The default `Correctness / Robustness / Fit / Performance` shape from §5.1 is generic; phases substitute domain-specific dimensions but keep the four-dimension + hard-fail shape.
+
+### Phase 1: Org connect + baseline
+
+**Artifact:** Connected org metadata + baseline org snapshot.
+
+| Dimension | Grades | Hard-fail |
+|---|---|---|
+| **Correctness** | Right org targeted, auth valid, alias matches user intent | 15 |
+| **Completeness** | Baseline captures all relevant orgs (sandbox + prod) and current feature flags | 12 |
+| **Drift detection** | Identifies stale auth, expired sessions, deprecated CLI versions | 10 |
+| **Safety** | Confirms no destructive ops queued; flags prod connections explicitly | 12 (hard-fail floor matters most here) |
+
+**Tests:** unit (alias resolution), integration (sf org list passes), smoke (sample query against the connected org returns expected schema).
+
+### Phase 2: Notes intake
+
+**Artifact:** Structured discovery digest from raw notes.
+
+| Dimension | Grades | Hard-fail |
+|---|---|---|
+| **Correctness** | Captures all distinct asks from the notes (nothing dropped) | 15 |
+| **Faithfulness** | No hallucinated requirements not in source notes | 12 (hard-fail) |
+| **Coherence** | Conflicts in source notes surfaced, not silently resolved | 10 |
+| **Persona fidelity** | Personas referenced match what the notes actually say about audience | 10 |
+
+**Tests:** unit (parse notes file), integration (digest references notes by line/quote), smoke (digest re-read produces same routing decision).
+
+### Phase 3: Product detection + recommendation
+
+**Artifact:** Recommended product set + cross-cloud routing decision + duration.
+
+| Dimension | Grades | Hard-fail |
+|---|---|---|
+| **Correctness** | Products match notes' actual asks, not adjacent ones | 15 |
+| **Routing accuracy** | Industry-first routing precedence applied; no generic skill chosen when industry-pack-owned | 12 (hard-fail) |
+| **Duration fit** | Step count matches selected duration (15/30/45 min); no overstuffing | 10 |
+| **Scope discipline** | No product creep beyond what notes justify | 12 |
+
+**Tests:** unit (routing rule eval), integration (recommendation references skill SKILL.md TRIGGER clauses), smoke (chosen products produce a coherent demo arc).
+
+### Phase 4: Demoscript authoring
+
+**Artifact:** `demoscript.md` with story arc + click path + personas.
+
+| Dimension | Grades | Hard-fail |
+|---|---|---|
+| **Narrative coherence** | Story arc has a beginning, conflict, resolution; personas have agency | 15 |
+| **Click-path fidelity** | Every UI step is real (real button labels, real navigation paths in current Salesforce UI) | 15 (hard-fail) |
+| **Data dependency clarity** | Every step that references data declares what data must exist before that step | 12 |
+| **Duration realism** | Step count + estimated time per step matches Phase 3 duration choice | 10 |
+
+**Tests:** unit (markdown structure valid), integration (every CLI command in script executes against the connected org), smoke (full click-path runs end-to-end in Playwright headless).
+
+### Phase 5: Data seeding
+
+**Artifact:** Seeded records in the connected org matching demoscript needs.
+
+| Dimension | Grades | Hard-fail |
+|---|---|---|
+| **Coverage** | Every record the demoscript references exists in the org | 18 (hard-fail) |
+| **Layout completeness** | No demo screen looks half-empty — all writeable fields populated unless empty-by-design | 12 |
+| **Relationship integrity** | Lookups, parent-child, junction objects all resolve | 12 (hard-fail) |
+| **Realism** | Names, amounts, dates feel real, not "Test User 1" / "$100" | 8 |
+
+**Tests:** unit (data tree JSON validates), integration (sf data import succeeds with no errors), smoke (every demoscript step that reads data finds the data).
+
+### Phase 6: `sf-demo-validate` (existing 200-pt rubric)
+
+**Artifact:** Validated, repaired demo-ready org.
+
+This is the **pilot phase**. Existing 200-pt rubric is reused; harness only changes *who grades it* (fresh evaluator subagent) and *how the trace is captured* (TRACE.md). No new rubric design needed.
+
+### Phase 7: Playwright pre-flight + presenter guide
+
+**Artifact:** Playwright test suite + HTML visual report + annotated presenter guide.
+
+| Dimension | Grades | Hard-fail |
+|---|---|---|
+| **Test coverage** | Every demoscript step has a corresponding Playwright assertion | 15 (hard-fail) |
+| **Visual fidelity** | Screenshots at each step match what the script claims will be shown | 12 |
+| **Presenter clarity** | Talking points reference what's visible on the screenshot, not abstract | 10 |
+| **Resilience** | Tests handle Salesforce UI lag, async loads, and auth re-prompts | 13 |
+
+**Tests:** unit (Playwright spec parses), integration (full suite runs green against connected org), smoke (presenter guide PDF renders with all screenshots embedded).
+
+---
+
+**Note on rubric maintenance.** Each phase's rubric lives alongside the phase's skill (or in `sf-demo-orchestrate`'s SKILL.md if the phase is orchestrator-internal). When the rubric changes, increment a version number — TRACE.md records the rubric version used, so old traces remain interpretable.
