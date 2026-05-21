@@ -31,11 +31,70 @@ upstream_refs:
 upstream_release_notes:
   - release: "Spring '26"
     url: https://help.salesforce.com/s/articleView?id=release-notes.rn_security.htm
+metadata:
+  scoring: "100 points across 5 categories — pass/fail emphasis (permissions either grant or deny; harness grades whether least-privilege + audit trail are honored)"
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "100-pt rubric (5 categories: Least Privilege 30, Permission Set Architecture 20, Audit + Documentation 20, FLS + Object Permissions Correctness 20, Profile Hygiene 10) — newly authored 2026-05-21. Mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  permissions_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 14
+      description: "FLS + object permissions correct. Maps to FLS + Object Permissions Correctness (20). Permissions either grant the right access or grant too much/too little — pass/fail at the field level, scored at the bundle level."
+      automatic_hard_fail_rules:
+        - "Any permission set granting Read on a field marked Sensitive without explicit business justification documented"
+        - "Any object permission granting Modify All / View All without privileged-role tag"
+        - "Any FLS gap: a field referenced in the org's Apex/LWC/Flow that no permission set grants Read access to"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 18
+      description: "Least-privilege adherence. Maps to Least Privilege (30). Heaviest robustness floor — over-provisioned permissions are the #1 path to compliance violations and breach blast-radius."
+      automatic_hard_fail_rules:
+        - "Any permission set granting Modify All Data, View All Data, or Customize Application without 'requires_admin_approval: true' tag"
+        - "Any production user assigned to a permission set that grants Manage Users (excluded from least-privilege by default)"
+        - "Any guest-user profile or permission set granting CRUD on any PII-bearing object"
+        - "Any service account permission set without IP-allowlist or certificate-bound auth requirement documented"
+    - name: Fit
+      max: 25
+      hard_fail_below: 10
+      description: "Permission set architecture. Maps to Permission Set Architecture (20). Permission Sets + Permission Set Groups for everything; Profiles only as the minimal baseline."
+      automatic_hard_fail_rules:
+        - "Any permission added directly to a Profile when a Permission Set could carry it (Profiles are migration debt)"
+        - "Any Permission Set Group with circular or contradictory member sets"
+        - "Any new permission set without a corresponding Permission Set Group entry (orphan perm sets accumulate)"
+    - name: Performance
+      max: 25
+      hard_fail_below: 10
+      description: "Audit + documentation. Maps to Audit + Documentation (20) + Profile Hygiene (10). Every permission grant traceable to a business reason; profiles cleaned of legacy grants."
+      automatic_hard_fail_rules:
+        - "Any permission set without description explaining who it's for and why"
+        - "Any user assignment without business-reason field populated"
+  test_rubric:
+    unit:
+      required: true
+      criteria: "Permission set XML validates. SetupEntityAccess entries match the documented intent. No FLS gaps for fields referenced in org code."
+    integration:
+      required: true
+      criteria: "Permission set deploys to a connected org. Test user assigned to the set can perform their declared actions and is denied undocumented ones (verified via runAs Apex or sf-permissions probe)."
+    smoke:
+      required: true
+      criteria: "Quarterly permission audit reproduces the same allow/deny matrix. No drift between deployed perm sets and source-of-truth declarations."
 ---
 
 # sf-permissions
 
 > Salesforce Permission Set analysis, visualization, and auditing tool
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). 100-pt rubric authored 2026-05-21 to fill the harness coverage gap. Robustness floor at 18 — over-provisioned permissions are the #1 path to compliance violations and breach blast-radius. Hard-fail rules block guest-user CRUD on PII, undocumented Modify All Data grants, and FLS gaps. Disable with `eval_harness.enabled: false`.
 
 ## When to Use This Skill
 
