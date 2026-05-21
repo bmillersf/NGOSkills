@@ -45,6 +45,39 @@ upstream_refs:
 upstream_release_notes:
   - release: "Spring '26"
     url: https://playwright.dev/docs/release-notes
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "120-pt rubric in this SKILL.md (Scoring Rubric section), mapped onto the 4-dimension Phase 7 rubric from skill-eval-harness-SPEC.md §16"
+  hard_fail_dimensions: [Test_Coverage, Visual_Fidelity, Presenter_Clarity, Resilience]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  phase7_dimensions:
+    - name: Test_Coverage
+      max: 25
+      hard_fail_below: 15
+      description: "Every step in click-path.json (from upstream Phase 4) has a corresponding Playwright assertion. A test suite that skips steps cannot be a pre-flight check — by definition it misses the regression it was built to catch."
+      automatic_hard_fail_rules:
+        - "Any step in click-path.json with no corresponding describe/test block in the generated Playwright spec"
+        - "Any step's expected_visible[] array with no corresponding assertion in the generated test"
+    - name: Visual_Fidelity
+      max: 25
+      hard_fail_below: 12
+      description: "Screenshots at each step match what the demoscript claims will be shown. The audience-facing screenshots in the presenter guide must reflect actual Salesforce state, not stale captures or wrong screens."
+    - name: Presenter_Clarity
+      max: 25
+      hard_fail_below: 10
+      description: "Talking points reference what's visible on the screenshot, not abstract concepts. Each step's narration ties to specific UI elements the presenter will point at."
+    - name: Resilience
+      max: 25
+      hard_fail_below: 13
+      description: "Tests handle Salesforce UI lag, async loads, auth re-prompts, and timeout-prone operations. A pre-flight check that fails on transient UI delay is worse than no check — it cries wolf."
+      automatic_hard_fail_rules:
+        - "Any test using brittle selectors (text content matchers without role/label fallbacks) for elements that change between Salesforce releases"
+        - "Any test missing explicit wait_for / wait_until on async-load elements (lightning-record-form, related lists, dynamic UIs)"
 ---
 
 # sf-demo-playwright: Demo Test Suite and Presenter Guide Generator
@@ -84,6 +117,48 @@ Expert demo automation engineer. Converts a `demoscript.md` click path into a pe
 | **Report template** | [references/report-template.md](references/report-template.md) | HTML report structure and screenshot embedding |
 | **Pre-flight script** | [scripts/preflight.sh](scripts/preflight.sh) | Shell script to run suite + open report before a demo |
 | **Playwright config** | [scripts/playwright.config.js](scripts/playwright.config.js) | Base Playwright configuration for Salesforce orgs |
+| **Eval harness (pilot)** | [skills-cursor/sf-skill-eval-harness/SKILL.md](../../skills-cursor/sf-skill-eval-harness/SKILL.md) | Three-agent adversarial loop verifying test suite + presenter guide. See "Eval Harness Wrap" section below. |
+
+---
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (set in frontmatter above), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md) — a separate skill that owns the orchestration of planner / implementer / evaluator subagents and grades the generated test suite + presenter guide in fresh context against `click-path.json` from the upstream Phase 4.
+
+**This skill provides the rubric (the 120-pt scoring section below, mapped onto the 4-dimension Phase 7 rubric in `skill-eval-harness-SPEC.md` §16) and the test-generation playbook (the 4-phase workflow below). The harness skill provides the loop control and adversarial evaluation.**
+
+The 4-phase workflow is **unchanged** by the harness — it's what the implementer subagent executes. Only the surrounding evaluation flow changes:
+
+- The harness skill spawns a fresh evaluator subagent (no memory of prior iterations) to verify the generated Playwright spec independently. The evaluator parses the spec file directly, cross-checks every `click-path.json` step against a corresponding test block, and runs the test suite headless against the connected org to confirm it actually passes.
+- Hard-fail floors block SHIP regardless of total score. **Test_Coverage** (a pre-flight check missing a step is worthless) and **Resilience** (a flaky pre-flight cries wolf) carry the heaviest enforcement at floors 15 and 13.
+- The harness writes structured handoffs in `.eval-harness/` so artifacts can't drift between iterations.
+
+### How the harness composes with this skill
+
+| What | Owned by |
+|---|---|
+| 120-pt scoring rubric | This skill ("Scoring Rubric" section below) |
+| 4-dimension Phase 7 rubric mapping | This skill's frontmatter `phase7_dimensions` block |
+| 4-phase implementer workflow (Demoscript Parsing → Test Suite Generation → HTML Report → Presenter Guide) | This skill ("Workflow" section below) |
+| Playwright config, selector best practices, screenshot scripts | This skill (existing references) |
+| Three-agent loop control (SHIP / ITERATE / SPEC-DEFECT verdicts, hard-fail floors, replan budget) | sf-skill-eval-harness |
+| Subagent prompts (planner / implementer / evaluator) | sf-skill-eval-harness/prompts/ |
+| Append-only TRACE.md primary debugging loop | sf-skill-eval-harness |
+
+### Critical evaluator checks for Phase 7
+
+The evaluator runs four deterministic verifications:
+
+1. **Coverage probe** — for every step in `click-path.json`, locate a corresponding test block in the generated Playwright spec. Missing test = Test_Coverage hard-fail.
+2. **Expected-visible probe** — for every `expected_visible[]` entry on every step, locate a matching assertion in the test (e.g., `expect(page.locator(...)).toContainText("...")`). Missing assertion = Test_Coverage hard-fail.
+3. **Resilience probe** — scan the spec for brittle patterns: text-content-only selectors on dynamic UI, missing `await` on async operations, missing `waitFor` on lightning-component renders. Each instance = Resilience -1; persistent patterns = Resilience hard-fail.
+4. **Live-run probe** — execute the spec headless against the connected org. Any test failing on its first run = candidate hard-fail (might indicate genuine breakage OR a flaky test); evaluator decides which.
+
+### Disabling the harness
+
+Set `eval_harness.enabled: false` in this skill's frontmatter (or remove the `eval_harness:` block entirely). The 4-phase workflow runs as before with no harness wrap.
+
+See [the harness skill's SKILL.md](../../skills-cursor/sf-skill-eval-harness/SKILL.md) for the full orchestration playbook.
 
 ---
 
