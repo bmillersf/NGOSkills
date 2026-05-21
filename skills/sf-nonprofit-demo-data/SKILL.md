@@ -41,6 +41,36 @@ upstream_refs:
 upstream_release_notes:
   - release: "Spring '26"
     url: https://help.salesforce.com/s/articleView?id=release-notes.rn_api.htm
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "170-pt rubric in this SKILL.md (Scoring Rubric section), mapped onto the 4-dimension Phase 5 rubric from skill-eval-harness-SPEC.md §16"
+  hard_fail_dimensions: [Coverage, Layout_Completeness, Relationship_Integrity, Realism]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  phase5_dimensions:
+    - name: Coverage
+      max: 25
+      hard_fail_below: 18
+      description: "Every record the demoscript references (per data-requirements.json) exists in the org with required_fields populated. Missing records or missing fields = catastrophic for the demo."
+    - name: Layout_Completeness
+      max: 25
+      hard_fail_below: 15
+      description: "No demo screen looks half-empty. Every writeable field on a generated record has a realistic value unless data-requirements.json explicitly marks it empty-by-design (because a later demo step fills it in live)."
+    - name: Relationship_Integrity
+      max: 25
+      hard_fail_below: 18
+      description: "Lookups, parent-child, junction objects all resolve. Every relationship in data-requirements.json[].relationships has a real target record in the org. No orphans."
+      automatic_hard_fail_rules:
+        - "Any lookup field in data-requirements.json[].required_fields whose value is a record-id placeholder (e.g., 'site-helping-schools-kenya') that does not resolve to a real record after seeding"
+        - "Any junction object referenced in data-requirements.json[].relationships whose parent or child record does not exist in the org"
+    - name: Realism
+      max: 25
+      hard_fail_below: 12
+      description: "Names, amounts, dates feel real for the org's domain. No 'Test User 1' / 'Account A' / '$100' placeholder values. Locale-appropriate names (e.g., realistic Oregon partner agency names if the demo is in Oregon)."
 ---
 
 # sf-nonprofit-demo-data: Nonprofit Demo Data Factory
@@ -86,6 +116,48 @@ Expert nonprofit Salesforce data architect. Generates realistic, story-coherent 
 | **NPSP data model** | [references/npsp-data-model.md](references/npsp-data-model.md) | NPSP objects, namespace fields, household patterns |
 | **Data patterns** | [references/data-patterns.md](references/data-patterns.md) | Reusable patterns: giving history, volunteer history, enrollment sequences |
 | **Sample data** | [assets/sample-data/](assets/sample-data/) | Ready-to-use JSON trees for common nonprofit scenarios |
+| **Eval harness (pilot)** | [skills-cursor/sf-skill-eval-harness/SKILL.md](../../skills-cursor/sf-skill-eval-harness/SKILL.md) | Three-agent adversarial loop verifying seeded org state. See "Eval Harness Wrap" section below. |
+
+---
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (set in frontmatter above), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md) — a separate skill that owns the orchestration of planner / implementer / evaluator subagents and grades the seeded org state in fresh context against `data-requirements.json` from the upstream Phase 4.
+
+**This skill provides the rubric (the 170-pt scoring section below, mapped onto the 4-dimension Phase 5 rubric in `skill-eval-harness-SPEC.md` §16) and the implementer playbook (the 6-phase data factory workflow below). The harness skill provides the loop control and adversarial evaluation.**
+
+The 6-phase data factory workflow is **unchanged** by the harness — it's what the implementer subagent executes. Only the surrounding evaluation flow changes:
+
+- The harness skill spawns a fresh evaluator subagent (no memory of prior iterations) to verify the seeded org state independently. The evaluator queries the org directly to confirm every record in `data-requirements.json` exists, every lookup resolves, and no demo screen will render half-empty.
+- Hard-fail floors block SHIP regardless of total score. **Coverage** (catastrophic if a record is missing) and **Relationship Integrity** (catastrophic if a lookup orphans) carry the heaviest floors at 18 each.
+- The evaluator runs **Layout completeness verification**: for every record in `data-requirements.json`, the evaluator queries the org's actual record state and checks that every writeable field is either populated OR explicitly listed as empty-by-design in the data-requirements contract. Empty fields with no contract justification = `Layout_Completeness` hard-fail.
+- The harness skill writes structured handoffs in `.eval-harness/` so artifacts can't drift between iterations.
+
+### How the harness composes with this skill
+
+| What | Owned by |
+|---|---|
+| 170-pt scoring rubric | This skill ("Scoring Rubric" section below) |
+| 4-dimension Phase 5 rubric mapping | This skill's frontmatter `phase5_dimensions` block |
+| 6-phase implementer workflow (Platform Detection → Persona Mapping → Field Inventory → Package Design → Generation → Cleanup) | This skill ("Workflow" section below) |
+| NPC/NPSP data model knowledge, field population standards, sample data | This skill (existing references) |
+| Three-agent loop control (SHIP / ITERATE / SPEC-DEFECT verdicts, hard-fail floors, replan budget) | sf-skill-eval-harness |
+| Subagent prompts (planner / implementer / evaluator) | sf-skill-eval-harness/prompts/ |
+| Append-only TRACE.md primary debugging loop | sf-skill-eval-harness |
+
+### Critical evaluator checks for Phase 5
+
+The evaluator runs three deterministic verifications against the live org:
+
+1. **Coverage probe** — for every record in `data-requirements.json`, query the org with the unique-identifier fields to confirm the record exists. Missing record = Coverage hard-fail.
+2. **Layout-completeness probe** — for every writeable field on each generated record, check whether the field is populated. If a field is empty AND not listed in the record's `_empty_by_design` contract field, that's a Layout_Completeness hard-fail.
+3. **Relationship probe** — for every entry in `data-requirements.json[].relationships`, query the lookup field's value and confirm it resolves to a real record. Any orphan = Relationship_Integrity hard-fail.
+
+### Disabling the harness
+
+Set `eval_harness.enabled: false` in this skill's frontmatter (or remove the `eval_harness:` block entirely). The 6-phase workflow runs as before with no harness wrap.
+
+See [the harness skill's SKILL.md](../../skills-cursor/sf-skill-eval-harness/SKILL.md) for the full orchestration playbook.
 
 ---
 
