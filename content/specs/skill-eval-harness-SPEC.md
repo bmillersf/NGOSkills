@@ -322,6 +322,19 @@ After 3-5 real demo prep cycles, compare:
 
 Three out of four "yes" → extract to `skills-cursor/sf-skill-eval-harness/` and roll out to `sf-ai-agentforce-persona` and `sf-ai-agentforce-testing` next. Below three → revert and document why in skill-learning anti-patterns.
 
+### First real-world data point (2026-05-21, Children Incorporated demo)
+
+| Criterion | Result |
+|---|---|
+| Did adversarial evaluator find ≥1 gap that self-eval rated as passing? | **Yes — 3 gaps in iter 1.** Implementer self-rated ~196/200 internally; fresh-context evaluator scored 77/100 with hard live-org evidence (bulk N+1 SOQL/DML, missing duplicate-prevention guard, click-path "Scheduled" string drift against NPC `GiftTransaction.Status` enum). |
+| Did the loop converge in ≤3 iterations on average? | **Yes — 2 iterations.** Iter 2 evaluator independently re-graded 89/100, all hard-fails clear, 6/6 Apex tests pass, 0 reconstruction divergence. |
+| Did TRACE.md make a real debugging session faster? | **Yes.** 5 rows captured the entire cross-iteration history; full audit trail without scrolling chat. |
+| Did the user (Brian) prefer harness output over current output? | TBD — captured for assessment after second pilot run. |
+
+Result: 3/4 yes after one cycle. Per the rule above, the harness is extract-and-roll-out qualified — execution of which already occurred in commit `b188a8a` ahead of this data point.
+
+Captured artifacts: [`skills-cursor/sf-skill-eval-harness/fixtures/children-incorporated-pilot-2026-05/`](../../skills-cursor/sf-skill-eval-harness/fixtures/children-incorporated-pilot-2026-05/) — full SPEC, IMPL-NOTES, EVAL-REPORT-1 (ITERATE), EVAL-FEEDBACK, EVAL-REPORT-2 (SHIP), TRACE, all 6 contract files.
+
 ---
 
 ## 9. Mapping to existing primitives

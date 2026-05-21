@@ -1,0 +1,42 @@
+{
+  "version": "1.0",
+  "requirements_file": ".eval-harness/requirements.json",
+  "coverage": [
+    {
+      "requirement_id": "REQ-001",
+      "covered_by_steps": ["step-2", "step-3"],
+      "demonstration_quality": "primary"
+    },
+    {
+      "requirement_id": "REQ-002",
+      "covered_by_steps": ["step-4", "step-5", "step-6"],
+      "demonstration_quality": "primary"
+    },
+    {
+      "requirement_id": "REQ-003",
+      "covered_by_steps": ["step-8", "step-9"],
+      "demonstration_quality": "primary"
+    },
+    {
+      "requirement_id": "REQ-004",
+      "covered_by_steps": ["step-11", "step-12", "step-13"],
+      "demonstration_quality": "primary"
+    }
+  ],
+  "uncovered_requirements": [
+    "REQ-005",
+    "REQ-006",
+    "REQ-007",
+    "REQ-008",
+    "REQ-009",
+    "REQ-010",
+    "REQ-011",
+    "REQ-012",
+    "REQ-013",
+    "REQ-014",
+    "REQ-015",
+    "REQ-016",
+    "REQ-017"
+  ],
+  "rationale_for_uncovered": "Per Children Inc demo prep decision (2026-05-21), Section 1 of the notes is prioritized at full depth (REQ-001 to REQ-004 with must_demo: true). Sections 2-4 (correspondence, donor notes/financials, content/MCAE, portals) are aspirational coverage with must_demo: false — they remain in scope as 'and here's what else you can do' beats if time permits within the 30-min duration but are not gating coverage for Phase 4 SHIP. REQ-005 through REQ-017 will be addressed in a follow-up demo or in Phase 7's presenter guide as supplementary material."
+}

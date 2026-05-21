@@ -1,0 +1,74 @@
+{
+  "version": "1.0",
+  "value_moments_file": ".eval-harness/value-moments.json",
+  "deliveries": [
+    {
+      "value_moment_requirement_id": "REQ-001",
+      "delivered_in_steps": ["step-2", "step-3"],
+      "pain_context_beat": {
+        "step": "step-2",
+        "narration": "Aisha is in Kenya, sitting at the laptop the program team uses. Today, getting a child into the system means emailing a coordinator's spreadsheet to HQ — 2-3 days before that child is visible to potential sponsors."
+      },
+      "watch_this_cue": {
+        "step": "step-2",
+        "narration": "Watch what happens when she clicks Save."
+      },
+      "moment_step": "step-3",
+      "narration_beat": {
+        "step": "step-3",
+        "narration": "From one save: Daniel exists, his Site context is populated, his year and school and interests are visible, and he's sponsorship-ready. Not a stub. Not a 'we'll fill it in later'. Today, in 2 minutes, instead of 2 days."
+      }
+    },
+    {
+      "value_moment_requirement_id": "REQ-002",
+      "delivered_in_steps": ["step-5", "step-6"],
+      "pain_context_beat": {
+        "step": "step-5",
+        "narration": "Joseph in HQ is the bottleneck for every new sponsorship. Today this is 15-20 minutes across three systems — find the unsponsored child, set up the recurring gift, link them, and hope the link sticks."
+      },
+      "watch_this_cue": {
+        "step": "step-5",
+        "narration": "Watch the right side of the screen when he saves."
+      },
+      "moment_step": "step-6",
+      "narration_beat": {
+        "step": "step-6",
+        "narration": "One save. Three records. The Gift Commitment is the agreement; the Schedule is the 12 monthly installments; the first Gift Transaction is already queued. Margaret committed once — the system manages the rest."
+      }
+    },
+    {
+      "value_moment_requirement_id": "REQ-003",
+      "delivered_in_steps": ["step-8", "step-9"],
+      "pain_context_beat": {
+        "step": "step-8",
+        "narration": "Today, when a donor cancels, Joseph emails the program team in Kenya to figure out what happens next. Things slip. Children stay un-reassigned for weeks."
+      },
+      "watch_this_cue": {
+        "step": "step-8",
+        "narration": "Two clicks: pick the reason, save."
+      },
+      "moment_step": "step-9",
+      "narration_beat": {
+        "step": "step-9",
+        "narration": "Cut to Aisha's queue, in Kenya, two seconds later. The task is there. Daniel's name. The reason. The cancel date. Aisha actions it the same day. The thing that used to lose children doesn't lose them anymore."
+      }
+    },
+    {
+      "value_moment_requirement_id": "REQ-004",
+      "delivered_in_steps": ["step-11", "step-12", "step-13"],
+      "pain_context_beat": {
+        "step": "step-11",
+        "narration": "Six months later, Daniel ages out. Margaret called back wanting to sponsor again. This — easy transfers when a child leaves — is the #1 thing Children Inc asked for. Today it's a 3-day round trip and they lose donors during that gap."
+      },
+      "watch_this_cue": {
+        "step": "step-12",
+        "narration": "Two clicks. Same site, ranked by need."
+      },
+      "moment_step": "step-13",
+      "narration_beat": {
+        "step": "step-13",
+        "narration": "Margaret's giving never paused. Daniel's record preserves what happened — sponsored Sept 2024 to May 2026, aged out. Sarah's record shows the new sponsor and the prior history. The thing that used to lose donors is now the thing that keeps them."
+      }
+    }
+  ]
+}

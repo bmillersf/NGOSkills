@@ -2,6 +2,8 @@
 
 This document records a deterministic end-to-end run of the eval harness on the `simple-volunteer-demo` fixture. It exercises the file-based loop without invoking an LLM — proving that the harness machinery (contracts, schemas, scoring, escalation, trace) works as designed before the first LLM-driven pilot run.
 
+> **First real-world LLM-driven pilot run completed 2026-05-21.** See [`fixtures/children-incorporated-pilot-2026-05/README.md`](fixtures/children-incorporated-pilot-2026-05/README.md) for the captured artifacts: 5-row TRACE, two EVAL-REPORTs, IMPL-NOTES, all 6 contract files. Loop converged in 2 iterations (ITERATE 77/100 → SHIP 89/100). Adversarial evaluator caught 3 gaps self-eval would have shipped. Single strongest evidence to date that the harness earns its keep.
+
 ## What this run validates
 
 | SPEC requirement | How this run validates it |

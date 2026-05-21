@@ -1,0 +1,93 @@
+{
+  "version": "1.0",
+  "duration_minutes": 30,
+  "duration_budget": {
+    "end_user_pov_min_pct": 60,
+    "admin_setup_max_pct": 20,
+    "narrative_transitions_pct": 20
+  },
+  "value_moments": [
+    {
+      "requirement_id": "REQ-001",
+      "min_steps": 5,
+      "persona": "Aisha, Site Coordinator at Helping Schools Kenya",
+      "persona_pain_quote": "Right now when a new child enrolls, I email a coordinator's spreadsheet to HQ — it takes 2-3 days before the child is in the system and visible to potential sponsors.",
+      "persona_outcome": "Aisha enrolls Daniel (8, Year 3 at Mwanza Primary, loves drawing and football) directly in Salesforce in under 2 minutes. He's immediately visible to the matching team.",
+      "wow_moment": {
+        "description": "After Aisha saves the child record, the page refreshes to show Daniel with all his site context (country, site coordinator, program level) on the related Site__c record — a fully formed sponsorship-ready profile, not a stub",
+        "why_audience_leans_forward": "The audience expects bare-bones data entry. They see a complete, sponsorship-ready record with site fields, child fields, and relationships all populated. The 'when does the rest get filled in?' question never arises.",
+        "presenter_cue": "Pause on the related Site__c. Note — this all came from one save.",
+        "estimated_duration_seconds": 12
+      },
+      "anti_demo": [
+        "Do not show the Site__c metadata or Object Manager",
+        "Do not show how the page layout was assembled",
+        "Do not show the field-level security settings",
+        "Do not click into Setup"
+      ],
+      "end_user_pov_steps": 4,
+      "admin_pov_steps": 1
+    },
+    {
+      "requirement_id": "REQ-002",
+      "min_steps": 6,
+      "persona": "Joseph, Donor Engagement Specialist (Children Inc HQ)",
+      "persona_pain_quote": "When a donor wants to sponsor, today I'm switching between three systems to find an unsponsored child, create the recurring gift, and link them. It takes 15-20 minutes per sponsorship and I drop the link sometimes.",
+      "persona_outcome": "Joseph helps Margaret sponsor Daniel in under 90 seconds — picks an available child from a list, sets up a $40/month Gift Commitment, and the 1:1 link is automatic.",
+      "wow_moment": {
+        "description": "On the Gift Commitment save, the audience sees three things appear simultaneously: the linked child on the commitment, the linked donor on the child record, and the first scheduled Gift Transaction installment — the full GiftCommitment → GiftCommitmentSchedule → GiftTransaction relationship visible in one screen",
+        "why_audience_leans_forward": "Children Inc's pain is that sponsorship is a multi-record dance done by hand. The audience sees the entire dance happen automatically from one save — and recognizes that the 'free hit' between Gift Commitment and Gift Transaction (the commitment exists before money arrives) is the right model.",
+        "presenter_cue": "Watch all three records — commitment, schedule, first transaction. One save.",
+        "estimated_duration_seconds": 15
+      },
+      "anti_demo": [
+        "Do not show how Gift Commitment was configured",
+        "Do not show the auto-link Flow",
+        "Do not navigate to Setup or Object Manager",
+        "Do not explain the schema in admin terms — show the records, not the design"
+      ],
+      "end_user_pov_steps": 5,
+      "admin_pov_steps": 1
+    },
+    {
+      "requirement_id": "REQ-003",
+      "min_steps": 4,
+      "persona": "Joseph, Donor Engagement Specialist",
+      "persona_pain_quote": "When a donor cancels, today I have to manually email the program team in Kenya to find out what to do with the child. Things slip through.",
+      "persona_outcome": "Joseph closes Margaret's Gift Commitment with a reason code in two clicks. A task automatically lands on the program team's queue with the child's name and the reason — they know to action it the same day.",
+      "wow_moment": {
+        "description": "Joseph clicks Cancel and picks 'Donor Financial Hardship' from the reason picklist. Cut to Aisha's queue in Kenya — the task is already there, with Daniel's name, the reason, and the cancel date.",
+        "why_audience_leans_forward": "The audience sees a cancellation immediately become an actionable task in the right country, on the right person's queue. The handoff that used to lose children doesn't lose them anymore.",
+        "presenter_cue": "Cut to Aisha's queue. Two seconds, the task is there.",
+        "estimated_duration_seconds": 12
+      },
+      "anti_demo": [
+        "Do not show the trigger or Flow that creates the task",
+        "Do not explain queue setup",
+        "Do not show how the reason picklist was configured"
+      ],
+      "end_user_pov_steps": 4,
+      "admin_pov_steps": 0
+    },
+    {
+      "requirement_id": "REQ-004",
+      "min_steps": 5,
+      "persona": "Joseph, Donor Engagement Specialist (handling the transfer)",
+      "persona_pain_quote": "Easy transfers when a child leaves the program is the #1 thing they asked for — today they call me, I dig through records, and three days later we have a new match. We lose donors during that gap.",
+      "persona_outcome": "When Daniel ages out of the program, Joseph re-links Margaret's Gift Commitment to a new child (Sarah, 7, same site) in two clicks. Margaret's giving never pauses. The transition note shows on Sarah's record.",
+      "wow_moment": {
+        "description": "Joseph clicks 'Transfer Sponsorship' on Margaret's Gift Commitment. A list of available children at the same site appears, ranked by sponsorship age and need. Joseph picks Sarah. The commitment re-points; Daniel's record shows 'Aged out — sponsored by Margaret Sept 2024-May 2026'; Sarah's record shows the new sponsor and the prior sponsorship history.",
+        "why_audience_leans_forward": "The audience sees the most-asked-for feature work in 30 seconds. The system preserves history (what Daniel had) AND continuity (Margaret's giving doesn't pause). The thing that used to lose donors is now a two-click flow.",
+        "presenter_cue": "Two clicks. History on both records. Margaret's gift never pauses.",
+        "estimated_duration_seconds": 15
+      },
+      "anti_demo": [
+        "Do not show the Transfer Sponsorship Apex/Flow source",
+        "Do not show the same-site matching logic",
+        "Do not show the history-preservation field configuration"
+      ],
+      "end_user_pov_steps": 4,
+      "admin_pov_steps": 1
+    }
+  ]
+}

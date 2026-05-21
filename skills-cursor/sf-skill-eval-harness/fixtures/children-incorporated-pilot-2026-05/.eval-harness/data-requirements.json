@@ -1,0 +1,99 @@
+{
+  "version": "1.0",
+  "records": [
+    {
+      "id": "site-helping-schools-kenya",
+      "object": "Site__c",
+      "required_fields": {
+        "Name": "Helping Schools Kenya",
+        "Country__c": "Kenya",
+        "Site_Coordinator__c": "user-aisha",
+        "Program_Level__c": "Primary"
+      },
+      "referenced_by_steps": ["step-2", "step-3", "step-12"]
+    },
+    {
+      "id": "donor-margaret-hartwell",
+      "object": "Account",
+      "record_type": "NGO_Fundraising_Supporter",
+      "required_fields": {
+        "FirstName": "Margaret",
+        "LastName": "Hartwell",
+        "PersonEmail": "margaret.hartwell@example.com",
+        "IsPersonAccount": true
+      },
+      "referenced_by_steps": ["step-5", "step-6", "step-8", "step-11", "step-13"]
+    },
+    {
+      "id": "child-daniel",
+      "object": "Child__c",
+      "required_fields": {
+        "FirstName__c": "Daniel",
+        "LastName__c": "M",
+        "Year__c": 3,
+        "School__c": "Mwanza Primary",
+        "FavoriteSubject__c": "Math",
+        "Hobbies__c": "Drawing, Football",
+        "Site__c": "site-helping-schools-kenya",
+        "Status__c": "Available",
+        "_status_picklist_values": ["Available", "Sponsored", "Aged Out", "Transferred", "Removed"]
+      },
+      "referenced_by_steps": ["step-2", "step-3", "step-4", "step-5", "step-13"],
+      "relationships": [
+        {"to": "site-helping-schools-kenya", "via": "Site__c"}
+      ]
+    },
+    {
+      "id": "child-sarah",
+      "object": "Child__c",
+      "required_fields": {
+        "FirstName__c": "Sarah",
+        "LastName__c": "K",
+        "Year__c": 1,
+        "School__c": "Mwanza Primary",
+        "Site__c": "site-helping-schools-kenya",
+        "Status__c": "Available"
+      },
+      "referenced_by_steps": ["step-12", "step-13"],
+      "relationships": [
+        {"to": "site-helping-schools-kenya", "via": "Site__c"}
+      ]
+    },
+    {
+      "id": "user-aisha",
+      "object": "User",
+      "required_fields": {
+        "FirstName": "Aisha",
+        "LastName": "Mwangi",
+        "Email": "aisha.mwangi@helpinghands.example.com",
+        "ProfileName": "Standard User",
+        "TimeZoneSidKey": "Africa/Nairobi",
+        "_PermissionSet": "CI_Site_Coordinator"
+      },
+      "referenced_by_steps": ["step-2", "step-3", "step-9"]
+    },
+    {
+      "id": "user-joseph",
+      "object": "User",
+      "required_fields": {
+        "FirstName": "Joseph",
+        "LastName": "Reyes",
+        "Email": "joseph.reyes@childreninc.example.com",
+        "ProfileName": "Standard User",
+        "_PermissionSet": "CI_Donor_Engagement_Specialist"
+      },
+      "referenced_by_steps": ["step-4", "step-5", "step-6", "step-8", "step-11", "step-12", "step-13"]
+    },
+    {
+      "id": "queue-helping-schools-kenya",
+      "object": "Group",
+      "required_fields": {
+        "Name": "Helping Schools Kenya Queue",
+        "DeveloperName": "Helping_Schools_Kenya_Queue",
+        "Type": "Queue",
+        "RelatedSObjects": ["Task", "Child__c"]
+      },
+      "referenced_by_steps": ["step-9"]
+    }
+  ]
+}
