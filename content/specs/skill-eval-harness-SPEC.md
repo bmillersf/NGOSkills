@@ -1,6 +1,6 @@
 # SPEC: Adversarial Skill Eval Harness (Pilot in sf-demo-validate)
 
-**Status:** Draft v6 — auto-wrap, ad-hoc invocation, non-collision with gsd/superpowers/gstack
+**Status:** Draft v7 — authoritative ownership + artifact link map (§22)
 **Author:** Brian Miller (drafted with Claude)
 **Date:** 2026-05-21
 **Pilot target:** `sf-demo-validate` (Phase 6 of `sf-demo-orchestrate`) — lowest-risk wrap because rubric already exists
@@ -930,3 +930,112 @@ The harness MUST NOT:
 > **gsd owns the lifecycle. Superpowers owns how engineering work gets done. gstack owns specialist cognitive passes. The harness owns adversarial evaluation of artifacts.**
 >
 > If you're tempted to have the harness do something that overlaps any of those scopes, route through the existing pack instead.
+
+---
+
+## 22. Authoritative ownership + artifact link map
+
+This section is the single source of truth for "who owns what" and "which file links to which." Every role, every artifact, every cross-phase link is named here. If something happens in the harness that isn't on one of these tables, it's an undefined behavior — file a SPEC issue rather than improvising.
+
+### 22.1 Role ownership
+
+Who owns each role in the three-agent loop and what existing primitive (if any) backs it.
+
+| Role | Owned by | Existing primitive | Substitutable? |
+|---|---|---|---|
+| **Planner** | Harness orchestrator (per-skill) | `gsd-planner` (composable, not required) | Yes — skills MAY supply a custom planner subagent if their domain needs it (e.g., `sf-ai-agentforce-persona` may want a persona-aware planner) |
+| **Implementer** | Harness orchestrator (per-skill) | `gsd-executor` + superpowers `test-driven-development` | Yes — but substitute MUST follow TDD and write tests before/with code |
+| **Quality Evaluator** | Harness orchestrator (per-skill) | `gsd-code-reviewer` | No for pilot — fixed to `gsd-code-reviewer`-style adversarial stance. Re-evaluate after pilot. |
+| **Test Evaluator** | Harness orchestrator (per-skill) | New: runs declared tests, parses results, scores binary categories | No — single shared implementation across all skills |
+| **Goal Verifier** | gsd | `gsd-verifier` | No — gsd-owned, harness only consumes its verdict |
+| **Trace Writer** | Harness orchestrator | New: lightweight TRACE.md appender | No — single shared implementation |
+| **Orchestrator-level budget tracker** | Calling orchestrator (e.g., `sf-demo-orchestrate`) | New per-orchestrator state file | No — orchestrator-specific, not harness-owned |
+
+### 22.2 Artifact ownership map
+
+Every file the harness produces or consumes, who writes it, who reads it, and where it lives.
+
+| File | Written by | Read by | Lifetime | Location |
+|---|---|---|---|---|
+| `requirements.json` | Phase 2 implementer | Phase 4 implementer + evaluator | Whole orchestrator run | `.eval-harness/` (phase-scoped) |
+| `value-moments.json` | Phase 3 implementer | Phase 4 implementer + evaluator; Phase 7 evaluator | Whole orchestrator run | `.eval-harness/` (phase-scoped) |
+| `requirement-coverage.json` | Phase 4 implementer | Phase 4 evaluator; Phase 6 evaluator | Whole orchestrator run | `.eval-harness/` (phase-scoped) |
+| `wow-moment-delivery.json` | Phase 4 implementer | Phase 4 evaluator; Phase 7 implementer | Whole orchestrator run | `.eval-harness/` (phase-scoped) |
+| `data-requirements.json` | Phase 4 implementer | Phase 5 implementer + evaluator; Phase 6 evaluator | Whole orchestrator run | `.eval-harness/` (phase-scoped) |
+| `click-path.json` | Phase 4 implementer | Phase 7 implementer + evaluator; Phase 6 evaluator | Whole orchestrator run | `.eval-harness/` (phase-scoped) |
+| `SPEC.md` | Planner | Implementer; Evaluator (for AC reference) | Single loop iteration (overwritten on re-plan) | `.eval-harness/` |
+| `IMPL-NOTES.md` | Implementer | Evaluator | Single iteration | `.eval-harness/` |
+| `EVAL-REPORT-{n}.md` | Evaluator | User; future Trace Writer | Permanent (one per iteration) | `.eval-harness/` |
+| `EVAL-FEEDBACK.md` | Evaluator | Implementer (next iteration) | Single iteration (overwritten) | `.eval-harness/` |
+| `SPEC-DEFECT.md` | Evaluator | Planner (re-plan) | Until next plan | `.eval-harness/` |
+| `TRACE.md` | Trace Writer | User; debugging; orchestrator aggregator | Permanent (append-only) | `.eval-harness/` |
+| `DEMO-PIPELINE-STATUS.md` | `sf-demo-orchestrate` | User | Whole orchestrator run | `.planning/demo-pipeline/` |
+| `REVIEW.md` | gsd-code-reviewer | User; gsd phase progression | Permanent | `.planning/<phase>/` (gsd-owned, harness does not write) |
+| `SUMMARY.md` | gsd-executor | User; gsd phase progression | Permanent | `.planning/<phase>/` (gsd-owned, harness does not write) |
+| `VERIFICATION.md` | gsd-verifier | User; gsd phase progression | Permanent | `.planning/<phase>/` (gsd-owned, harness does not write) |
+
+**Key principle:** Files in `.eval-harness/` are harness-owned; files in `.planning/` are gsd-owned. Harness reads gsd files (for context), never writes them.
+
+### 22.3 Cross-phase link map
+
+How artifacts reference each other. Each link is by `id` field — never by prose lookup, never by index position.
+
+```
+Phase 2: requirements.json
+  └─ requirements[].id  (e.g., "REQ-001")
+       │
+       ├──► Phase 3: value-moments.json
+       │      └─ value_moments[].requirement_id (FK to REQ-001)
+       │           │
+       │           └──► Phase 4: wow-moment-delivery.json
+       │                  └─ deliveries[].value_moment_requirement_id (FK)
+       │
+       └──► Phase 4: requirement-coverage.json
+              └─ coverage[].requirement_id (FK)
+                   │
+                   └──► references click-path.json step ids
+                          (covered_by_steps: ["step-3", "step-4"])
+
+Phase 4: click-path.json
+  └─ steps[].id  (e.g., "step-3")
+       │
+       ├──► Phase 4: data-requirements.json
+       │      └─ records[].referenced_by_steps[] (FK to step ids)
+       │
+       └──► Phase 7: Playwright spec
+              └─ describe block per step.id
+                  └─ assertions from step.expected_visible[]
+```
+
+**Rules for link integrity:**
+
+1. **Every FK must resolve.** A `value_moments[].requirement_id` that doesn't exist in `requirements.json` is a hard-fail at the producing phase.
+2. **No orphans.** Every `requirements[].id` with `must_demo: true` must be referenced by ≥1 `value_moments[].requirement_id` (Phase 3) and ≥1 `coverage[].requirement_id` (Phase 4).
+3. **No prose-only references.** If the demoscript prose mentions a feature, the corresponding `requirement_id` MUST appear in `requirement-coverage.json`. Phase 4 evaluator's independent matrix reconstruction (§16 Phase 4) catches violations.
+4. **Stable IDs across iterations.** When the implementer re-runs after EVAL-FEEDBACK, IDs that referred to the same conceptual thing in iteration N must persist in iteration N+1. New IDs only for genuinely new content.
+
+### 22.4 Schema location and versioning
+
+| Schema | Path | Versioned by |
+|---|---|---|
+| `requirements.schema.json` | `.eval-harness/schemas/` | Harness shared |
+| `value-moments.schema.json` | `.eval-harness/schemas/` | Harness shared |
+| `requirement-coverage.schema.json` | `.eval-harness/schemas/` | Harness shared |
+| `wow-moment-delivery.schema.json` | `.eval-harness/schemas/` | Harness shared |
+| `data-requirements.schema.json` | `.eval-harness/schemas/` | Harness shared |
+| `click-path.schema.json` | `.eval-harness/schemas/` | Harness shared |
+| Per-skill rubric YAML | Skill's own `rubrics/` directory | Skill-owned |
+
+Each contract JSON file MUST include a `version` field. Harness version-checks against the schema. Mismatched versions = hard-fail at the consuming phase.
+
+### 22.5 Authoritative routing — when in doubt
+
+If a question of "should X happen here, or there?" arises, resolve in this order:
+
+1. Check the role ownership table (§22.1). If the role is gsd-owned, the harness defers.
+2. Check the artifact ownership map (§22.2). If the file is owned by another pack, the harness reads-only.
+3. Check the link map (§22.3). If the link doesn't exist, the harness doesn't invent it — the producing phase must add it explicitly.
+4. Check the non-collision rules (§21.3). If any rule applies, the harness does not act.
+5. If no rule resolves it, surface to user. Don't improvise.
+
+This routing order is intentionally conservative. The harness should err on the side of doing less when ownership is ambiguous.
