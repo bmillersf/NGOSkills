@@ -43,11 +43,65 @@ upstream_refs:
 upstream_release_notes:
   - release: "Spring '26"
     url: https://help.salesforce.com/s/articleView?id=release-notes.rn_devops.htm
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "130-pt rubric inline (7 categories: Scope + edition clarity 15, DevOps Center setup + pipeline 25, Work Item + Change Bundle discipline 20, Packaging decision 20, Package versioning + promotion 20, AppExchange / ISV readiness 15, Governance + audit 15), mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  devops_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 14
+      description: "Pipeline + work-item discipline. Maps to DevOps Center setup + pipeline (25) + Work Item + Change Bundle discipline (20)."
+      automatic_hard_fail_rules:
+        - "Any pipeline that bypasses the staging environment for prod deploys"
+        - "Any Change Bundle without explicit Work Item link (audit gap)"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 12
+      description: "Versioning + promotion + governance. Maps to Package versioning + promotion (20) + Governance + audit (15)."
+      automatic_hard_fail_rules:
+        - "Any package promoted without test results captured"
+        - "Any rollback path missing from production deploy plan"
+        - "Any package version reused (immutable versioning broken)"
+    - name: Fit
+      max: 25
+      hard_fail_below: 10
+      description: "Packaging decision correct. Maps to Packaging decision (20). 1GP / 2GP / Unlocked chosen with documented justification."
+      automatic_hard_fail_rules:
+        - "Any 1GP managed package for new internal work (2GP unlocked is the modern default)"
+        - "Any unlocked package with @namespace dependency that isn't documented"
+    - name: Performance
+      max: 25
+      hard_fail_below: 10
+      description: "AppExchange + ISV + scope. Maps to AppExchange / ISV readiness (15) + Scope + edition clarity (15)."
+      automatic_hard_fail_rules:
+        - "Any ISV package without security review timeline"
+        - "Any deploy plan without ApexLog / debug capture for first 24h post-prod"
+  test_rubric:
+    unit:
+      required: true
+      criteria: "Apex test classes deploy + pass on every package promotion."
+    integration:
+      required: true
+      criteria: "End-to-end pipeline (dev → int → uat → prod) tested with a representative work item."
+    smoke:
+      required: true
+      criteria: "Rollback rehearsed end-to-end. Production deploy completes within window with all tests green."
 ---
 
 # sf-devops-center
 
 Two related shipping surfaces Salesforce customers care about: **DevOps Center** (the UI-based, GitHub-backed release pipeline in Setup) and **Packaging** (1GP, 2GP Managed, and 2GP Unlocked — the way you bundle metadata for ISV distribution, internal reuse, or AppExchange listing). Both are "how code gets from one org to another, reliably and with source control"; both are distinct from the raw CLI `sf project deploy` surface.
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). Three subagents grade against the 130-pt rubric in fresh context. Hard-fail rules block 1GP greenfields, missing rollback paths, and reused package versions. Disable with `eval_harness.enabled: false`.
 
 ---
 

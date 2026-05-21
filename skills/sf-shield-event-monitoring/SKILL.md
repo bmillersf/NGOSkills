@@ -43,11 +43,64 @@ upstream_refs:
 upstream_release_notes:
   - release: "Spring '26"
     url: https://help.salesforce.com/s/articleView?id=release-notes.rn_security.htm
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "130-pt rubric inline (7 categories: License + scope clarity 15, Event Monitoring design 25, Transaction Security Policies 20, Platform Encryption 25, Field Audit Trail 15, Security Center + multi-org posture 15, Operational readiness 15), mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  shield_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 14
+      description: "Event Monitoring + Transaction Security policies designed correctly. Maps to Event Monitoring design (25) + Transaction Security Policies (20)."
+      automatic_hard_fail_rules:
+        - "Any Real-Time Event subscription without retention policy (event log overflow)"
+        - "Any Transaction Security Policy without test cases for both block and notify paths"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 18
+      description: "Platform Encryption applied correctly. Maps to Platform Encryption (25). Heaviest robustness — losing tenant secret = unrecoverable data loss."
+      automatic_hard_fail_rules:
+        - "Any encryption rotation without tenant secret backup verified"
+        - "Any encrypted field without index/search behavior assessed (queries silently break)"
+        - "Any tenant secret rotation cadence longer than compliance requires"
+    - name: Fit
+      max: 25
+      hard_fail_below: 10
+      description: "Audit + multi-org posture correct. Maps to Field Audit Trail (15) + Security Center (15)."
+      automatic_hard_fail_rules:
+        - "Any compliance-bound field without Field Audit Trail enabled"
+        - "Any multi-org without Security Center for posture aggregation"
+    - name: Performance
+      max: 25
+      hard_fail_below: 10
+      description: "Operational readiness. Maps to Operational readiness (15) + License + scope (15)."
+      automatic_hard_fail_rules:
+        - "Any Shield deploy without runbook for tenant secret rotation + incident response"
+  test_rubric:
+    unit:
+      required: true
+      criteria: "Transaction Security Policy unit-tested with both block and notify scenarios."
+    integration:
+      required: true
+      criteria: "Event Monitoring stream verified to emit expected event types. Encryption applied without breaking existing queries."
+    smoke:
+      required: true
+      criteria: "Tenant secret rotation rehearsed end-to-end. Field Audit Trail captures expected changes. Security Center surfaces posture across orgs."
 ---
 
 # sf-shield-event-monitoring
 
 Salesforce Shield is a bundle of three trust products plus a multi-org cockpit: **Event Monitoring** (what happened), **Platform Encryption** (data at rest), **Field Audit Trail** (long-term history), and **Security Center** (cross-org posture). This skill owns the end-to-end design and operational playbook for all four, plus the Event Monitoring Analytics App.
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). Three subagents grade against the 130-pt rubric in fresh context. Robustness floor at 18 — losing a Platform Encryption tenant secret = unrecoverable data loss. Disable with `eval_harness.enabled: false`.
 
 ---
 

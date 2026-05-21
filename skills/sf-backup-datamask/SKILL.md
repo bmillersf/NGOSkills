@@ -40,11 +40,65 @@ upstream_refs:
 upstream_release_notes:
   - release: "Spring '26"
     url: https://help.salesforce.com/s/articleView?id=release-notes.rn_security.htm
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "120-pt rubric inline (6 categories: Scope + license clarity 15, Backup retention + restore design 25, Data Mask policy design 25, Irreversibility safeguards 15, GDPR/erasure + compliance alignment 15, Operational runbook 25), mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  backup_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 18
+      description: "Backup + restore design correct. Maps to Backup retention + restore design (25). Heaviest correctness — broken backup = unrecoverable disaster."
+      automatic_hard_fail_rules:
+        - "Any backup retention without verified restore drill (untested backups are not backups)"
+        - "Any backup schedule slower than RPO requires"
+        - "Any backup without offline / immutable copy (ransomware risk)"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 12
+      description: "Data Mask policy + irreversibility. Maps to Data Mask policy design (25) + Irreversibility safeguards (15)."
+      automatic_hard_fail_rules:
+        - "Any Data Mask run on production without explicit org-type guard (catastrophic)"
+        - "Any irreversible mask without 'are you sure' double confirmation"
+        - "Any mask policy that doesn't redact all PII patterns (SSN, credit card, email)"
+    - name: Fit
+      max: 25
+      hard_fail_below: 10
+      description: "GDPR + compliance + scope. Maps to Scope + license clarity (15) + GDPR/erasure (15)."
+      automatic_hard_fail_rules:
+        - "Any GDPR / right-to-erasure flow without verified end-to-end deletion across backups"
+    - name: Performance
+      max: 25
+      hard_fail_below: 18
+      description: "Operational runbook is load-bearing. Maps to Operational runbook (25). Heaviest performance — backup ops are runbook-driven; if the runbook is wrong, recovery fails."
+      automatic_hard_fail_rules:
+        - "Any backup deploy without quarterly restore drill scheduled"
+        - "Any DR plan without RTO + RPO documented"
+  test_rubric:
+    unit:
+      required: true
+      criteria: "Mask policy unit-tested against PII pattern fixtures (SSN, credit card, email, phone)."
+    integration:
+      required: true
+      criteria: "Backup runs to completion. Restore drill rehearsed end-to-end against a sandbox."
+    smoke:
+      required: true
+      criteria: "Quarterly restore drill produces a working sandbox from the most recent backup. RTO + RPO measured against drill."
 ---
 
 # sf-backup-datamask
 
 Two related but distinct add-ons: **Salesforce Backup** (production resilience — daily backup of data, metadata, Chatter, with selective restore and point-in-time recovery) and **Salesforce Data Mask** (sandbox privacy — irreversibly anonymize PII so non-production environments are safe for partners, offshore teams, and students).
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). Three subagents grade against the 120-pt rubric in fresh context. Correctness AND Performance floors both at 18 — untested backups aren't backups; runbook errors compound during disaster recovery. Disable with `eval_harness.enabled: false`.
 
 They share the same audience (security / platform operations) and the same failure mode ("we thought we were covered, we weren't"), so this skill owns both.
 
