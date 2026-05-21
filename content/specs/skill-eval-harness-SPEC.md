@@ -1,6 +1,6 @@
 # SPEC: Adversarial Skill Eval Harness (Pilot in sf-demo-validate)
 
-**Status:** Draft v5 — Phase 3 → 4 depth & user-value contract (the shallow-demo fix)
+**Status:** Draft v6 — auto-wrap, ad-hoc invocation, non-collision with gsd/superpowers/gstack
 **Author:** Brian Miller (drafted with Claude)
 **Date:** 2026-05-21
 **Pilot target:** `sf-demo-validate` (Phase 6 of `sf-demo-orchestrate`) — lowest-risk wrap because rubric already exists
@@ -799,3 +799,134 @@ The "5 clicks of stuff I don't care about as an end-user" problem is upstream of
 | `wow_moment_min_duration_seconds` | 10 | Anything shorter than 10s of "watch this" doesn't land. |
 
 These are starting points. Pilot data will tell us where they should actually sit.
+
+---
+
+## 20. Universal coverage: any skill, any invocation context
+
+Every artifact-producing step in a demo workflow should run through the harness — not just the 7 phases of `sf-demo-orchestrate`. This includes ad-hoc work mid-prep ("also edit the Experience Cloud landing page", "add a banner to this site", "build a quick LWC for this portal page") that the user spawns alongside the main demo flow.
+
+### 20.1 Trigger model: opt-in via SKILL.md frontmatter
+
+A skill declares it wants harness wrapping:
+
+```yaml
+---
+name: sf-experience-cloud
+description: ...
+eval_harness:
+  enabled: true
+  rubric_ref: rubrics/sf-experience-cloud.yaml
+  hard_fail_dimensions: [Correctness, Click-path-fidelity]
+  max_iterations: 3
+  apply_when:
+    - artifact_produced  # any time skill writes a real artifact
+---
+```
+
+`apply_when` enum determines when the harness activates:
+- `artifact_produced` — any invocation that writes new files or modifies metadata. Default for most skills.
+- `multi_step_workflow` — only when the skill runs a multi-step workflow (skip on single-question lookups).
+- `explicitly_requested` — only when the user passes a flag like `--with-eval`. Use for skills where harness overhead would be excessive on routine work.
+
+### 20.2 Routing through the harness — orchestrator-aware vs standalone
+
+Two invocation contexts, same harness, different artifact homes:
+
+**Inside `sf-demo-orchestrate`:**
+- `.eval-harness/` lives at `.planning/demo-pipeline/<phase>/.eval-harness/`
+- TRACE.md aggregates into `DEMO-PIPELINE-STATUS.md`
+- Re-plan budget is the orchestrator-global pool (3 total per run, §6.2)
+- Hard-fail breaches surface to the orchestrator, which surfaces to user
+
+**Standalone (ad-hoc invocation):**
+- `.eval-harness/` lives at the project root or current working directory
+- TRACE.md is standalone
+- Re-plan budget is per-loop only (1 re-plan, §6.2 — no global pool, since there's no orchestrator)
+- Hard-fail breaches surface directly to user
+
+### 20.3 Mid-prep side-quests during a demo run
+
+The common case: user is mid-`sf-demo-orchestrate` and asks for something unrelated ("also fix the donation form on the landing page"). Two paths, user picks per request:
+
+1. **In-pipeline** — side-quest runs as a sub-phase of the orchestrator. Counts against the global re-plan pool. TRACE rolls up into `DEMO-PIPELINE-STATUS.md`. Use when the side-quest will affect the demo (e.g., the landing page is in the click-path).
+2. **Out-of-pipeline** — side-quest runs as a standalone harness invocation in its own `.eval-harness/` directory. Doesn't touch the orchestrator state. Use when the side-quest is genuinely unrelated to the demo.
+
+`sf-demo-orchestrate` asks the user explicitly when a side-quest fires mid-pipeline. Default is in-pipeline (the more conservative choice).
+
+### 20.4 First-tier opt-in skills (Stage 5 rollout order)
+
+Skills get harness wrapping in priority order based on (a) artifact stakes, (b) past failure-mode evidence, (c) rubric maturity. Tier 1 priority list:
+
+| Skill | Why prioritized |
+|---|---|
+| `sf-demo-validate` | Pilot — rubric already exists |
+| `sf-experience-cloud` | Frequent ad-hoc landing-page asks; visible failures |
+| `sf-nonprofit-experience-cloud-build` | Demo-adjacent portal builds; story-coherence matters |
+| `sf-lwc` | Production code; test rubric is mature already |
+| `sf-apex` | Production code; governor-limit hard-fail is naturally enforceable |
+| `sf-flow` | Metadata artifact with clear correctness rubric |
+| `sf-ai-agentforce` | High-visibility agent builds; persona/tone needs adversarial check |
+| `sf-ai-agentforce-persona` | Subjective quality is its core challenge |
+
+Tier 2 (research / one-shot lookup skills like `sf-docs`, `sf-soql` lookups, etc.): no harness. Self-evaluation gap is small for retrieval; harness overhead exceeds value.
+
+### 20.5 Skills explicitly excluded from harness wrapping
+
+| Category | Reason |
+|---|---|
+| Pure retrieval / lookup (e.g., `sf-docs`) | No producer/evaluator gap on a doc fetch |
+| Pure routing / orchestrator skills (e.g., `sf-demo-orchestrate` itself) | They invoke harness on their phases — wrapping the orchestrator wraps recursively |
+| `gsd-*` slash commands | Owned by gsd pack — see §21 for composition |
+| `gstack-*` slash commands | Owned by gstack pack — see §21 for composition |
+| Superpowers skills | Owned by superpowers pack — see §21 for composition |
+
+---
+
+## 21. Non-collision with gsd, superpowers, and gstack
+
+The user runs three vendored skill packs alongside NGOSkills. The harness must compose with all three — never replace, never silently override.
+
+### 21.1 Scope boundary table
+
+| Pack | Owns | Harness relationship |
+|---|---|---|
+| **gsd** | Phase lifecycle: spec→plan→execute, `.planning/<phase>/` artifacts, milestone state, roadmap progression | Harness runs **inside** a gsd phase, not around it. `.eval-harness/` becomes a subdirectory of the phase. gsd-planner / gsd-executor / gsd-code-reviewer / gsd-verifier remain authoritative for phase progression. The harness layers adversarial eval onto the artifacts the phase produces. |
+| **superpowers** | Engineering methodology: TDD, plan-writing, subagent-driven dev, code-review hygiene | Harness **uses** superpowers — implementer subagent follows `test-driven-development`; planner role borrows `writing-plans`; evaluator uses `requesting-code-review` hygiene. Composition, not duplication. |
+| **gstack** | Cognitive-mode specialists: founder taste, paranoid review, browser-based QA, design exploration, retro | Different scope from harness evaluator. gstack-review = paranoid pass on a diff after code lands. Harness evaluator = artifact-quality grade during production. Both run, sequenced. |
+
+### 21.2 Concrete sequencing rules (when both fire on same work)
+
+| User intent | Order |
+|---|---|
+| User runs `/gsd-execute-phase` on a phase that includes harness-enabled skills | Harness runs **per task**; gsd-executor advances the phase **after** all tasks SHIP. gsd-verifier runs at end-of-phase as before. gstack-review (if invoked) runs on the merged diff per existing CLAUDE.md guidance. |
+| User runs `/gsd-code-review` on a phase | gsd-code-reviewer runs as today. Harness-emitted EVAL-REPORT files are *inputs* it can read (richer signal), not replacements. gsd-code-reviewer still writes REVIEW.md. |
+| User runs `/gstack-review` outside a gsd phase | gstack-review runs as today. If harness produced an EVAL-REPORT in the same working directory, gstack-review reads it as additional context but renders its own verdict. |
+| User runs `/gsd-verify-work` (UAT) | gsd-verifier runs as today. Harness TRACE.md is referenced for "did the artifact pass adversarial eval before UAT" — does not replace UAT. |
+| User runs `/gsd-debug` on a stuck issue | Existing escalation chain (CLAUDE.md §5). Harness never preempts gsd-debug; if a harness loop is stuck after iteration cap, escalation surfaces to user, who chooses gsd-debug or gstack-investigate. |
+
+### 21.3 Hard non-overrides
+
+The harness MUST NOT:
+
+- Modify or delete files in `.planning/` directories owned by gsd
+- Skip or replace gsd-verifier — its verdict is independent and authoritative for phase progression
+- Replace gstack-review or gstack-qa — they are stateless paranoid passes on a different scope (diff-level, browser-level), and the user invokes them deliberately
+- Auto-trigger any superpowers skill — superpowers skills auto-trigger on their own match conditions; the harness composes by *delegating to* a superpowers skill (e.g., implementer "uses test-driven-development"), not by re-implementing it
+- Block a user from running gsd / gstack / superpowers commands — if a harness loop is mid-flight and the user invokes another command, the harness pauses (EVAL-FEEDBACK.md preserved), the user's command runs, and the user resumes the loop manually if they want
+
+### 21.4 Where artifacts go in each context
+
+| Invocation context | `.eval-harness/` location | Companion artifacts |
+|---|---|---|
+| Inside `/gsd-execute-phase` | `.planning/<milestone>/<phase>/.eval-harness/` | gsd writes PLAN.md, SUMMARY.md, REVIEW.md alongside |
+| Inside `sf-demo-orchestrate` | `.planning/demo-pipeline/<phase>/.eval-harness/` | DEMO-PIPELINE-STATUS.md aggregates per-phase TRACE |
+| Standalone skill invocation, no orchestrator | `.eval-harness/` at project root | None — standalone |
+| Mid-prep side-quest, in-pipeline | Inherits orchestrator location | DEMO-PIPELINE-STATUS.md tracks it |
+| Mid-prep side-quest, out-of-pipeline | `.eval-harness-side-quests/<timestamp>/` | None — isolated |
+
+### 21.5 Composition rule of thumb
+
+> **gsd owns the lifecycle. Superpowers owns how engineering work gets done. gstack owns specialist cognitive passes. The harness owns adversarial evaluation of artifacts.**
+>
+> If you're tempted to have the harness do something that overlaps any of those scopes, route through the existing pack instead.
