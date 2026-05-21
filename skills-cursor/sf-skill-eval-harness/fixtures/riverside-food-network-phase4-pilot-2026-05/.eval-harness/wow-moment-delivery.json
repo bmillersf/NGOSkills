@@ -1,0 +1,57 @@
+{
+  "version": "1.0",
+  "value_moments_file": "value-moments.json",
+  "deliveries": [
+    {
+      "value_moment_requirement_id": "REQ-001",
+      "delivered_in_steps": ["step-2", "step-3", "step-4", "step-5", "step-6"],
+      "pain_context_beat": {
+        "step": "step-1",
+        "narration": "Today, partner agencies email or call Devon. Devon retypes their requests into a Google Sheet. Carla reads the sheet on Mondays. Lead time is 5-10 days. Devon says he's a transcription robot. We're going to make that disappear in five minutes."
+      },
+      "watch_this_cue": {
+        "step": "step-3",
+        "narration": "Watch the time stamp when Maria clicks Submit — it's 9am Monday. Now follow what doesn't happen next: Devon does not get an email. Devon does not retype anything."
+      },
+      "moment_step": "step-5",
+      "narration_beat": {
+        "step": "step-6",
+        "narration": "It's Tuesday morning. Maria submitted yesterday at 9am. No human transcribed anything between then and now — and Centro Latino's request is already on Carla's dashboard, mapped to Truck Route 3 and the Wednesday warehouse pull list. That is the demo. Devon's transcription work is gone. Lead time collapsed from 5-10 days to next-morning."
+      }
+    },
+    {
+      "value_moment_requirement_id": "REQ-002",
+      "delivered_in_steps": ["step-6", "step-7", "step-8", "step-9"],
+      "pain_context_beat": {
+        "step": "step-1",
+        "narration": "15 to 20 percent of volunteers no-show. Devon spends his Tuesdays hunting them down on a printed sign-in sheet. The data lives in three places — a Google Form spreadsheet, a clipboard at the site, and Devon's head. Tuesdays are the cost."
+      },
+      "watch_this_cue": {
+        "step": "step-7",
+        "narration": "Watch what Jordan does NOT do — she doesn't email Devon. She reschedules her Saturday shift herself. The shift slot reopens for someone else. No phone tag, no spreadsheet."
+      },
+      "moment_step": "step-8",
+      "narration_beat": {
+        "step": "step-9",
+        "narration": "And here is the Tuesday-saver: when a different volunteer no-showed Thursday night, Devon didn't have to find out. The Case is already in his queue, with the volunteer's name, the missed shift, the third-no-show-this-quarter context, and a follow-up template ready to send. Devon's three-hour Tuesday is now a four-click triage. Janet — that's Devon's Tuesdays back."
+      }
+    },
+    {
+      "value_moment_requirement_id": "REQ-003",
+      "delivered_in_steps": ["step-10", "step-11", "step-12"],
+      "pain_context_beat": {
+        "step": "step-1",
+        "narration": "Carla rebuilds her Monday-morning distribution plan in Excel. Every. Single. Monday. 90 minutes, before she's had coffee. Pounds pledged by category, open partner requests, unfilled volunteer slots, route map. All in spreadsheets that are stale the moment she finishes them."
+      },
+      "watch_this_cue": {
+        "step": "step-10",
+        "narration": "Watch the Protein tile. Carla is opening this dashboard cold for the first time on a Monday morning."
+      },
+      "moment_step": "step-10",
+      "narration_beat": {
+        "step": "step-11",
+        "narration": "That red Protein tile told Carla in three seconds what used to take her 90 minutes to discover — she's 600 pounds short for Thursday. No new license, no Tableau, no NPC migration. This is built on the NPSP you already pay for. 90 minutes every Monday. That's 78 hours of Carla's time a year. Janet — that is the staff time saved you came to see."
+      }
+    }
+  ]
+}

@@ -1,0 +1,73 @@
+{
+  "version": "1.0",
+  "duration_minutes": 30,
+  "duration_budget": {
+    "end_user_pov_min_pct": 60,
+    "admin_setup_max_pct": 20,
+    "narrative_transitions_pct": 20
+  },
+  "value_moments": [
+    {
+      "requirement_id": "REQ-001",
+      "min_steps": 4,
+      "persona": "Maria (partner agency lead, Centro Latino de Hillsboro food pantry) submits the request; Devon (Volunteer & Partner Manager) watches his transcription work vanish; Carla (Operations Director) sees the routed request appear Tuesday morning.",
+      "persona_pain_quote": "I want to stop being a transcription robot.",
+      "persona_outcome": "Devon stops retyping requests from email into a Google Sheet. Maria's 9am-Monday submission flows into NPSP as a Case the moment she clicks Submit, and by Tuesday morning the same record is on Carla's dashboard with truck route and warehouse pull list assigned. Lead time collapses from 5-10 days to next-morning.",
+      "wow_moment": {
+        "description": "Maria submits her food request from the partner portal at 9:00am Monday. We jump forward to Tuesday morning and open Carla's NPSP distribution plan dashboard — Centro Latino's request is already mapped to Truck Route 3 (Hillsboro / Forest Grove loop) and to the Wednesday warehouse pull list, with no human transcription in between. Devon never touched it.",
+        "why_audience_leans_forward": "Janet (board chair) sees one full day of Devon's transcription work and 5-10 days of partner lead time disappear in a single screen transition — staff time saved, not feature breadth.",
+        "presenter_cue": "After Maria clicks Submit, pause for 2 beats and say 'Now it is Tuesday morning.' Switch tab to Carla's dashboard. Do not narrate the magic — let the screen land.",
+        "estimated_duration_seconds": 90
+      },
+      "anti_demo": [
+        "Do not show Setup or any /lightning/setup/ URL while explaining how the request routed to a truck — Janet has zero patience for admin views.",
+        "Do not narrate feature breadth (sharing rules, validation rules, flow design) — Janet's test is staff time saved, not platform capability.",
+        "Do not show Devon manually moving the request from one screen to another — the entire point is that he doesn't.",
+        "Do not propose Tableau or 'this would be even better in NPC' — both are explicitly out of scope."
+      ],
+      "end_user_pov_steps": 4,
+      "admin_pov_steps": 0
+    },
+    {
+      "requirement_id": "REQ-002",
+      "min_steps": 4,
+      "persona": "Jordan (volunteer) self-serves a shift change in the portal; Devon (Volunteer & Partner Manager) sees an auto-created Case land in his queue when another volunteer no-shows.",
+      "persona_pain_quote": "No-shows are a real pain — Devon estimates 15-20% no-show rate, and reaching out manually is what eats his Tuesdays.",
+      "persona_outcome": "Jordan reschedules her own Saturday shift in 30 seconds, no email to Devon. When a different volunteer no-shows on a Thursday distribution, Devon does not have to comb through a printed sign-in sheet — a Case is already in his queue with the volunteer name, shift, and a follow-up template. Devon gets his Tuesdays back.",
+      "wow_moment": {
+        "description": "From the volunteer portal, Jordan reschedules herself off Saturday's mobile distribution and onto next week — no email, no call. Then on Devon's screen, we show a no-show Case auto-created from a Thursday shift with the volunteer's name, the missed shift, and a pre-populated follow-up message. Devon's Tuesday outreach is now a 4-click triage, not a 3-hour spreadsheet hunt.",
+        "why_audience_leans_forward": "Janet hears '15-20% no-show rate' translated into 'Devon's Tuesdays back' — the staff-time-saved frame she is auditing for, on a number Devon already gave her in a board meeting.",
+        "presenter_cue": "After Jordan reschedules, switch personas with one sentence: 'Now the same portal, Devon's view, on a different day.' Do not toggle between personas mid-task.",
+        "estimated_duration_seconds": 75
+      },
+      "anti_demo": [
+        "Do not walk through the Case auto-creation rule in Setup — the audience does not care how it was built.",
+        "Do not explain the Customer Community license model unless Janet asks; mention it once in passing if at all.",
+        "Do not show feature breadth (Cadences, Omni-Channel routing, Knowledge) — stay on the no-show case, nothing else."
+      ],
+      "end_user_pov_steps": 3,
+      "admin_pov_steps": 1
+    },
+    {
+      "requirement_id": "REQ-003",
+      "min_steps": 4,
+      "persona": "Carla (Operations Director) walks into the office on Monday morning and opens her NPSP dashboard for the first time without rebuilding it in Excel.",
+      "persona_pain_quote": "I want to walk in Monday morning, look at one screen, and know if I'm short on protein for Thursday.",
+      "persona_outcome": "Carla's 90-minute Monday Excel rebuild becomes a 30-second dashboard glance. She sees pounds-pledged by category (produce / protein / dry goods / infant formula), open partner requests counter, unfilled volunteer slots, and the route map — all live, all in NPSP, no Tableau license needed.",
+      "wow_moment": {
+        "description": "Carla opens her single NPSP dashboard on Monday at 8:00am. The protein tile is red — she is 600 pounds short of what Thursday's distribution needs. She clicks the tile, drills into the partner requests still expecting protein, and reassigns one to a different week — all without leaving the page. The 90-minute Excel rebuild is gone.",
+        "why_audience_leans_forward": "Janet sees the literal '90 minutes every Monday' Carla quoted in discovery vanish on screen, with no new license, no Tableau, no NPC migration — built on the NPSP they already pay for.",
+        "presenter_cue": "Open the dashboard cold (no narration first). Let the protein-shortage tile do the work. Then say 'This used to be 90 minutes in Excel.'",
+        "estimated_duration_seconds": 60
+      },
+      "anti_demo": [
+        "Do not propose Tableau or CRM Analytics — explicitly out of scope per the discovery notes.",
+        "Do not show the dashboard in Setup or in the Lightning App Builder — present-tense end-user view only.",
+        "Do not demo more than one drill-down — Janet will read further capability as feature breadth.",
+        "Do not show feature breadth without staff-time-saved framing — every talking point ties to Carla's 90 minutes or Devon's transcription."
+      ],
+      "end_user_pov_steps": 3,
+      "admin_pov_steps": 0
+    }
+  ]
+}

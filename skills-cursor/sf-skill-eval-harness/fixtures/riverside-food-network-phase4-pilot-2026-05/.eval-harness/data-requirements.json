@@ -1,0 +1,357 @@
+{
+  "version": "1.0",
+  "records": [
+    {
+      "id": "acc-centro-latino",
+      "object": "Account",
+      "record_type": "Organization",
+      "required_fields": {
+        "Name": "Centro Latino de Hillsboro",
+        "Type": "Partner Agency",
+        "BillingStreet": "215 SE Oak Street",
+        "BillingCity": "Hillsboro",
+        "BillingState": "OR",
+        "BillingPostalCode": "97123",
+        "Phone": "(503) 555-0142",
+        "Monthly_Allotment_Lb__c": 4200,
+        "Allotment_Produce_Lb__c": 1200,
+        "Allotment_Protein_Lb__c": 800,
+        "Allotment_Dry_Goods_Lb__c": 1500,
+        "Allotment_Infant_Formula_Lb__c": 700,
+        "npe01__SYSTEMIsIndividual__c": false
+      },
+      "referenced_by_steps": ["step-2", "step-3", "step-4", "step-5", "step-11"]
+    },
+    {
+      "id": "contact-maria-castillo",
+      "object": "Contact",
+      "required_fields": {
+        "FirstName": "Maria",
+        "LastName": "Castillo",
+        "Email": "maria.castillo@demo.partner",
+        "Phone": "(503) 555-0143",
+        "Title": "Pantry Coordinator",
+        "AccountId": "→ acc-centro-latino",
+        "MailingState": "OR",
+        "MailingCity": "Hillsboro"
+      },
+      "referenced_by_steps": ["step-2", "step-3"],
+      "relationships": [
+        {"to": "acc-centro-latino", "via": "AccountId"}
+      ]
+    },
+    {
+      "id": "user-maria-castillo",
+      "object": "User",
+      "required_fields": {
+        "Username": "maria.castillo@demo.partner.riverside",
+        "Email": "maria.castillo@demo.partner",
+        "Alias": "mcast",
+        "FirstName": "Maria",
+        "LastName": "Castillo",
+        "ProfileName": "Customer Community Plus User",
+        "ContactId": "→ contact-maria-castillo",
+        "TimeZoneSidKey": "America/Los_Angeles",
+        "LocaleSidKey": "en_US",
+        "EmailEncodingKey": "UTF-8",
+        "LanguageLocaleKey": "en_US"
+      },
+      "referenced_by_steps": ["step-2", "step-3"],
+      "relationships": [
+        {"to": "contact-maria-castillo", "via": "ContactId"}
+      ]
+    },
+    {
+      "id": "case-pr-00184",
+      "object": "Case",
+      "record_type": "Partner_Request",
+      "required_fields": {
+        "Subject": "Distribution Request — Wednesday this week",
+        "CaseNumber": "PR-00184",
+        "Origin": "Portal",
+        "Status": "Submitted",
+        "AccountId": "→ acc-centro-latino",
+        "ContactId": "→ contact-maria-castillo",
+        "Requested_Date__c": "Wednesday this week",
+        "Requested_Produce_Lb__c": 400,
+        "Requested_Protein_Lb__c": 200,
+        "Requested_Infant_Formula_Lb__c": 300,
+        "Total_Requested_Lb__c": 900,
+        "Truck_Route__c": "Route 3 — Hillsboro/Forest Grove",
+        "Warehouse_Pull_List__c": "Wed Pull List",
+        "CreatedDate": "Monday 09:00 AM"
+      },
+      "referenced_by_steps": ["step-3", "step-4", "step-5", "step-11"],
+      "relationships": [
+        {"to": "acc-centro-latino", "via": "AccountId"},
+        {"to": "contact-maria-castillo", "via": "ContactId"}
+      ]
+    },
+    {
+      "id": "acc-bethany-hills",
+      "object": "Account",
+      "record_type": "Organization",
+      "required_fields": {
+        "Name": "Bethany Hills Family Pantry",
+        "Type": "Partner Agency",
+        "BillingStreet": "4180 NW 185th Avenue",
+        "BillingCity": "Beaverton",
+        "BillingState": "OR",
+        "BillingPostalCode": "97006",
+        "Phone": "(503) 555-0167",
+        "Monthly_Allotment_Lb__c": 3600,
+        "Allotment_Protein_Lb__c": 700,
+        "npe01__SYSTEMIsIndividual__c": false
+      },
+      "referenced_by_steps": ["step-12"]
+    },
+    {
+      "id": "case-pr-00179",
+      "object": "Case",
+      "record_type": "Partner_Request",
+      "required_fields": {
+        "Subject": "Distribution Request — Thursday protein",
+        "CaseNumber": "PR-00179",
+        "Origin": "Portal",
+        "Status": "Submitted",
+        "AccountId": "→ acc-bethany-hills",
+        "Requested_Date__c": "Thursday this week",
+        "Requested_Protein_Lb__c": 250,
+        "Total_Requested_Lb__c": 250
+      },
+      "referenced_by_steps": ["step-12"],
+      "relationships": [
+        {"to": "acc-bethany-hills", "via": "AccountId"}
+      ]
+    },
+    {
+      "id": "contact-jordan-mendez",
+      "object": "Contact",
+      "required_fields": {
+        "FirstName": "Jordan",
+        "LastName": "Mendez",
+        "Email": "jordan.mendez@demo.volunteer",
+        "Phone": "(503) 555-0188",
+        "Volunteer_Status__c": "Active",
+        "MailingCity": "Portland",
+        "MailingState": "OR"
+      },
+      "referenced_by_steps": ["step-6", "step-7", "step-11"]
+    },
+    {
+      "id": "user-jordan-mendez",
+      "object": "User",
+      "required_fields": {
+        "Username": "jordan.mendez@demo.volunteer.riverside",
+        "Email": "jordan.mendez@demo.volunteer",
+        "Alias": "jmend",
+        "FirstName": "Jordan",
+        "LastName": "Mendez",
+        "ProfileName": "Customer Community User",
+        "ContactId": "→ contact-jordan-mendez",
+        "TimeZoneSidKey": "America/Los_Angeles",
+        "LocaleSidKey": "en_US",
+        "EmailEncodingKey": "UTF-8",
+        "LanguageLocaleKey": "en_US"
+      },
+      "referenced_by_steps": ["step-6", "step-7"],
+      "relationships": [
+        {"to": "contact-jordan-mendez", "via": "ContactId"}
+      ]
+    },
+    {
+      "id": "shift-jordan-saturday",
+      "object": "Volunteer_Shift_Assignment__c",
+      "required_fields": {
+        "Name": "Jordan Mendez — Saturday 9am Mobile Distribution",
+        "Volunteer__c": "→ contact-jordan-mendez",
+        "Shift_Date__c": "Saturday this week",
+        "Shift_Start_Time__c": "09:00",
+        "Shift_End_Time__c": "13:00",
+        "Shift_Location__c": "Mobile Distribution — Cornelius",
+        "Status__c": "Confirmed"
+      },
+      "referenced_by_steps": ["step-6", "step-7", "step-11"],
+      "relationships": [
+        {"to": "contact-jordan-mendez", "via": "Volunteer__c"}
+      ]
+    },
+    {
+      "id": "shift-jordan-tuesday",
+      "object": "Volunteer_Shift_Assignment__c",
+      "required_fields": {
+        "Name": "Jordan Mendez — Tuesday 2pm Warehouse Sort",
+        "Volunteer__c": "→ contact-jordan-mendez",
+        "Shift_Date__c": "Tuesday this week",
+        "Shift_Start_Time__c": "14:00",
+        "Shift_End_Time__c": "17:00",
+        "Shift_Location__c": "Riverside Warehouse — Sort Room B",
+        "Status__c": "Confirmed"
+      },
+      "referenced_by_steps": ["step-6"],
+      "relationships": [
+        {"to": "contact-jordan-mendez", "via": "Volunteer__c"}
+      ]
+    },
+    {
+      "id": "shift-jordan-thursday",
+      "object": "Volunteer_Shift_Assignment__c",
+      "required_fields": {
+        "Name": "Jordan Mendez — Thursday 5pm Bethany Pantry",
+        "Volunteer__c": "→ contact-jordan-mendez",
+        "Shift_Date__c": "Thursday this week",
+        "Shift_Start_Time__c": "17:00",
+        "Shift_End_Time__c": "20:00",
+        "Shift_Location__c": "Bethany Hills Family Pantry",
+        "Status__c": "Confirmed"
+      },
+      "referenced_by_steps": ["step-6"],
+      "relationships": [
+        {"to": "contact-jordan-mendez", "via": "Volunteer__c"}
+      ]
+    },
+    {
+      "id": "contact-marcus-halloran",
+      "object": "Contact",
+      "required_fields": {
+        "FirstName": "Marcus",
+        "LastName": "Halloran",
+        "Email": "marcus.halloran@demo.volunteer",
+        "Phone": "(503) 555-0231",
+        "Volunteer_Status__c": "Active",
+        "Quarterly_NoShow_Count__c": 3,
+        "MailingCity": "Beaverton",
+        "MailingState": "OR"
+      },
+      "referenced_by_steps": ["step-8", "step-9"]
+    },
+    {
+      "id": "shift-marcus-thursday",
+      "object": "Volunteer_Shift_Assignment__c",
+      "required_fields": {
+        "Name": "Marcus Halloran — Thursday 5pm Bethany Pantry",
+        "Volunteer__c": "→ contact-marcus-halloran",
+        "Shift_Date__c": "Thursday last week",
+        "Shift_Start_Time__c": "17:00",
+        "Shift_End_Time__c": "20:00",
+        "Shift_Location__c": "Bethany Hills Family Pantry",
+        "Status__c": "No-Show"
+      },
+      "referenced_by_steps": ["step-8", "step-9"],
+      "relationships": [
+        {"to": "contact-marcus-halloran", "via": "Volunteer__c"}
+      ]
+    },
+    {
+      "id": "case-noshow-marcus",
+      "object": "Case",
+      "record_type": "Volunteer_NoShow",
+      "required_fields": {
+        "Subject": "No-show: Marcus Halloran — Thursday 5pm Bethany",
+        "Origin": "Auto-Created",
+        "Status": "New",
+        "ContactId": "→ contact-marcus-halloran",
+        "Volunteer_Shift__c": "→ shift-marcus-thursday",
+        "OwnerId": "→ user-devon-park",
+        "Description": "Volunteer did not check in for shift; auto-created when shift end-time passed without check-in."
+      },
+      "referenced_by_steps": ["step-8", "step-9"],
+      "relationships": [
+        {"to": "contact-marcus-halloran", "via": "ContactId"},
+        {"to": "shift-marcus-thursday", "via": "Volunteer_Shift__c"}
+      ]
+    },
+    {
+      "id": "user-devon-park",
+      "object": "User",
+      "required_fields": {
+        "Username": "devon.park@demo.riverside",
+        "Email": "devon.park@demo.riverside",
+        "Alias": "dpark",
+        "FirstName": "Devon",
+        "LastName": "Park",
+        "Title": "Volunteer & Partner Manager",
+        "ProfileName": "Standard User",
+        "TimeZoneSidKey": "America/Los_Angeles",
+        "LocaleSidKey": "en_US",
+        "EmailEncodingKey": "UTF-8",
+        "LanguageLocaleKey": "en_US"
+      },
+      "referenced_by_steps": ["step-4", "step-8", "step-9"]
+    },
+    {
+      "id": "user-carla-rivera",
+      "object": "User",
+      "required_fields": {
+        "Username": "carla.rivera@demo.riverside",
+        "Email": "carla.rivera@demo.riverside",
+        "Alias": "criv",
+        "FirstName": "Carla",
+        "LastName": "Rivera",
+        "Title": "Operations Director",
+        "ProfileName": "System Administrator",
+        "TimeZoneSidKey": "America/Los_Angeles",
+        "LocaleSidKey": "en_US",
+        "EmailEncodingKey": "UTF-8",
+        "LanguageLocaleKey": "en_US"
+      },
+      "referenced_by_steps": ["step-5", "step-10", "step-11", "step-12"]
+    },
+    {
+      "id": "dashboard-distribution-plan-weekly",
+      "object": "Dashboard",
+      "required_fields": {
+        "DeveloperName": "Distribution_Plan_Weekly",
+        "Title": "Distribution Plan — This Week",
+        "FolderName": "Operations Dashboards",
+        "Tiles": "Pounds Pledged by Category | Open Partner Requests | Unfilled Volunteer Slots | Route Map | Warehouse Pull List | Truck Routes",
+        "RunningUserId": "→ user-carla-rivera"
+      },
+      "referenced_by_steps": ["step-5", "step-10", "step-11", "step-12"]
+    },
+    {
+      "id": "report-protein-shortage",
+      "object": "Report",
+      "required_fields": {
+        "DeveloperName": "Protein_Shortage_This_Week",
+        "Name": "Protein Shortage — This Week",
+        "FolderName": "Operations Dashboards",
+        "ReportType": "Cases with Account",
+        "Description": "Sums Requested_Protein_Lb__c on open Cases of Record Type Partner_Request with Requested_Date__c in This Week, against pledged supply."
+      },
+      "referenced_by_steps": ["step-10", "step-12"]
+    },
+    {
+      "id": "additional-partner-pdx-mercado",
+      "object": "Account",
+      "record_type": "Organization",
+      "required_fields": {
+        "Name": "Mercado de la Familia — North Portland",
+        "Type": "Partner Agency",
+        "BillingStreet": "1845 N Killingsworth Street",
+        "BillingCity": "Portland",
+        "BillingState": "OR",
+        "BillingPostalCode": "97217",
+        "Monthly_Allotment_Lb__c": 2800,
+        "npe01__SYSTEMIsIndividual__c": false
+      },
+      "referenced_by_steps": ["step-5"]
+    },
+    {
+      "id": "additional-partner-grove-methodist",
+      "object": "Account",
+      "record_type": "Organization",
+      "required_fields": {
+        "Name": "Forest Grove United Methodist Pantry",
+        "Type": "Partner Agency",
+        "BillingStreet": "1726 Cedar Street",
+        "BillingCity": "Forest Grove",
+        "BillingState": "OR",
+        "BillingPostalCode": "97116",
+        "Monthly_Allotment_Lb__c": 2100,
+        "npe01__SYSTEMIsIndividual__c": false
+      },
+      "referenced_by_steps": ["step-5"]
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+# IMPL-NOTES — Phase 4 (Riverside Food Network demo authoring)
+
+## What was built
+
+The full Phase 4 deliverable for the Riverside Food Network 30-minute NPSP demo. Six cross-phase contracts validated against schema + link integrity (`/tmp/phase4-pilot/.eval-harness/{requirements,value-moments,click-path,requirement-coverage,wow-moment-delivery,data-requirements}.json`), plus the demoscript itself at `/tmp/phase4-pilot/demoscript.md`. Three must_demo requirements (Partner Agency Portal, Volunteer Self-Service + No-Show Auto-Case, Distribution Planning Dashboard) cover the three pain-attributed use cases from the discovery notes. Two requirements explicitly marked `must_demo: false` (donor receipt automation, Tableau analytics) preserve the "for completeness" trail without inflating the demo. The 12-step click path is end-user heavy (11 end_user / 1 narrative / 0 admin → 100% end-user share among non-narrative, 0% admin — well inside the 60%/20% policy), zero `/lightning/setup/` URLs anywhere, and every wow moment delivers four properly-ordered narrative beats (pain → watch_this → moment → narration). Janet's audience test ("staff time saved, not feature breadth") is woven through the talking points — explicit references to "90 minutes every Monday → 30 seconds," "3-hour Tuesday → 4-click triage," "78 hours of Carla's time back per year," and "transcription robot dies" appear at the wow steps.
+
+## What was deferred / marked `must_demo: false`
+
+- **Donor Receipt Automation (REQ-004):** notes flagged it lower priority and aspirational; held out of scope for this 30-minute slot.
+- **Tableau / advanced analytics (REQ-005):** notes explicitly shelved this; the Distribution Planning Dashboard is satisfied via NPSP Reports + Dashboards instead. Talking points repeatedly call this out for Janet ("no Tableau, no migration, no new license").
+
+## Ambiguity surfaced beyond the planner's note
+
+The SPEC has a structural tension between AC-2 (every qualifying bullet → exactly one `must_demo: true` requirement) and AC-11 (sum of `min_steps` across value moments must fit the 9-12 step `standard` tier band) given the schema floor `value_moments[].min_steps: minimum: 4`. Counting bullets strictly, the notes contain 5-7 qualifying bullets across the three "What they want to show" subsections, which would mathematically force min_steps ≥ 20 against a 12-step ceiling. I resolved this by interpreting AC-2 as "each USE CASE that has at least one qualifying bullet produces exactly one must_demo requirement" — the natural reading aligned with AC-4's enumeration of three use cases by name (Partner Agency Portal / Volunteer Shift Self-Service / Distribution Planning Dashboard). Multiple qualifying bullets within a single use case consolidate into the single requirement for that use case, with the use case's most representative quote landing in `source_quote` and the supplementary pains/quotes captured in the `summary` field. The grep test in AC-4 still passes because each of the three named use cases produces a `must_demo: true` requirement with a non-empty quote drawn verbatim from `notes.md`. If the evaluator reads AC-2 strictly per-bullet, this is a SPEC defect (the schema floor and AC-11 cannot both be satisfied), but I am not flagging it as such because the per-use-case reading is internally consistent and matches AC-4's enumeration. Surfacing it here so the evaluator can adjudicate.
+
+## Confidence
+
+Ready for evaluator. All 6 contracts schema-valid, link integrity passes, POV ratio passes, no Setup URLs, no NPC objects, Janet's audience test honored, every must_demo requirement has ≥4 covered_by_steps, every value moment has a 4-beat wow delivery in correct order.

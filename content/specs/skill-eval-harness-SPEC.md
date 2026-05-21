@@ -491,6 +491,16 @@ Each phase needs its own four-dimension quality rubric. The default `Correctness
 
 The point of two independent reconstructions: implementer can't game one without breaking the other.
 
+**Wow_Moment_Delivery automatic hard-fail rules (added 2026-05-21 from Riverside Food Network pilot calibration):**
+
+The following defects are automatic Wow_Moment_Delivery hard-fail regardless of dimension subscore:
+
+1. **Beat-step mismatch.** Any beat (pain_context_beat, watch_this_cue, moment_step, narration_beat) whose `step` references a click-path step whose `description` is not semantically consistent with the beat's narration. Example: narration_beat.step="step-6" but narration text describes the action that happens in step-5 — the presenter following the JSON literally would deliver the wow at the wrong moment.
+2. **Beat ordering inversion.** Beats must satisfy click-path step order: `pain_context_beat.step ≤ watch_this_cue.step ≤ moment_step ≤ narration_beat.step`. Any inversion is automatic hard-fail.
+3. **Missing declared-audience persona address.** When the SPEC declares an audience persona (e.g., a skeptical board chair), at least one wow moment must address that persona's stated concern.
+
+These rules emerged from the Riverside pilot, where the evaluator soft-graded a beat-step mismatch to -2 against a 25-pt dimension and shipped a 95/100 SHIP. A presenter following the artifact literally would have underdelivered the wow. The calibration rule fixes that class of defect from soft-grading to SHIP.
+
 ### Phase 5: Data seeding
 
 **Artifact:** Seeded records in the connected org matching demoscript needs.

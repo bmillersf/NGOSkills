@@ -1,0 +1,46 @@
+{
+  "version": "1.0",
+  "source_notes": "/tmp/phase4-pilot/notes.md",
+  "requirements": [
+    {
+      "id": "REQ-001",
+      "summary": "Partner Agency Portal end-to-end: Maria (Latino community center pantry lead) submits a food request from the Experience Cloud portal at 9am Monday; Devon's transcription work disappears; by Tuesday morning Carla's distribution plan dashboard already shows the request mapped to a specific truck route and warehouse pull list. Replaces today's email-to-Google-Sheet loop with 5-10 day lead time. Includes Devon's 'transcription robot' pain.",
+      "source_quote": "The \"wow\" is supposed to be: a partner submits a request at 9am Monday, and by Tuesday morning Carla's distribution plan dashboard already shows the request mapped to a specific truck route and warehouse pull list.",
+      "source_line": 17,
+      "must_demo": true,
+      "category": "feature"
+    },
+    {
+      "id": "REQ-002",
+      "summary": "Volunteer Shift Self-Service with no-show auto-case: Jordan signs in to the same Experience Cloud portal (Customer Community license), views and reschedules upcoming shifts; when a volunteer no-shows, a Case is auto-created and routed to Devon. Replaces the Google Form + printed sign-in sheet + Devon's mental model triple-source today, and replaces the manual Tuesday outreach that eats his week (15-20% no-show rate).",
+      "source_quote": "They want volunteers to sign up via the same portal as partners (different user license), see their upcoming shifts, cancel/reschedule themselves, and have no-shows automatically create a case for Devon to follow up.",
+      "source_line": 23,
+      "must_demo": true,
+      "category": "feature"
+    },
+    {
+      "id": "REQ-003",
+      "summary": "Distribution Planning Dashboard (NPSP Reports + Dashboard, NOT Tableau): single Monday-morning view showing pounds pledged by category, open partner requests, unfilled volunteer slots, and a map of distribution routes. Replaces Carla's 90-minute Excel rebuild every Monday so she walks in and immediately knows if she is short on protein for Thursday.",
+      "source_quote": "I want to walk in Monday morning, look at one screen, and know if I'm short on protein for Thursday.",
+      "source_line": 30,
+      "must_demo": true,
+      "category": "feature"
+    },
+    {
+      "id": "REQ-004",
+      "summary": "Donor Receipt Automation: personalized gift-level acknowledgments for gifts >$250. Customer flagged this as lower priority and aspirational — not in scope for this 30-minute demo.",
+      "source_quote": "Lower priority — Carla mentioned it but didn't flag pain. Probably aspirational, not must-demo.",
+      "source_line": 35,
+      "must_demo": false,
+      "category": "feature"
+    },
+    {
+      "id": "REQ-005",
+      "summary": "Tableau / advanced analytics layer on top of distribution data. Customer explicitly shelved for this engagement; out of scope.",
+      "source_quote": "Tableau / advanced analytics (Carla mentioned but shelved)",
+      "source_line": 55,
+      "must_demo": false,
+      "category": "feature"
+    }
+  ]
+}

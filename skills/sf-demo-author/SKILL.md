@@ -54,6 +54,10 @@ eval_harness:
       max: 25
       hard_fail_below: 12
       description: "Every wow moment from value-moments.json is delivered with all four narrative beats (pain context, watch this, moment, narration), correctly ordered in the click path."
+      automatic_hard_fail_rules:
+        - "Beat-step mismatch: any beat's referenced step has a description not semantically consistent with the beat's narration text"
+        - "Beat ordering inversion: beats must satisfy pain_context_beat.step <= watch_this_cue.step <= moment_step <= narration_beat.step"
+        - "Missing declared-audience persona address: when SPEC declares an audience persona, at least one wow must address their concern"
     - name: End_User_POV_Ratio
       max: 25
       hard_fail_below: 12

@@ -1,0 +1,23 @@
+{
+  "version": "1.0",
+  "requirements_file": "requirements.json",
+  "coverage": [
+    {
+      "requirement_id": "REQ-001",
+      "covered_by_steps": ["step-2", "step-3", "step-4", "step-5"],
+      "demonstration_quality": "primary"
+    },
+    {
+      "requirement_id": "REQ-002",
+      "covered_by_steps": ["step-6", "step-7", "step-8", "step-9"],
+      "demonstration_quality": "primary"
+    },
+    {
+      "requirement_id": "REQ-003",
+      "covered_by_steps": ["step-5", "step-10", "step-11", "step-12"],
+      "demonstration_quality": "primary"
+    }
+  ],
+  "uncovered_requirements": [],
+  "rationale_for_uncovered": null
+}
