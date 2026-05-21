@@ -1,6 +1,6 @@
 # SPEC: Adversarial Skill Eval Harness (Pilot in sf-demo-validate)
 
-**Status:** Draft v3 — full-orchestrator wrap + opt-in extension to other skills
+**Status:** Draft v4 — requirement-coverage enforcement + cross-phase handoff contracts
 **Author:** Brian Miller (drafted with Claude)
 **Date:** 2026-05-21
 **Pilot target:** `sf-demo-validate` (Phase 6 of `sf-demo-orchestrate`) — lowest-risk wrap because rubric already exists
@@ -458,16 +458,18 @@ Each phase needs its own four-dimension quality rubric. The default `Correctness
 
 ### Phase 4: Demoscript authoring
 
-**Artifact:** `demoscript.md` with story arc + click path + personas.
+**Artifact:** `demoscript.md` with story arc + click path + personas + machine-readable `requirement-coverage.json` (see §17).
 
 | Dimension | Grades | Hard-fail |
 |---|---|---|
-| **Narrative coherence** | Story arc has a beginning, conflict, resolution; personas have agency | 15 |
+| **Requirement coverage** | Every feature/ask in Phase 2 notes digest is demonstrated by ≥1 click-path step. No silent drops. | 18 (hard-fail — this is the half-baked-demo killer) |
 | **Click-path fidelity** | Every UI step is real (real button labels, real navigation paths in current Salesforce UI) | 15 (hard-fail) |
-| **Data dependency clarity** | Every step that references data declares what data must exist before that step | 12 |
-| **Duration realism** | Step count + estimated time per step matches Phase 3 duration choice | 10 |
+| **Narrative coherence** | Story arc has a beginning, conflict, resolution; personas have agency | 10 |
+| **Data dependency contract** | Every data reference uses the structured format from §17 so Phase 5 can mechanically consume it | 12 (hard-fail) |
 
-**Tests:** unit (markdown structure valid), integration (every CLI command in script executes against the connected org), smoke (full click-path runs end-to-end in Playwright headless).
+**Tests:** unit (markdown structure valid + `requirement-coverage.json` schema valid), integration (every CLI command in script executes against the connected org + every requirement in Phase 2 digest maps to ≥1 step), smoke (full click-path runs end-to-end in Playwright headless).
+
+**Critical evaluator check:** Evaluator reads Phase 2 digest and Phase 4 script side-by-side. Builds the requirement → step coverage matrix from scratch, independent of `requirement-coverage.json`. If the matrix evaluator built doesn't match the one Phase 4 wrote, that's a `SPEC-DEFECT` — implementer is lying to itself about coverage.
 
 ### Phase 5: Data seeding
 
@@ -504,3 +506,155 @@ This is the **pilot phase**. Existing 200-pt rubric is reused; harness only chan
 ---
 
 **Note on rubric maintenance.** Each phase's rubric lives alongside the phase's skill (or in `sf-demo-orchestrate`'s SKILL.md if the phase is orchestrator-internal). When the rubric changes, increment a version number — TRACE.md records the rubric version used, so old traces remain interpretable.
+
+---
+
+## 17. Cross-phase handoff contracts (the rough-handoff fix)
+
+The "rough handoff" failure mode happens when Phase N's output is prose, Phase N+1 interprets it loosely, and the mismatch only surfaces at end-to-end test time (or worse, during the live demo). Fix: every phase emits a structured machine-readable artifact alongside its human-readable artifact. Phase N+1's evaluator validates against that contract before the implementer runs.
+
+### 17.1 Requirement-coverage contract (Phase 2 → Phase 4)
+
+Phase 2 (notes intake) writes `.eval-harness/requirements.json`:
+
+```json
+{
+  "version": "1.0",
+  "source_notes": "path/to/notes.md",
+  "requirements": [
+    {
+      "id": "REQ-001",
+      "summary": "Show donor giving history with year-over-year comparison",
+      "source_quote": "donors want to see how their giving has evolved",
+      "source_line": 23,
+      "must_demo": true,
+      "category": "feature"
+    },
+    {
+      "id": "REQ-002",
+      "summary": "Volunteer signup via Experience Cloud portal",
+      "source_quote": "make it easy to sign up new volunteers",
+      "source_line": 41,
+      "must_demo": true,
+      "category": "feature"
+    }
+  ]
+}
+```
+
+Phase 4 (demoscript) writes `.eval-harness/requirement-coverage.json`:
+
+```json
+{
+  "version": "1.0",
+  "requirements_file": ".eval-harness/requirements.json",
+  "coverage": [
+    {
+      "requirement_id": "REQ-001",
+      "covered_by_steps": ["step-3", "step-4"],
+      "demonstration_quality": "primary"
+    },
+    {
+      "requirement_id": "REQ-002",
+      "covered_by_steps": ["step-7"],
+      "demonstration_quality": "primary"
+    }
+  ],
+  "uncovered_requirements": [],
+  "rationale_for_uncovered": null
+}
+```
+
+**Hard rules:**
+- Every `requirements[].id` with `must_demo: true` must appear in `coverage[]` with at least one step OR in `uncovered_requirements[]` with a non-null `rationale_for_uncovered` that the evaluator approves.
+- `demonstration_quality` is `primary` (this step is the main demo of this requirement) or `incidental` (the requirement is touched but not the focus). Each requirement needs at least one `primary`.
+- Phase 4's evaluator independently builds this matrix from the demoscript and compares. Mismatch = `SPEC-DEFECT`.
+
+### 17.2 Data dependency contract (Phase 4 → Phase 5)
+
+Phase 4 (demoscript) writes `.eval-harness/data-requirements.json`:
+
+```json
+{
+  "version": "1.0",
+  "records": [
+    {
+      "id": "donor-001",
+      "object": "Account",
+      "record_type": "Household",
+      "required_fields": {
+        "Name": "The Hartwell Family",
+        "npe01__SYSTEMIsIndividual__c": true,
+        "npo02__TotalOppAmount__c": 4500
+      },
+      "referenced_by_steps": ["step-3", "step-4"],
+      "relationships": [
+        {"to": "donor-001-contact", "via": "PrimaryContact__c"}
+      ]
+    }
+  ]
+}
+```
+
+**Hard rules:**
+- Every record the demoscript references must appear in `records[]` with object, fields, and which steps need it.
+- Phase 5 reads this file directly to drive seeding. No interpretation of prose.
+- Phase 5's evaluator verifies every `records[].id` exists in the org with the required fields populated and all relationships resolved.
+
+### 17.3 Click-path contract (Phase 4 → Phase 7)
+
+Phase 4 writes `.eval-harness/click-path.json`:
+
+```json
+{
+  "version": "1.0",
+  "steps": [
+    {
+      "id": "step-3",
+      "description": "Navigate to The Hartwell Family household record",
+      "url_pattern": "/lightning/r/Account/{donor-001.id}/view",
+      "actions": [
+        {"type": "click", "selector": "a[title='The Hartwell Family']"},
+        {"type": "wait_for", "selector": "h1.recordHeader"},
+        {"type": "screenshot", "name": "donor-detail.png"}
+      ],
+      "expected_visible": ["Total Gifts: $4,500", "Last Gift: 2025-12-15"]
+    }
+  ]
+}
+```
+
+**Hard rules:**
+- Every step in the demoscript must have a corresponding entry here.
+- Phase 7 generates Playwright tests directly from this file. No prose interpretation.
+- Phase 7's evaluator verifies every assertion in `expected_visible` actually fires green against the seeded org.
+
+### 17.4 Why machine-readable, not just structured prose
+
+Two reasons:
+
+1. **Evaluator can mechanically compare.** "Did Phase 5 seed everything Phase 4 needs?" becomes a JSON diff, not a prose review. Catches half-baked handoffs deterministically.
+2. **Implementer can't paper over gaps.** Prose lets an LLM write "the demo includes donor history" without specifying which records, which fields, which screens. JSON forces concreteness — and missing JSON keys are caught by schema validation, not by hoping the evaluator notices.
+
+### 17.5 Schema enforcement
+
+Each contract has a JSON Schema in `.eval-harness/schemas/`. Phase implementer's `unit_tests` rubric includes "contract file validates against schema" as a required category. A demoscript that produces invalid JSON fails Phase 4's test rubric automatically — no SHIP verdict possible.
+
+---
+
+## 18. The half-baked-demo prevention checklist
+
+This is the explicit answer to "make sure the demoscript truly shows all features and isn't half-baked." Combination of rubric, contracts, and evaluator behavior — all defense-in-depth on the same failure mode:
+
+| Defense layer | Where it lives | What it catches |
+|---|---|---|
+| **Phase 2 hard-fail on faithfulness** | §16 Phase 2 rubric | Notes digest hallucinated requirements not in source |
+| **`requirements.json` with line citations** | §17.1 | Phase 2 must point to source-line evidence for each requirement |
+| **Phase 4 hard-fail on requirement coverage** (18 pts) | §16 Phase 4 rubric | Demoscript drops a `must_demo: true` requirement |
+| **Independent coverage matrix by evaluator** | §16 Phase 4 critical evaluator check | Implementer can't lie about coverage — evaluator builds matrix from scratch |
+| **`requirement-coverage.json` as machine artifact** | §17.1 | Coverage is enforceable JSON, not prose |
+| **Phase 5 reads `data-requirements.json` directly** | §17.2 | No prose interpretation — half-empty screens caught at seed time |
+| **Phase 6 (`sf-demo-validate`) cross-checks coverage** | Existing 200-pt rubric + harness | Final check: every requirement has a working demo path in the seeded org |
+| **Phase 7 Playwright asserts on `expected_visible`** | §17.3 | If the demo step claims to show something, the test verifies it actually shows |
+
+If a demo ships half-baked through all 8 of these defenses, that's a real bug worth investigating, not a normal outcome.
