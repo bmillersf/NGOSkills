@@ -1,6 +1,6 @@
 # SPEC: Adversarial Skill Eval Harness (Pilot in sf-demo-validate)
 
-**Status:** Draft v4 — requirement-coverage enforcement + cross-phase handoff contracts
+**Status:** Draft v5 — Phase 3 → 4 depth & user-value contract (the shallow-demo fix)
 **Author:** Brian Miller (drafted with Claude)
 **Date:** 2026-05-21
 **Pilot target:** `sf-demo-validate` (Phase 6 of `sf-demo-orchestrate`) — lowest-risk wrap because rubric already exists
@@ -445,31 +445,38 @@ Each phase needs its own four-dimension quality rubric. The default `Correctness
 
 ### Phase 3: Product detection + recommendation
 
-**Artifact:** Recommended product set + cross-cloud routing decision + duration.
+**Artifact:** Recommended product set + cross-cloud routing decision + duration + `value-moments.json` (see §19) — the *depth and user-value spec* that bounds Phase 4.
 
 | Dimension | Grades | Hard-fail |
 |---|---|---|
-| **Correctness** | Products match notes' actual asks, not adjacent ones | 15 |
 | **Routing accuracy** | Industry-first routing precedence applied; no generic skill chosen when industry-pack-owned | 12 (hard-fail) |
-| **Duration fit** | Step count matches selected duration (15/30/45 min); no overstuffing | 10 |
-| **Scope discipline** | No product creep beyond what notes justify | 12 |
+| **Demo depth specification** | Per `must_demo` requirement: min step count specified, persona pain quote captured, persona outcome stated, ≥1 wow moment identified | 15 (hard-fail — the shallow-demo killer) |
+| **User-value framing** | Recommendations encode user *outcomes*, not product *features*; end-user POV ratio target ≥60%; admin/setup time capped at ≤20% of duration | 13 (hard-fail) |
+| **Duration fit** | Aggregate min-step-counts across requirements ≤ duration budget; no overstuffing, no underutilization | 10 |
 
-**Tests:** unit (routing rule eval), integration (recommendation references skill SKILL.md TRIGGER clauses), smoke (chosen products produce a coherent demo arc).
+**Tests:** unit (routing rule eval + `value-moments.json` schema valid), integration (recommendation references skill SKILL.md TRIGGER clauses + every product maps to ≥1 requirement from Phase 2), smoke (depth budget across requirements is feasible inside duration budget).
+
+**Critical evaluator check:** Evaluator reads each `value-moments.json` entry and asks: *"Would an end-user (not an admin) lean forward during this moment?"* If the wow moment is "the record was created" or "the field was populated," that's an admin moment, not a user moment. Hard-fail.
 
 ### Phase 4: Demoscript authoring
 
-**Artifact:** `demoscript.md` with story arc + click path + personas + machine-readable `requirement-coverage.json` (see §17).
+**Artifact:** `demoscript.md` with story arc + click path + personas + machine-readable `requirement-coverage.json` (§17) + `wow-moment-delivery.json` (§19).
 
 | Dimension | Grades | Hard-fail |
 |---|---|---|
-| **Requirement coverage** | Every feature/ask in Phase 2 notes digest is demonstrated by ≥1 click-path step. No silent drops. | 18 (hard-fail — this is the half-baked-demo killer) |
-| **Click-path fidelity** | Every UI step is real (real button labels, real navigation paths in current Salesforce UI) | 15 (hard-fail) |
-| **Narrative coherence** | Story arc has a beginning, conflict, resolution; personas have agency | 10 |
-| **Data dependency contract** | Every data reference uses the structured format from §17 so Phase 5 can mechanically consume it | 12 (hard-fail) |
+| **Requirement coverage & depth** | Every Phase 2 requirement is demonstrated AND each one meets the min step count from Phase 3's `value-moments.json`. No drops, no shallow coverage. | 18 (hard-fail) |
+| **Wow-moment delivery** | Every wow moment from Phase 3 is delivered with: (a) preceding pain context beat, (b) explicit "watch this" cue for the presenter, (c) the moment itself, (d) a "this is what just happened" narration beat | 12 (hard-fail) |
+| **End-user POV ratio** | Click-path steps tagged `pov: end_user` ≥ Phase 3 target (default 60%); steps tagged `pov: admin` ≤ Phase 3 cap (default 20%) | 12 (hard-fail) |
+| **Click-path fidelity & data contract** | UI steps are real; `data-requirements.json` validates against schema | 13 (hard-fail) |
 
-**Tests:** unit (markdown structure valid + `requirement-coverage.json` schema valid), integration (every CLI command in script executes against the connected org + every requirement in Phase 2 digest maps to ≥1 step), smoke (full click-path runs end-to-end in Playwright headless).
+**Tests:** unit (markdown structure valid + all JSON contracts validate), integration (every CLI command in script executes against connected org + every requirement maps to ≥1 step at required depth + POV ratio computed and checked), smoke (full click-path runs end-to-end in Playwright headless + wow-moment beats render visibly distinct in the presenter guide).
 
-**Critical evaluator check:** Evaluator reads Phase 2 digest and Phase 4 script side-by-side. Builds the requirement → step coverage matrix from scratch, independent of `requirement-coverage.json`. If the matrix evaluator built doesn't match the one Phase 4 wrote, that's a `SPEC-DEFECT` — implementer is lying to itself about coverage.
+**Critical evaluator checks:** Two independent reconstructions, both required:
+
+1. **Coverage matrix** — Evaluator reads Phase 2 digest + Phase 4 script side-by-side, builds requirement → step matrix from scratch. Mismatch with `requirement-coverage.json` = `SPEC-DEFECT`.
+2. **Depth & POV reconstruction** — Evaluator reads Phase 3 `value-moments.json` + Phase 4 click-path, independently counts steps per requirement and tags each step's POV (end_user / admin / mixed). Computes POV ratio from scratch. If implementer's claimed ratio diverges from evaluator's reconstruction by >5%, that's a `SPEC-DEFECT`.
+
+The point of two independent reconstructions: implementer can't game one without breaking the other.
 
 ### Phase 5: Data seeding
 
@@ -642,19 +649,153 @@ Each contract has a JSON Schema in `.eval-harness/schemas/`. Phase implementer's
 
 ---
 
-## 18. The half-baked-demo prevention checklist
+## 18. The half-baked + shallow-demo prevention checklist
 
-This is the explicit answer to "make sure the demoscript truly shows all features and isn't half-baked." Combination of rubric, contracts, and evaluator behavior — all defense-in-depth on the same failure mode:
+Two failure modes, defense-in-depth on both:
+
+**Half-baked = features silently dropped.** Caught by:
 
 | Defense layer | Where it lives | What it catches |
 |---|---|---|
-| **Phase 2 hard-fail on faithfulness** | §16 Phase 2 rubric | Notes digest hallucinated requirements not in source |
-| **`requirements.json` with line citations** | §17.1 | Phase 2 must point to source-line evidence for each requirement |
-| **Phase 4 hard-fail on requirement coverage** (18 pts) | §16 Phase 4 rubric | Demoscript drops a `must_demo: true` requirement |
-| **Independent coverage matrix by evaluator** | §16 Phase 4 critical evaluator check | Implementer can't lie about coverage — evaluator builds matrix from scratch |
-| **`requirement-coverage.json` as machine artifact** | §17.1 | Coverage is enforceable JSON, not prose |
-| **Phase 5 reads `data-requirements.json` directly** | §17.2 | No prose interpretation — half-empty screens caught at seed time |
-| **Phase 6 (`sf-demo-validate`) cross-checks coverage** | Existing 200-pt rubric + harness | Final check: every requirement has a working demo path in the seeded org |
-| **Phase 7 Playwright asserts on `expected_visible`** | §17.3 | If the demo step claims to show something, the test verifies it actually shows |
+| Phase 2 hard-fail on faithfulness | §16 Phase 2 rubric | Notes digest hallucinated requirements not in source |
+| `requirements.json` with line citations | §17.1 | Phase 2 must point to source-line evidence for each requirement |
+| Phase 4 hard-fail on requirement coverage (18 pts) | §16 Phase 4 rubric | Demoscript drops a `must_demo: true` requirement |
+| Independent coverage matrix by evaluator | §16 Phase 4 critical evaluator check | Implementer can't lie about coverage — evaluator builds matrix from scratch |
+| Phase 5 reads `data-requirements.json` directly | §17.2 | No prose interpretation — half-empty screens caught at seed time |
+| Phase 6 (`sf-demo-validate`) cross-checks coverage | Existing 200-pt rubric + harness | Final check: every requirement has a working demo path in the seeded org |
+| Phase 7 Playwright asserts on `expected_visible` | §17.3 | If the demo step claims to show something, the test verifies it actually shows |
 
-If a demo ships half-baked through all 8 of these defenses, that's a real bug worth investigating, not a normal outcome.
+**Shallow = demo runs end to end but is forgettable / admin-heavy / no wow.** Caught by:
+
+| Defense layer | Where it lives | What it catches |
+|---|---|---|
+| Phase 3 hard-fail on demo depth specification (15 pts) | §16 Phase 3 rubric | Per-requirement min steps + persona pain + wow moment must be specified |
+| Phase 3 hard-fail on user-value framing (13 pts) | §16 Phase 3 rubric | End-user POV target + admin cap must be set; recommendations encoded as outcomes |
+| `value-moments.json` contract | §19.1 | Phase 3 spec is machine-readable; Phase 4 can be graded against it |
+| Phase 4 hard-fail on requirement coverage AND depth (18 pts) | §16 Phase 4 rubric | Coverage isn't enough — each requirement must hit `min_steps` from Phase 3 |
+| Phase 4 hard-fail on wow-moment delivery (12 pts) | §16 Phase 4 rubric | All four beats (pain → watch this → moment → narration) must be present and ordered |
+| Phase 4 hard-fail on POV ratio (12 pts) | §16 Phase 4 rubric | Click-path tagged per step; ratio measured against Phase 3 target |
+| Independent POV reconstruction by evaluator | §16 Phase 4 critical evaluator check | Implementer can't fake the POV ratio — evaluator re-tags every step from scratch |
+| `wow-moment-delivery.json` contract | §19.2 | Wow moments are machine-checkable, not claimed in prose |
+
+If a demo ships half-baked or shallow through all 15 of these defenses, that's a real bug worth investigating, not a normal outcome.
+
+---
+
+## 19. Phase 3 → 4 depth & user-value contract (the shallow-demo fix)
+
+The "5 clicks of stuff I don't care about as an end-user" problem is upstream of Phase 4. It's a Phase 3 specification gap: if Phase 3 hands Phase 4 "demo Agentforce auto-triage for 30 min," Phase 4 will faithfully produce 5 clicks. The fix is making Phase 3 specify *depth*, *pain*, *outcome*, and *wow moments* — and making that specification the contract Phase 4 is graded against.
+
+### 19.1 `value-moments.json` (Phase 3 emits)
+
+```json
+{
+  "version": "1.0",
+  "duration_minutes": 30,
+  "duration_budget": {
+    "end_user_pov_min_pct": 60,
+    "admin_setup_max_pct": 20,
+    "narrative_transitions_pct": 20
+  },
+  "value_moments": [
+    {
+      "requirement_id": "REQ-001",
+      "min_steps": 6,
+      "persona": "Sarah, Director of Development",
+      "persona_pain_quote": "I spend 4 hours every Monday building donor reports manually before I can even think about strategy",
+      "persona_outcome": "Sarah opens her dashboard at 8am Monday and the report is already there, with anomalies flagged — she has her morning back",
+      "wow_moment": {
+        "description": "AI-flagged anomaly: 'Hartwell family gave 3x normal — likely major gift opportunity'",
+        "why_audience_leans_forward": "It's the system noticing what Sarah didn't have time to notice. Audience realizes this is the system doing strategy work, not data work.",
+        "presenter_cue": "Pause here. Let it land.",
+        "estimated_duration_seconds": 15
+      },
+      "anti_demo": [
+        "Do not show how the AI was configured",
+        "Do not show the underlying data model",
+        "Do not click into Setup"
+      ],
+      "end_user_pov_steps": 5,
+      "admin_pov_steps": 1
+    }
+  ]
+}
+```
+
+**Hard rules:**
+- Every Phase 2 requirement with `must_demo: true` must have a `value_moments[]` entry.
+- `min_steps` is a minimum, not a target. Phase 4 may produce more steps but cannot produce fewer.
+- `wow_moment` is required. "There is no wow moment" is not a valid value. If a requirement genuinely has no wow moment, it shouldn't be a `must_demo` requirement.
+- `persona_pain_quote` should be drawn from the Phase 2 notes digest where possible. If invented, mark `synthesized: true` and the evaluator will scrutinize harder.
+- `anti_demo[]` is the explicit "don't show this" list — typically Setup, configuration, the underlying data model, anything end-users don't see in real life.
+- `end_user_pov_steps + admin_pov_steps ≤ min_steps` and end_user share must satisfy `duration_budget.end_user_pov_min_pct`.
+
+### 19.2 `wow-moment-delivery.json` (Phase 4 emits)
+
+```json
+{
+  "version": "1.0",
+  "value_moments_file": ".eval-harness/value-moments.json",
+  "deliveries": [
+    {
+      "value_moment_requirement_id": "REQ-001",
+      "delivered_in_steps": ["step-3", "step-4", "step-5"],
+      "pain_context_beat": {
+        "step": "step-3",
+        "narration": "Sarah arrives Monday morning. Last week, this is when she'd be 2 hours into her report."
+      },
+      "watch_this_cue": {
+        "step": "step-4",
+        "narration": "Watch the top of the dashboard — Sarah hasn't done anything yet."
+      },
+      "moment_step": "step-4",
+      "narration_beat": {
+        "step": "step-5",
+        "narration": "The system noticed what Sarah didn't have time to notice. That's the difference."
+      }
+    }
+  ]
+}
+```
+
+**Hard rules:**
+- Every `value_moments[]` entry from Phase 3 must have a corresponding `deliveries[]` entry.
+- All four beats (pain_context, watch_this, moment, narration) must be present and tied to specific steps in the click-path.
+- Beats must appear in click-path step order (pain before moment, moment before narration).
+
+### 19.3 Per-step POV tagging (in `click-path.json`, extends §17.3)
+
+```json
+{
+  "id": "step-4",
+  "description": "Sarah views her morning dashboard",
+  "pov": "end_user",
+  "url_pattern": "/lightning/n/Donor_Dashboard",
+  "actions": [...],
+  "expected_visible": [...]
+}
+```
+
+`pov` enum: `end_user` | `admin` | `mixed` | `narrative`. The narrative bucket is for transition steps that don't show UI (e.g., a slide intro). POV ratio is computed across `end_user` vs `admin` only — narrative steps don't count against either side.
+
+### 19.4 Why this fixes the shallow-demo problem
+
+| Old failure mode | What now blocks it |
+|---|---|
+| Phase 3 says "demo auto-triage" → Phase 4 produces 5 clicks | Phase 3 must specify min steps + persona pain + wow moment per requirement; "demo auto-triage" is not a valid Phase 3 output |
+| Phase 4 produces a feature checklist instead of a story | Phase 4 must deliver pain_context → watch_this → moment → narration beats per requirement; checklist demos can't satisfy this contract |
+| Demo is mostly Setup/admin time | Phase 3 caps admin time at 20%; Phase 4's evaluator measures POV ratio independently |
+| No wow moment, demo is flat | Phase 3 hard-fail if no wow moment specified; Phase 4 hard-fail if specified moment isn't delivered |
+| Implementer claims user-focused but actually shows admin screens | Two independent reconstructions in §16 Phase 4 — implementer can't fake the POV ratio |
+
+### 19.5 Defaults (configurable in `sf-demo-orchestrate` SKILL.md)
+
+| Setting | Default | Rationale |
+|---|---|---|
+| `end_user_pov_min_pct` | 60% | Most of the demo is what end-users see. |
+| `admin_setup_max_pct` | 20% | Some admin context is fine; dominant-admin demos lose audiences. |
+| `narrative_transitions_pct` | 20% | Story beats need room. |
+| `min_steps_per_requirement` (default if Phase 3 doesn't specify) | 4 | Below 4 steps, you can't tell a pain → wow → outcome story. |
+| `wow_moment_min_duration_seconds` | 10 | Anything shorter than 10s of "watch this" doesn't land. |
+
+These are starting points. Pilot data will tell us where they should actually sit.
