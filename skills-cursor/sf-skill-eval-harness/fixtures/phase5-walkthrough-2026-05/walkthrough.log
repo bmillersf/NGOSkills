@@ -1,0 +1,98 @@
+# Phase 5 deterministic walkthrough — captured 2026-05-21
+
+## Step 1 — Schema + link integrity validation
+
+```
+$ python3 -m scripts.cli validate-contracts \
+    --harness-dir fixtures/riverside-food-network-phase4-pilot-2026-05/.eval-harness \
+    --strict
+OK: 6 contract(s) valid, link integrity OK
+```
+
+## Step 2 — ITERATE simulation: Coverage breach
+
+Hypothetical scenario: implementer seeded the org but missed 2 of 8 partner
+agency records. Aggregate score is 81% but Coverage hits 16/25, below the
+18-point hard-fail floor.
+
+Input JSON to `cli score`:
+
+```json
+{
+  "scores": [
+    {"name": "Coverage", "score": 16, "evidence": "2 of 8 partner agency records missing from org after seed"},
+    {"name": "Layout_Completeness", "score": 22, "evidence": "all writeable fields populated except 1 (empty-by-design)"},
+    {"name": "Relationship_Integrity", "score": 22, "evidence": "all junction records resolved"},
+    {"name": "Realism", "score": 21, "evidence": "Oregon partner names verified"}
+  ],
+  "dimensions": [
+    {"name": "Coverage", "max_points": 25, "hard_fail_floor": 18},
+    {"name": "Layout_Completeness", "max_points": 25, "hard_fail_floor": 15},
+    {"name": "Relationship_Integrity", "max_points": 25, "hard_fail_floor": 18},
+    {"name": "Realism", "max_points": 25, "hard_fail_floor": 12}
+  ],
+  "tests": {"unit_pass": true, "integration_pass": false, "smoke_pass": true}
+}
+```
+
+Output:
+
+```json
+{
+  "verdict": "ITERATE",
+  "quality_total": 81,
+  "quality_max": 100,
+  "quality_pct": 81.0,
+  "hard_fail_breaches": [
+    "Coverage scored 16 (floor 18)"
+  ],
+  "spec_defect_reason": null
+}
+```
+
+CLI exit code: 1 (signals ITERATE to shell pipelines)
+
+**Why this is the right outcome:** Without the floor, 81% would ship.
+But 2 missing records = 2 click-path steps that fail on demo day.
+The hard-fail floor catches the demo-killer hidden behind a passing
+aggregate score.
+
+## Step 3 — SHIP simulation: all gaps fixed
+
+Hypothetical scenario: iter-2 implementer seeded the missing records,
+all dimensions clear their floors with margin.
+
+Input JSON:
+
+```json
+{
+  "scores": [
+    {"name": "Coverage", "score": 24, "evidence": "all 8 partner agencies + 14 volunteers + 12 shifts present"},
+    {"name": "Layout_Completeness", "score": 23, "evidence": "no half-empty layouts; 2 fields empty-by-design per contract"},
+    {"name": "Relationship_Integrity", "score": 24, "evidence": "all lookups resolve; 0 orphans"},
+    {"name": "Realism", "score": 22, "evidence": "Oregon partner names + realistic gift amounts"}
+  ],
+  "dimensions": [
+    {"name": "Coverage", "max_points": 25, "hard_fail_floor": 18},
+    {"name": "Layout_Completeness", "max_points": 25, "hard_fail_floor": 15},
+    {"name": "Relationship_Integrity", "max_points": 25, "hard_fail_floor": 18},
+    {"name": "Realism", "max_points": 25, "hard_fail_floor": 12}
+  ],
+  "tests": {"unit_pass": true, "integration_pass": true, "smoke_pass": true}
+}
+```
+
+Output:
+
+```json
+{
+  "verdict": "SHIP",
+  "quality_total": 93,
+  "quality_max": 100,
+  "quality_pct": 93.0,
+  "hard_fail_breaches": [],
+  "spec_defect_reason": null
+}
+```
+
+CLI exit code: 0
