@@ -1,0 +1,133 @@
+{
+  "version": "1.0",
+  "steps": [
+    {
+      "id": "step-1",
+      "description": "Sarah opens the Helping Hands public volunteer page on her phone",
+      "pov": "end_user",
+      "url_pattern": "/s/volunteer",
+      "actions": [
+        {"type": "navigate"},
+        {"type": "screenshot", "name": "01-public-list.png"}
+      ],
+      "expected_visible": ["Saturday Food Drive", "Sign me up"]
+    },
+    {
+      "id": "step-2",
+      "description": "Sarah scrolls and reads three open shifts",
+      "pov": "end_user",
+      "actions": [{"type": "wait_for", "selector": ".shift-card"}],
+      "expected_visible": ["3 shifts available"]
+    },
+    {
+      "id": "step-3",
+      "description": "Sarah taps Saturday Food Drive — detail page loads with no auth wall",
+      "pov": "end_user",
+      "actions": [
+        {"type": "click", "selector": "a[data-shift='saturday-food-drive']"},
+        {"type": "screenshot", "name": "02-shift-detail.png"}
+      ],
+      "expected_visible": ["Saturday 9am", "Sign me up"]
+    },
+    {
+      "id": "step-4",
+      "description": "Sarah taps 'Sign me up'",
+      "pov": "end_user",
+      "actions": [
+        {"type": "click", "selector": "button.signup-cta"}
+      ],
+      "expected_visible": ["Email address"]
+    },
+    {
+      "id": "step-5",
+      "description": "Sarah enters her email and submits",
+      "pov": "end_user",
+      "actions": [
+        {"type": "type", "selector": "input[name='email']", "value": "sarah@example.com"},
+        {"type": "click", "selector": "button[type='submit']"}
+      ],
+      "expected_visible": ["Thanks, Sarah"]
+    },
+    {
+      "id": "step-6",
+      "description": "Confirmation screen with personalized message, side-by-side coordinator view shows new flag",
+      "pov": "end_user",
+      "actions": [
+        {"type": "wait_for", "selector": ".confirmation"},
+        {"type": "screenshot", "name": "03-confirmation.png"}
+      ],
+      "expected_visible": ["Thanks, Sarah", "First-time volunteer"]
+    },
+    {
+      "id": "step-7",
+      "description": "Cut to Monday morning — Maya logs into Salesforce",
+      "pov": "narrative",
+      "actions": [{"type": "narrate", "value": "Monday, 8am. Maya's first sip of coffee."}],
+      "expected_visible": []
+    },
+    {
+      "id": "step-8",
+      "description": "Maya opens her Coordinator dashboard",
+      "pov": "end_user",
+      "url_pattern": "/lightning/n/Volunteer_Coordinator",
+      "actions": [
+        {"type": "navigate"},
+        {"type": "screenshot", "name": "04-coordinator-dash.png"}
+      ],
+      "expected_visible": ["This Week's Signups"]
+    },
+    {
+      "id": "step-9",
+      "description": "Maya sees the flagged first-time volunteers with click-to-call",
+      "pov": "end_user",
+      "actions": [{"type": "wait_for", "selector": ".first-timer-flag"}],
+      "expected_visible": ["First-time volunteer", "Sarah"]
+    },
+    {
+      "id": "step-10",
+      "description": "Maya taps the call icon next to Sarah",
+      "pov": "end_user",
+      "actions": [
+        {"type": "click", "selector": "a.click-to-call[data-contact='sarah']"}
+      ],
+      "expected_visible": ["sarah@example.com"]
+    },
+    {
+      "id": "step-11",
+      "description": "Setup screen — quickly show how the flag is computed (admin context)",
+      "pov": "admin",
+      "actions": [
+        {"type": "navigate"}
+      ],
+      "expected_visible": ["First-time volunteer flag formula"]
+    },
+    {
+      "id": "step-12",
+      "description": "Tom opens the Programs Director dashboard",
+      "pov": "end_user",
+      "url_pattern": "/lightning/n/Programs_Director",
+      "actions": [
+        {"type": "navigate"},
+        {"type": "screenshot", "name": "05-director-dash.png"}
+      ],
+      "expected_visible": ["Shifts Filled This Week", "Retention"]
+    },
+    {
+      "id": "step-13",
+      "description": "Refresh — retention metric ticks up because of Sarah's first shift",
+      "pov": "end_user",
+      "actions": [
+        {"type": "click", "selector": "button.refresh"},
+        {"type": "screenshot", "name": "06-retention-tick.png"}
+      ],
+      "expected_visible": ["Retention", "+1"]
+    },
+    {
+      "id": "step-14",
+      "description": "Wrap — recap the three personas and their outcomes",
+      "pov": "narrative",
+      "actions": [{"type": "narrate", "value": "Sarah signed up in two clicks. Maya kept her morning. Tom has his board story."}],
+      "expected_visible": []
+    }
+  ]
+}

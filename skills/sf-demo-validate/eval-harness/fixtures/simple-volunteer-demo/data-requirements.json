@@ -1,0 +1,63 @@
+{
+  "version": "1.0",
+  "records": [
+    {
+      "id": "shift-saturday-food-drive",
+      "object": "VolunteerShift__c",
+      "required_fields": {
+        "Name": "Saturday Food Drive",
+        "Start__c": "2026-05-23T09:00:00Z",
+        "End__c": "2026-05-23T13:00:00Z",
+        "Capacity__c": 12,
+        "PublicVisible__c": true
+      },
+      "referenced_by_steps": ["step-1", "step-2", "step-3"]
+    },
+    {
+      "id": "shift-tuesday-pantry",
+      "object": "VolunteerShift__c",
+      "required_fields": {
+        "Name": "Tuesday Pantry Restock",
+        "Start__c": "2026-05-26T14:00:00Z",
+        "End__c": "2026-05-26T17:00:00Z",
+        "Capacity__c": 6,
+        "PublicVisible__c": true
+      },
+      "referenced_by_steps": ["step-2"]
+    },
+    {
+      "id": "shift-thursday-delivery",
+      "object": "VolunteerShift__c",
+      "required_fields": {
+        "Name": "Thursday Meal Delivery",
+        "Start__c": "2026-05-28T10:00:00Z",
+        "End__c": "2026-05-28T12:00:00Z",
+        "Capacity__c": 4,
+        "PublicVisible__c": true
+      },
+      "referenced_by_steps": ["step-2"]
+    },
+    {
+      "id": "coordinator-maya",
+      "object": "User",
+      "required_fields": {
+        "FirstName": "Maya",
+        "LastName": "Coordinator",
+        "Email": "maya@helpinghands.example.com",
+        "ProfileName": "Volunteer Coordinator"
+      },
+      "referenced_by_steps": ["step-7", "step-8", "step-9", "step-10"]
+    },
+    {
+      "id": "director-tom",
+      "object": "User",
+      "required_fields": {
+        "FirstName": "Tom",
+        "LastName": "Director",
+        "Email": "tom@helpinghands.example.com",
+        "ProfileName": "Programs Director"
+      },
+      "referenced_by_steps": ["step-12", "step-13"]
+    }
+  ]
+}

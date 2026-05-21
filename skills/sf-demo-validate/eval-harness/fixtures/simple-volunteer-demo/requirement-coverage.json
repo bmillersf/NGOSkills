@@ -1,0 +1,28 @@
+{
+  "version": "1.0",
+  "requirements_file": "fixtures/simple-volunteer-demo/requirements.json",
+  "coverage": [
+    {
+      "requirement_id": "REQ-001",
+      "covered_by_steps": ["step-1", "step-2", "step-3"],
+      "demonstration_quality": "primary"
+    },
+    {
+      "requirement_id": "REQ-002",
+      "covered_by_steps": ["step-4", "step-5", "step-6"],
+      "demonstration_quality": "primary"
+    },
+    {
+      "requirement_id": "REQ-003",
+      "covered_by_steps": ["step-8", "step-9", "step-10"],
+      "demonstration_quality": "primary"
+    },
+    {
+      "requirement_id": "REQ-004",
+      "covered_by_steps": ["step-12", "step-13"],
+      "demonstration_quality": "primary"
+    }
+  ],
+  "uncovered_requirements": [],
+  "rationale_for_uncovered": null
+}

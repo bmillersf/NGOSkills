@@ -1,0 +1,61 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "wow-moment-delivery.schema.json",
+  "title": "Phase 4 wow-moment delivery beats",
+  "description": "Phase 4 emits this. Each wow moment from Phase 3 must have all four narrative beats tied to specific click-path steps.",
+  "type": "object",
+  "required": ["version", "value_moments_file", "deliveries"],
+  "additionalProperties": false,
+  "properties": {
+    "version": {"type": "string", "enum": ["1.0"]},
+    "value_moments_file": {"type": "string"},
+    "deliveries": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "value_moment_requirement_id", "delivered_in_steps",
+          "pain_context_beat", "watch_this_cue", "moment_step", "narration_beat"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "value_moment_requirement_id": {"type": "string", "pattern": "^REQ-[0-9]{3,}$"},
+          "delivered_in_steps": {
+            "type": "array",
+            "minItems": 1,
+            "items": {"type": "string", "pattern": "^step-[0-9]+$"}
+          },
+          "pain_context_beat": {
+            "type": "object",
+            "required": ["step", "narration"],
+            "additionalProperties": false,
+            "properties": {
+              "step": {"type": "string", "pattern": "^step-[0-9]+$"},
+              "narration": {"type": "string", "minLength": 10}
+            }
+          },
+          "watch_this_cue": {
+            "type": "object",
+            "required": ["step", "narration"],
+            "additionalProperties": false,
+            "properties": {
+              "step": {"type": "string", "pattern": "^step-[0-9]+$"},
+              "narration": {"type": "string", "minLength": 5}
+            }
+          },
+          "moment_step": {"type": "string", "pattern": "^step-[0-9]+$"},
+          "narration_beat": {
+            "type": "object",
+            "required": ["step", "narration"],
+            "additionalProperties": false,
+            "properties": {
+              "step": {"type": "string", "pattern": "^step-[0-9]+$"},
+              "narration": {"type": "string", "minLength": 10}
+            }
+          }
+        }
+      }
+    }
+  }
+}

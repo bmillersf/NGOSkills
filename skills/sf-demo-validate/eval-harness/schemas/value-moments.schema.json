@@ -1,0 +1,64 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "value-moments.schema.json",
+  "title": "Phase 3 → 4 depth and user-value contract",
+  "description": "Phase 3 emits this. Phase 4 grades against it. Forces specification of min steps + persona pain + wow moment per requirement.",
+  "type": "object",
+  "required": ["version", "duration_minutes", "duration_budget", "value_moments"],
+  "additionalProperties": false,
+  "properties": {
+    "version": {"type": "string", "enum": ["1.0"]},
+    "duration_minutes": {"type": "integer", "minimum": 5, "maximum": 120},
+    "duration_budget": {
+      "type": "object",
+      "required": ["end_user_pov_min_pct", "admin_setup_max_pct", "narrative_transitions_pct"],
+      "additionalProperties": false,
+      "properties": {
+        "end_user_pov_min_pct": {"type": "integer", "minimum": 0, "maximum": 100},
+        "admin_setup_max_pct": {"type": "integer", "minimum": 0, "maximum": 100},
+        "narrative_transitions_pct": {"type": "integer", "minimum": 0, "maximum": 100}
+      }
+    },
+    "value_moments": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "requirement_id", "min_steps", "persona", "persona_pain_quote",
+          "persona_outcome", "wow_moment", "anti_demo",
+          "end_user_pov_steps", "admin_pov_steps"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "requirement_id": {"type": "string", "pattern": "^REQ-[0-9]{3,}$"},
+          "min_steps": {"type": "integer", "minimum": 4},
+          "persona": {"type": "string", "minLength": 3},
+          "persona_pain_quote": {"type": "string", "minLength": 10},
+          "persona_outcome": {"type": "string", "minLength": 10},
+          "synthesized": {"type": "boolean"},
+          "wow_moment": {
+            "type": "object",
+            "required": [
+              "description", "why_audience_leans_forward",
+              "presenter_cue", "estimated_duration_seconds"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "description": {"type": "string", "minLength": 10},
+              "why_audience_leans_forward": {"type": "string", "minLength": 10},
+              "presenter_cue": {"type": "string", "minLength": 1},
+              "estimated_duration_seconds": {"type": "integer", "minimum": 10}
+            }
+          },
+          "anti_demo": {
+            "type": "array",
+            "items": {"type": "string", "minLength": 5}
+          },
+          "end_user_pov_steps": {"type": "integer", "minimum": 0},
+          "admin_pov_steps": {"type": "integer", "minimum": 0}
+        }
+      }
+    }
+  }
+}
