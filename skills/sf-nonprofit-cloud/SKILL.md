@@ -32,11 +32,63 @@ upstream_refs:
 upstream_release_notes:
   - release: "Spring '26"
     url: https://help.salesforce.com/s/articleView?id=release-notes.rn_industries_nonprofit.htm
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "100-pt rubric inline (6 categories: Data Model Alignment 25, Module Fit 20, Platform Selection 15, Migration Safety 15, Integration 15, Best Practices 10), mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  npc_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 18
+      description: "Right platform objects + no cross-contamination. Maps to Data Model Alignment (25). Heaviest correctness — mixing NPC and NPSP object models is the single most-damaging nonprofit Salesforce mistake."
+      automatic_hard_fail_rules:
+        - "Any solution mixing npe01__/npo02__/npsp__ (NPSP namespace) with NPC standard objects (Program, ProgramEnrollment, GiftCommitment) on the same persona/flow"
+        - "Any custom object duplicating an NPC standard (custom Donor__c when Person Account exists)"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 12
+      description: "Migration safety. Maps to Migration Safety (15). NPSP→NPC migration must preserve historical data without legacy anti-patterns."
+      automatic_hard_fail_rules:
+        - "Any NPSP→NPC migration plan without explicit field mapping for npe01__OppPayment__c → GiftTransaction"
+        - "Any migration that drops historical data without explicit retention contract"
+    - name: Fit
+      max: 25
+      hard_fail_below: 10
+      description: "Platform Selection + Module Fit. Maps to Platform Selection (15) + Module Fit (20). NPC vs NPSP justified, right modules picked."
+      automatic_hard_fail_rules:
+        - "Any platform selection without explicit NPC-vs-NPSP justification documented"
+        - "Any greenfield nonprofit on NPSP in 2026 (NPC is the modern default)"
+    - name: Performance
+      max: 25
+      hard_fail_below: 10
+      description: "Integration + Best Practices. Maps to Integration (15) + Best Practices (10). Data Cloud / Experience Cloud / AppExchange wired correctly."
+      automatic_hard_fail_rules:
+        - "Any custom AppExchange dependency without Power of Us evaluated first"
+  test_rubric:
+    unit:
+      required: true
+      criteria: "Object model + module selection documented + traceable to requirements."
+    integration:
+      required: true
+      criteria: "Test deploy completes without metadata errors. Sample records create successfully."
+    smoke:
+      required: true
+      criteria: "End-to-end persona walkthrough (donor, grantee, program participant) works in the deployed solution."
 ---
 
 # sf-nonprofit-cloud: Nonprofit Platform Orchestrator
 
 Routes nonprofit Salesforce work to the correct product track — **Nonprofit Cloud (NPC)** or **Nonprofit Success Pack (NPSP)** — and provides cross-cutting architecture, migration planning, and platform comparison.
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). Three subagents grade against the 100-pt rubric in fresh context. Correctness floor at 18 — mixing NPC and NPSP object models in the same flow is the single most-damaging nonprofit Salesforce mistake. Disable with `eval_harness.enabled: false`.
 
 ## First Question
 

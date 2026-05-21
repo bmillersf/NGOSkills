@@ -33,6 +33,54 @@ upstream_refs:
 upstream_release_notes:
   - release: "Spring '26"
     url: https://help.salesforce.com/s/articleView?id=release-notes.rn_industries_nonprofit.htm
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "120-pt rubric inline (6 categories: Gift Processing 25, Donor Model 20, Campaign & Attribution 20, Recurring Giving 20, Gift Designation & Reporting 20, Best Practices 15), mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  fundraising_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 18
+      description: "Gift processing correctness. Maps to Gift Processing (25). Heaviest correctness — gift validation/lifecycle errors lose donor money or trust."
+      automatic_hard_fail_rules:
+        - "Any gift processing without explicit failed-payment retry path"
+        - "Any gift status transition that bypasses validation rules"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 14
+      description: "Recurring giving + retry. Maps to Recurring Giving (20). Schedules + retry + retention robust against payment failures."
+      automatic_hard_fail_rules:
+        - "Any recurring gift schedule without dunning / retry policy"
+        - "Any recurring schedule that doesn't pause on N consecutive failures (donor harm + chargeback risk)"
+    - name: Fit
+      max: 25
+      hard_fail_below: 10
+      description: "Donor model + campaign attribution. Maps to Donor Model (20) + Campaign & Attribution (20)."
+      automatic_hard_fail_rules:
+        - "Any donor model without explicit Person Account vs Household decision"
+        - "Any campaign hierarchy without Gift Soft Credit attribution rules"
+    - name: Performance
+      max: 25
+      hard_fail_below: 10
+      description: "Designation + reporting + best practices. Maps to Gift Designation (20) + Best Practices (15)."
+      automatic_hard_fail_rules:
+        - "Any acknowledgment process that fails to comply with donor-receipting law (501c3 / IRS)"
+  test_rubric:
+    unit:
+      required: true
+      criteria: "Gift entry + validation + lifecycle transitions unit-tested."
+    integration:
+      required: true
+      criteria: "End-to-end donation: pledge → payment → receipt → acknowledgment → soft credit rollup completes correctly."
+    smoke:
+      required: true
+      criteria: "Recurring giving handles failure + retry without donor data loss. Annual receipts generate correctly."
 ---
 
 # sf-nonprofit-fundraising: Nonprofit Cloud Fundraising Architect
@@ -40,6 +88,10 @@ upstream_release_notes:
 Expert Salesforce architect specializing in **Nonprofit Cloud (NPC)** fundraising: donor lifecycle management, gift processing, campaign attribution, recurring giving, Gift Soft Credits, and fundraising analytics.
 
 > **Platform note**: This skill covers the NPC Gift Transaction/Person Account model. For NPSP Opportunity/Contact-based donation management, see **sf-nonprofit-npsp**.
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). Three subagents grade against the 120-pt rubric in fresh context. Correctness floor at 18 — gift validation/lifecycle errors lose donor money or trust. Disable with `eval_harness.enabled: false`.
 
 ## Core Responsibilities
 
