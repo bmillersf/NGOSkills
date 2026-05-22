@@ -39,6 +39,68 @@ compatibility: "Requires Service Cloud user license; Entitlement Management, Ser
 metadata:
   version: "1.0.0"
   author: "NGOSkills"
+  scoring: "120 points across 10 categories — Industry pre-check 15 / Channels+record-types 15 / Intake automation 15 / SLA Entitlements+Milestones 20 / Asset+Service Contract 10 / Escalation 10 / Case Teams 10 / Incident Management 10 / Merge+dedup 5 / Output+delegation 10 (95 is passing)"
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "120-pt rubric (10 categories) extracted from existing 'Scoring Rubric' section in this SKILL.md (line 233). Mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  service_case_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 16
+      description: "Industry pre-check + Case data model + intake. Maps to Industry pre-check (15) + Channels+record-types (15) + Intake automation (15). Phase 0 honored, record types justified, all intake channels (Email-to-Case mode + Web-to-Case + Assignment + Auto-Response) wired."
+      automatic_hard_fail_rules:
+        - "Phase 0 industry pre-check skipped — automatic fail per the rubric"
+        - "Industry-owned Case record type silently overridden — automatic fail"
+        - "Custom Parent/Child case hierarchy built when Incident Management is licensed (ad-hoc hierarchy doesn't survive RCA / broadcast / status-page)"
+        - "Email-to-Case On-Premise chosen without attachment-size or firewall-policy justification (legacy mode; default is On-Demand)"
+        - "Record-type sprawl — new Case record type per SKU/region instead of picklists + Dynamic Forms (reserve record types for genuinely distinct processes)"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 16
+      description: "SLA design integrity. Maps to SLA Entitlements+Milestones (20) + Asset+Service Contract (10). Heaviest robustness floor — SLA breaches are contractual + auditable; Flow-based timers drift on Business Hours changes."
+      automatic_hard_fail_rules:
+        - "SLA timer rolled in Flow when Entitlement Milestone covers it (Flow timer skips Business Hours, misses Milestone Actions, can't be audited against Entitlement compliance reports)"
+        - "Milestone completion criteria missing IsClosed=TRUE (or correct completion field) — Milestones start but never complete"
+        - "Business Hours mismatch between Entitlement and its Milestones (timer drift)"
+        - "Asset → Entitlement → Service Contract chain incomplete (or N/A not justified) when contracts are in scope"
+        - "Auto-close via Apex after N days of no customer reply (hard auto-close hides true resolution metrics — staged Pending Customer Flow + reminders is the pattern)"
+    - name: Fit
+      max: 25
+      hard_fail_below: 14
+      description: "Escalation + Case Teams + Incident Management + Output. Maps to Escalation (10) + Case Teams (10) + Incident Management (10) + Output+delegation (10). Phase skills receive context; Case ↔ Incident ↔ Problem model documented; swarming decision made."
+      automatic_hard_fail_rules:
+        - "Escalation rules and Milestones overlap without precedence — both fire on the same SLA breach"
+        - "Assignment Rules + Omni-Channel both run on Case without precedence contract (double-assignment + owner-churn)"
+        - "Case Teams configured without role definitions / predefined teams (slot-shaped collaboration)"
+        - "Incident Management licensed but case-to-incident escalation pattern not documented"
+        - "ITSM sync contract missing when Incident Management bridges to external ServiceNow / Jira"
+        - "Hand-off to sf-service-omnichannel / sf-service-knowledge / sf-apex / sf-flow without context"
+    - name: Performance
+      max: 25
+      hard_fail_below: 12
+      description: "Merge / dedup / close-out hygiene. Maps to Merge+dedup+close-out (5). Dedup rules + close-out quick action defined; Closed Reason / Resolution Summary required to maintain downstream reporting (FCR / RCA / product-area trending)."
+      automatic_hard_fail_rules:
+        - "Close Case quick action without required Closed Reason / Resolution Summary fields (destroys FCR + RCA + product-area trending)"
+        - "Dedup rules absent on Email-to-Case (duplicate cases per inbound thread)"
+        - "Case Merge disabled in an org with frequent duplicate inbound (manual merge burden + reporting drift)"
+        - "Reports on Case without filter scoped to caseload (full-org scan when each agent owns a queue subset)"
+  test_rubric:
+    unit:
+      required: true
+      criteria: "Phase 0 industry pre-check executed. Case record types + intake channel + SLA design metadata validates. Entitlement→Milestone→CaseMilestone chain fields populated. Escalation rule entries ordered without overlap with Milestone Actions."
+    integration:
+      required: true
+      criteria: "Deploys to a Service Cloud sandbox. Intake routes a test case through each configured channel (Email-to-Case / Web-to-Case / API). SLA Entitlement+Milestone fires correctly with Business Hours math. Case ↔ Incident link works (or marked N/A). Close Case quick action gates on required fields."
+    smoke:
+      required: true
+      criteria: "Agent walks the case lifecycle: case received → SLA timer running → comments + emails captured → escalation if breached → resolution recorded → milestone completes → closure with Closed Reason/Summary. FCR + AHT + SLA-attainment metrics computable from the resulting records."
 release_pinned: "Spring '26"
 docs_last_verified: 2026-05-01
 upstream_refs:
@@ -64,6 +126,10 @@ upstream_release_notes:
 ---
 
 # sf-service-case: Case, Entitlements & Incidents
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). 120-pt rubric across 10 Case categories, extracted from this skill's existing Scoring Rubric section (line 233) and mapped onto the 4-dim shape. Robustness floor at 16 — SLA breaches are contractual + auditable; Flow-based timers drift on Business Hours changes. Hard-fail rules block Phase 0 skip, custom Parent/Child when Incident Management is licensed, Email-to-Case On-Premise without justification, Flow-rolled SLA timers when Entitlement Milestones cover the case, Assignment Rules + Omni-Channel both running without precedence, and Close Case action without required Closed Reason / Resolution Summary. Disable with `eval_harness.enabled: false`.
 
 Owns the Case data model, Case automation, and the SLA family (Entitlements, Milestones, Service Contracts), plus native Incident Management when present. Comes after the [sf-service-cloud](../sf-service-cloud/SKILL.md) orchestrator has localized the work to this phase.
 

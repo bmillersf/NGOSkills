@@ -37,6 +37,59 @@ compatibility: "Requires Service Cloud user licenses with Omni-Channel enabled; 
 metadata:
   version: "1.0.0"
   author: "NGOSkills"
+  scoring: "120 points across 10 categories — Industry pre-check 15 / Routable objects+volume 15 / Service Channels+queues 15 / Routing Configurations 20 / Presence topology 15 / Skills-Based 10 / Attribute/External/Omni Flow 10 / Supervisor 10 / Verification 5 / Delegation 5 (95 is passing)"
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "120-pt rubric (10 categories) extracted from existing 'Scoring Rubric' section in this SKILL.md (line 236). Mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  service_omnichannel_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 16
+      description: "Industry pre-check + routable objects + Service Channel design. Maps to Industry pre-check (15) + Routable objects+volume (15) + Service Channels+queues (15). The Field Service deferral is the most common Phase 0 miss — Omni-Channel doesn't route Work Orders / Service Appointments."
+      automatic_hard_fail_rules:
+        - "Phase 0 industry pre-check skipped — automatic fail per the rubric"
+        - "Routing Field Service WorkOrder / ServiceAppointment through Omni-Channel instead of deferring to sf-field-service — automatic fail per the rubric"
+        - "Industry-owned routable record routed through generic Omni-Channel without industry deferral"
+        - "Service Channel object scope wrong (e.g., one channel covering multiple unrelated objects — capacity math breaks)"
+        - "Queue naming/membership not captured — public-group → queue → routing chain ambiguous"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 14
+      description: "Routing Configuration + Presence + capacity integrity. Maps to Routing Configurations (20) + Presence topology (15). Capacity model is what protects agents from queue overflow + protects customers from neglect; Routing Model + Work Item Size + Push Timeout are the levers."
+      automatic_hard_fail_rules:
+        - "Routing Model not declared (Most Available / Least Active / External) — default behavior unspecified"
+        - "Work Item Size not sized to total Presence capacity — over- or under-loads agent the moment work hits the queue"
+        - "Push Timeout left at default with no rationale — accepted-but-stuck items never recycle"
+        - "Push-eligible Presence statuses missing 'Allow Omni-Channel to push work' on the Presence Configuration (work items drop silently)"
+        - "Presence Decline Reasons absent (no telemetry on why agents pass on work)"
+        - "Capacity total per cohort not computed — staffing model undocumented"
+    - name: Fit
+      max: 25
+      hard_fail_below: 14
+      description: "Skills-Based / Attribute / External / Omni Flow choice + Supervisor. Maps to Skills-Based (10) + Attribute/External/Omni Flow (10) + Supervisor (10). Right routing mechanism for the use case; Supervisor tabs + utility bar configured."
+      automatic_hard_fail_rules:
+        - "Skills-Based Routing chosen when an Attribute or Omni Flow rule is the documented pattern (or vice versa)"
+        - "External Routing recommended without naming the connected telephony / routing platform + the wiring path"
+        - "Skill-attachment mechanism chosen but no fallback policy when no skilled agent is available (work pools indefinitely)"
+        - "Supervisor tabs not configured for the documented cohorts (managers can't see queue state)"
+        - "Utility bar oversized — every utility bar item recommended without documented usage criteria"
+    - name: Performance
+      max: 25
+      hard_fail_below: 12
+      description: "Verification + delegation hygiene. Maps to Verification (5) + Delegation+output (5). Smoke + load + week-one monitoring defined; correct hand-offs to sf-service-case / sf-service-knowledge / sf-flow / sf-apex; structured output."
+      automatic_hard_fail_rules:
+        - "Verification plan missing smoke test (single work item routes correctly)"
+        - "Verification plan missing load test (Routing Configuration holds at peak volume from Phase 1 capacity model)"
+        - "Verification plan missing week-one monitoring — capacity drift / push-timeout misses / decline reasons should be observed in production"
+        - "Hand-off to sf-service-case / sf-service-knowledge / sf-apex / sf-flow without context"
+        - "Output not in the documented structured format"
 release_pinned: "Spring '26"
 docs_last_verified: 2026-05-01
 upstream_refs:
@@ -66,6 +119,10 @@ upstream_release_notes:
 Owns the Omni-Channel routing stack: how work items (Cases, Leads, custom objects, Chats, Voice Calls, Messaging Sessions) get from a queue to an available agent based on capacity, skills, or attributes. Owns Presence, capacity math, Supervisor tooling, and the Service Console utility bar for the Omni widget.
 
 Comes after [sf-service-cloud](../sf-service-cloud/SKILL.md) orchestration or in parallel with [sf-service-case](../sf-service-case/SKILL.md) once Case creation is wired.
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). 120-pt rubric across 10 routing categories, extracted from this skill's existing Scoring Rubric section (line 236) and mapped onto the 4-dim shape. Correctness floor at 16 — Field Service deferral is the most common Phase 0 miss; Omni-Channel doesn't route WorkOrder / ServiceAppointment. Hard-fail rules block Phase 0 skip, FS routing through Omni-Channel, missing Routing Model declaration, push-eligible Presence statuses missing 'Allow Omni-Channel to push' flag, capacity total uncomputed, and Skills-Based Routing without fallback when no skilled agent available. Disable with `eval_harness.enabled: false`.
 
 ---
 
