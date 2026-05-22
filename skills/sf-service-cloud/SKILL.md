@@ -42,6 +42,69 @@ compatibility: "Requires Service Cloud user licenses; Voice, Messaging, Einstein
 metadata:
   version: "1.0.0"
   author: "NGOSkills"
+  scoring: "150 points across 11 categories — orchestrator (Industry pre-check 15 / Edition+license 15 / Phase localization 20 / Routing topology 15 / Case+SLA 20 / Knowledge+self-service 15 / Console 10 / Voice/CTI 10 / Einstein+Agentforce 10 / Metrics+governance 10 / Delegation+output 10)"
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "150-pt rubric (11 categories) extracted from existing 'Scoring Rubric' section in this SKILL.md (line 248). Mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  service_cloud_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 16
+      description: "Industry pre-check + Phase localization. Maps to Industry pre-check (15) + Phase localization (20). Like sf-sales-cloud, this is an orchestrator — silent override of an industry data model is the dominant defect class."
+      automatic_hard_fail_rules:
+        - "Industry pre-check skipped (FSC/Health/Education/PSS/Field Service/Manufacturing/Consumer Goods/Comms/Media/Energy/Nonprofit) — automatic fail per the rubric"
+        - "Industry signal positive but no deferral emitted — silent override of an industry-owned data model"
+        - "Single-phase work (Case-only / Omni-only / Knowledge-only / Voice-only) authored here instead of routed to the focused phase skill"
+        - "Field Service signal (FieldServiceStandard) detected but work-order-adjacent cases not routed to sf-field-service"
+        - "Channel → queue → skill → agent routing topology missing or partial when Omni-Channel is in scope"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 14
+      description: "Case data model + SLA + Voice integrity. Maps to Case+SLA (20) + Voice/CTI (10). SLA strategy is regulated by entitlement vs contract vs flow choice; Voice introduces PII recording obligations."
+      automatic_hard_fail_rules:
+        - "Custom Flow-based SLA timer recommended when Entitlements + Milestones cover the requirement (duplicates platform capability + drifts on Business Hours change)"
+        - "Voice / CTI recommended without naming recording retention + PII redaction + data residency model (PCI/HIPAA/GDPR exposure)"
+        - "Assignment rules + Omni-Channel both wired without explicit precedence (double-assignment bug)"
+        - "Per-product Case record types for every SKU (record-type sprawl — page-layout unmaintainability)"
+        - "Einstein Case Classification recommended without confirming ≥1,000 labeled cases per field (model degrades; agents distrust)"
+        - "Service Cloud Voice + Messaging recommended without confirming Voice edition / Messaging channel licenses are present"
+    - name: Fit
+      max: 25
+      hard_fail_below: 14
+      description: "Routing topology + Knowledge strategy + Console productivity. Maps to Routing topology (15) + Knowledge+self-service (15) + Console (10) + Delegation+output (10). Phase skills receive needed context; Knowledge uses Data Categories + Publication Workflow; utility bar audited; structured handoff emitted."
+      automatic_hard_fail_rules:
+        - "Knowledge org without Article Types + Data Categories + Publication Workflow + Multi-Language strategy (devolves into stale drafts + duplicate articles)"
+        - "Console utility bar 'junk drawer' — every utility bar item recommended without 80%-of-agents-in-30-days usage criterion"
+        - "Hand-off to phase skill (sf-service-case / sf-service-omnichannel / sf-service-knowledge / sf-field-service) without context (deferred work loses the orchestrator's analysis)"
+        - "Cross-cloud boundary (Sales / Marketing / Data Cloud / Industry / Voice partner) drawn implicitly — adjacent skill not explicitly called out"
+        - "Output not in the documented orchestrator output format (industry pre-check confirmation + per-phase delegation status + scoring summary)"
+    - name: Performance
+      max: 25
+      hard_fail_below: 12
+      description: "Edition/license/channel mix + metrics + Einstein readiness. Maps to Edition/license/channel (15) + Metrics+governance (10) + Einstein+Agentforce (10). All 14 context items captured; metrics + reporting surface chosen + ownership named; Einstein activated only with training-data maturity."
+      automatic_hard_fail_rules:
+        - "Edition / license / channel mix incomplete (one or more of the 14 context items neither captured nor explicitly N/A'd)"
+        - "Reply Recommendations recommended without labeled Chat transcripts (no signal)"
+        - "Work Summaries recommended without completed-case transcripts (no signal)"
+        - "Metrics surface (CSAT / FCR / AHT / SLA attainment / NPS) recommended without naming reporting tool + ownership"
+        - "Score below 120 / 150 returned to user without revise pass"
+  test_rubric:
+    unit:
+      required: true
+      criteria: "Phase 0 industry pre-check executed: ApexClass NamespacePrefix scan + license + edition check. All 14 context items captured or N/A'd. Channel-queue-skill-agent topology documented. Stage → Forecast Category-equivalent (Case status → SLA outcome) mapping explicit."
+    integration:
+      required: true
+      criteria: "Recommended changes deploy to a Service Cloud sandbox without industry-package upgrade conflicts. Case lifecycle runs end-to-end (channel intake → assignment → SLA timer → resolution → closure). Omni-Channel routes a sample work item correctly. Knowledge article surfaces in console for the right Case type."
+    smoke:
+      required: true
+      criteria: "Agent walks the case-to-resolution path on the Service Console: case received via configured channel → routed via Omni-Channel → SLA timer fires → Knowledge article suggested → resolution recorded → closure satisfies milestone. Voice / Messaging / Einstein features respect license boundaries."
 release_pinned: "Spring '26"
 docs_last_verified: 2026-05-01
 upstream_refs:
@@ -75,6 +138,10 @@ upstream_release_notes:
 Use this skill when the user needs **product-level Service Cloud guidance** rather than a single isolated feature: standing up a contact center, redesigning a support operation, wiring the Case object together with Omni-Channel, Knowledge, Entitlements, Service Contracts, and Einstein for Service, or deciding which phase skill should own a given sub-task.
 
 This skill is the **parent router** for the Service Cloud family. It keeps cross-cutting context (edition, licenses, channel mix, SLA model, agent volume, console layout) that every phase skill depends on, and hands off to the specialist skills listed below once the phase is localized.
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). 150-pt rubric across 11 orchestrator categories, extracted from this skill's existing Scoring Rubric section (line 248) and mapped onto the 4-dim shape. Correctness floor at 16 — like sf-sales-cloud, this is a parent router; silent override of an industry data model is the dominant defect class. Hard-fail rules block missing industry pre-check, custom Flow-based SLA when Entitlements+Milestones cover the requirement, Voice/CTI without recording-retention/PII model, Einstein activated without training-data maturity, and assignment-rules + Omni-Channel both wired without precedence. Disable with `eval_harness.enabled: false`.
 
 ---
 
