@@ -19,6 +19,59 @@ compatibility: "Requires Sales Engagement PSL (formerly HVS); industry-first rou
 metadata:
   version: "1.0.0"
   author: "NGOSkills"
+  scoring: "120 points across 11 categories — Phase 0 20 / Persona+target 10 / Cadence step design 15 / Auto-add 10 / Branching 10 / Dialer 10 / EAC 10 / Email Capture 5 / Conversion handling 5 / Compliance 10 / Anti-patterns 15"
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "120-pt rubric (11 categories) extracted from existing 'Scoring rubric (120 pts)' section in this SKILL.md (line 176). Mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  sales_engagement_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 16
+      description: "Industry pre-check + Persona+target type + Cadence step design. Maps to Phase 0 (20) + Persona+target (10) + Cadence step design (15). The most common defect is wiring a cadence to the wrong target type (Lead vs Contact) — silent enrollment failures."
+      automatic_hard_fail_rules:
+        - "Phase 0 industry pre-check skipped"
+        - "Industry-owned cadence pattern silently duplicated by a generic Sales Engagement cadence (e.g., FSC client outreach, NPC stewardship plan)"
+        - "Cadence wired to a target type without confirming PSL coverage (Sales Engagement PSL absent on rep users)"
+        - "Cadence covering both Lead and Contact in one definition (target-type ambiguity — pick one)"
+        - "Cadence step count outside the 6-10 range for outbound (under-engineered or step-explosion)"
+        - "Cadence with dead branches (step references next-step that doesn't exist) or no explicit exit criteria"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 14
+      description: "Compliance + Auto-add + Branching. Maps to Compliance (10) + Auto-add (10) + Branching (10). Heavy floor — DNC/TCPA/GDPR violations are regulated; auto-add misfire enrolls non-targets; branching without tracking is just a static drip."
+      automatic_hard_fail_rules:
+        - "Cadence touching phone outreach without DNC / TCPA scrub on auto-add entry criteria"
+        - "Cadence touching email outreach without GDPR / CASL / CAN-SPAM opt-out check on entry"
+        - "Auto-add rule wired without choosing criteria-based vs flow-driven vs manual per cadence (silent enrollment of every record matching a broad criterion)"
+        - "Branching on email events but tracking pixels disabled at org level (silent always-fall-through)"
+        - "Call disposition list >8 entries (rep cognitive overload — picks default → bad telemetry)"
+        - "Auto-log calls disabled despite Dialer use — manual logging discipline doesn't scale"
+    - name: Fit
+      max: 25
+      hard_fail_below: 14
+      description: "Dialer + EAC + Email Capture + Conversion handling. Maps to Dialer (10) + EAC (10) + Email Capture (5) + Conversion (5). EAC sharing model + Email Capture reconciliation are how activity duplicates get prevented; cadence behavior on Lead→Contact conversion is an explicit choice."
+      automatic_hard_fail_rules:
+        - "EAC + Sales Email Capture both enabled without reconciliation strategy (every email logged twice)"
+        - "EAC sharing model not aligned with industry / regulated org needs (e.g., FSC reps' calendars exposed to colleagues)"
+        - "Mailbox sync not confirmed per user (silent partial-org coverage)"
+        - "Lead → Contact conversion behavior on running cadence not explicitly decided (move / exit / pause — silent default-pick)"
+        - "Sales Dialer numbers not provisioned for the active user pool (caller ID empty / number recycled)"
+    - name: Performance
+      max: 25
+      hard_fail_below: 12
+      description: "Anti-patterns + revise pass. Maps to Anti-patterns (15). No cadence explosion, no mixed target type, no industry override; revise pass on score below 96."
+      automatic_hard_fail_rules:
+        - "Cadence explosion (>20 active cadences without segmentation rationale — rep dashboard becomes unusable)"
+        - "Mixed target type recommended (Lead + Contact in single cadence)"
+        - "Industry override silently shipped (industry's own touch plan duplicated by Sales Engagement)"
+        - "Score below 96 / 120 returned to user without revise pass"
 release_pinned: "Spring '26"
 docs_last_verified: 2026-05-01
 upstream_refs:
@@ -40,6 +93,10 @@ upstream_release_notes:
 ---
 
 # sf-sales-engagement: Cadences, Dialer, Activity Capture
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). 120-pt rubric across 11 Sales Engagement categories, extracted from this skill's existing Scoring rubric section (line 176) and mapped onto the 4-dim shape. Robustness floor at 14 — DNC/TCPA/GDPR violations are regulated; auto-add misfire enrolls non-targets; branching without tracking is static drip. Hard-fail rules block Phase 0 skip, mixed target type (Lead+Contact in one cadence), step count outside 6-10, dead branches, missing DNC/GDPR scrub, EAC + Email Capture without reconciliation, and unconfirmed Sales Engagement PSL on rep users. Disable with `eval_harness.enabled: false`.
 
 Owns Sales Engagement (the product formerly known as High Velocity Sales) end-to-end: Cadences, Cadence Steps, Cadence Auto-Add Rules, Work Queues, Prioritized Work Queue, Sales Dialer, Sales Calls, Einstein Activity Capture (EAC), Sales Email Capture, Lightning email templates feeding cadences, email tracking, and call dispositions with auto-logging. Opportunity mechanics, forecasts, and multi-capability design route elsewhere.
 
