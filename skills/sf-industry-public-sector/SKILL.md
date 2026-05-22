@@ -40,6 +40,62 @@ compatibility: "Requires Public Sector Solutions license (commonly includes Omni
 metadata:
   version: "1.0.0"
   author: "NGOSkills"
+  scoring: "150 points across 7 categories — Workload fit 25 / Data model 25 / Intake UX 20 / Process automation 20 / Accessibility+Compliance 25 / Security 20 / Testing 15. Failing <105; rework <120; per-category ≥60% of max."
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "150-pt rubric (7 categories) extracted from existing 'Scoring rubric' section in this SKILL.md (line 233). Mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  pss_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 16
+      description: "Workload fit + Data model. Maps to Workload fit (25) + Data model (25). Right PSS object for the regulatory program; Person Account constituent model; RecordType strategy; sharing model; multi-jurisdiction support."
+      automatic_hard_fail_rules:
+        - "Standard Case used instead of PSS CaseType (CaseType inherits Case but adds regulatory metadata, benefit disbursement lineage, compliance audit trail)"
+        - "Individual constituent modeled as Contact + Business Account instead of Person Account (PSS benefit eligibility, Constituent-360 FlexCards, OOTB automation all assume Person Account)"
+        - "Custom shadow object built when Benefit / BenefitAssignment / BenefitDisbursement / BusinessLicense / Permit / Inspection / RegulatoryCode / RegulatoryCodeViolation / IndividualApplication / Complaint exists"
+        - "Sharing model not documented for multi-jurisdiction org (constituent visible across jurisdictions when state regs prohibit)"
+        - "RecordType strategy missing — single record type for distinct regulatory programs"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 18
+      description: "Accessibility + Compliance + Security. Maps to Accessibility+Compliance (25) + Security (20). Heaviest robustness floor — Section 508 / WCAG 2.1 AA non-compliance is legal liability (DOJ ADA Title II); FedRAMP boundary violations are program-ending."
+      automatic_hard_fail_rules:
+        - "Public-facing intake without Section 508 / WCAG 2.1 AA verification (legal liability — 'fix post-launch' is not acceptable)"
+        - "Assistive-tech testing skipped (screen reader / keyboard-only / voice-control)"
+        - "FedRAMP boundary not respected — constituent PII flowing to a non-FedRAMP integration target without documented + approved Interconnection Security Agreement (ISA)"
+        - "Data residency requirement violated (constituent data in a region the regulatory program prohibits)"
+        - "Shield Platform Encryption not configured for PII fields when org is FedRAMP / regulated"
+        - "Shield Event Monitoring not configured (no audit signal on PII / benefit access)"
+        - "Guest profile granting more than the documented least-privilege scope on a public intake site"
+        - "Named Credentials not used for outbound integrations (inline auth / hardcoded keys)"
+    - name: Fit
+      max: 25
+      hard_fail_below: 14
+      description: "Intake UX + Process automation. Maps to Intake UX (20) + Process automation (20). OmniScript over custom LWC intake; Flow Orchestration for multi-stage workflows; no Apex for declarative-eligible work."
+      automatic_hard_fail_rules:
+        - "Custom LWC intake built when OmniScript owns the surface (re-implements accessibility / save-and-resume / field audit / IP wiring from scratch)"
+        - "Save-and-resume not configured on long intake forms (constituent abandonment on session loss)"
+        - "Server-side validation absent on intake (client-only validation easily bypassed)"
+        - "Apex written for declarative-eligible work (Flow Orchestration / Record-Triggered Flow expresses the same logic)"
+        - "Multi-stage workflow built as single Flow when Flow Orchestration is the documented pattern"
+        - "Hardcoded benefit amounts in Flow or Apex instead of BenefitAssignment rules (amounts change every fiscal year by statute — code push every July 1)"
+    - name: Performance
+      max: 25
+      hard_fail_below: 12
+      description: "Testing. Maps to Testing (15). ≥85% Apex coverage, E2E intake test, orchestration path coverage, pen test, accessibility audit."
+      automatic_hard_fail_rules:
+        - "Apex coverage <85% on PSS write paths"
+        - "E2E intake test (constituent → Application → Benefit → Disbursement) absent"
+        - "Orchestration path coverage incomplete (some Stages / Decisions never exercised)"
+        - "Pen test not commissioned for public-facing intake before go-live"
+        - "Accessibility audit (axe / Lighthouse / manual) not run before launch"
 release_pinned: "Spring '26"
 docs_last_verified: 2026-05-01
 upstream_refs:
@@ -61,6 +117,10 @@ upstream_release_notes:
 ---
 
 # sf-industry-public-sector: Public Sector Solutions Orchestrator
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). 150-pt rubric across 7 PSS categories, extracted from this skill's existing Scoring rubric section (line 233) and mapped onto the 4-dim shape. Robustness floor at 18 — Section 508 / WCAG 2.1 AA non-compliance is legal liability (DOJ ADA Title II); FedRAMP boundary violations are program-ending. Hard-fail rules block standard Case instead of CaseType, Contact+BusinessAccount instead of Person Account, missing 508/WCAG verification, FedRAMP boundary crossings without ISA, custom LWC intake when OmniScript owns the surface, hardcoded benefit amounts (changes every fiscal year by statute), and missing pen test / a11y audit before go-live. Disable with `eval_harness.enabled: false`.
 
 Expert Salesforce architect for **Public Sector Solutions (PSS)**: constituent services, benefit management, licensing and permitting, inspections, regulatory code enforcement, grantmaking for government agencies, emergency program management, and OmniStudio-powered intake.
 

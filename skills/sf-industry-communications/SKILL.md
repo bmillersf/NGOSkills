@@ -22,6 +22,52 @@ compatibility: "Requires Communications Cloud license + `vlocity_cmt__` managed 
 metadata:
   version: "1.0.0"
   author: "NGOSkills"
+  scoring: "50 points across 5 categories — Industry detection 10 / Object model 10 / Decomposition awareness 10 / Routing to common-core 10 / License gating 10"
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "50-pt rubric (5 categories) extracted from existing 'Scoring rubric (50 points)' section in this SKILL.md (line 72). Mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  comms_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 14
+      description: "Industry detection + Object model. Maps to Industry detection (10) + Object model (10). vlocity_cmt__ attributed correctly (Comms vs Media share namespace); first-class objects (Catalog__c / Offer__c / CartItem__c) used."
+      automatic_hard_fail_rules:
+        - "vlocity_cmt__ namespace detected but skill not disambiguated from Media Cloud (license + object presence is the discriminator)"
+        - "Telco products modeled as plain Product2 without vlocity_cmt__ extension"
+        - "Catalog / Offer / CartItem authored as custom objects when vlocity_cmt__ equivalents exist"
+        - "Hardcoded MSISDN / DID ranges instead of Number Management"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 12
+      description: "Decomposition awareness. Maps to Decomposition awareness (10). Commercial Order → OrchestrationPlan/OrchestrationItem decomposition pattern; OM rules instead of Flow-built decomposition."
+      automatic_hard_fail_rules:
+        - "Order decomposition built in Flow instead of Industries OM rules"
+        - "Commercial order and technical order conflated (no separation between Order__c and OrchestrationPlan__c / OrchestrationItem__c)"
+        - "Custom Apex mutations bypassing CartItem__c API (cart state corruption)"
+    - name: Fit
+      max: 25
+      hard_fail_below: 12
+      description: "Routing to common-core + Delegation. Maps to Routing to common-core (10). Comms is OmniStudio-first; aggressive delegation of UI/flow to common-core."
+      automatic_hard_fail_rules:
+        - "OmniScript / IP / Data Mapper / FlexCard / Callable Apex authored here instead of delegated"
+        - "Generic Sales/Service Cloud routing in a Comms-detected org (industry override)"
+        - "Standard automation work authored here instead of routed to sf-flow / sf-apex"
+    - name: Performance
+      max: 25
+      hard_fail_below: 12
+      description: "License gating + Namespace hygiene. Maps to License gating (10). OM / Digital Commerce / ESM add-ons confirmed; vlocity_cmt__ namespace present in code."
+      automatic_hard_fail_rules:
+        - "OM (Order Management for decomposition) features recommended without confirming OM license"
+        - "Digital Commerce features recommended without confirming Digital Commerce entitlement"
+        - "ESM features recommended without confirming ESM license"
+        - "Code moved between Comms and Media orgs without namespace audit"
 release_pinned: "Spring '26"
 docs_last_verified: 2026-05-01
 upstream_refs:
@@ -37,6 +83,10 @@ upstream_release_notes:
   - release: "Spring '26"
     url: https://help.salesforce.com/s/articleView?id=release-notes.rn_industries_communications.htm
 ---
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). 50-pt rubric across 5 router categories, mapped onto the 4-dim shape. Correctness floor at 14 — vlocity_cmt__ is shared with Media Cloud; misattribution corrupts the routing decision. Hard-fail rules block undisambiguated namespace, telco products as plain Product2, hardcoded MSISDN/DID ranges, order decomposition in Flow (Industries OM rules own it), custom Apex bypassing CartItem__c API, and code moved between Comms/Media orgs without namespace audit. Disable with `eval_harness.enabled: false`.
 
 ## When this skill owns the task
 
