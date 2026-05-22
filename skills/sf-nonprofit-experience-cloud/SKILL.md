@@ -34,11 +34,62 @@ upstream_refs:
 upstream_release_notes:
   - release: "Spring '26"
     url: https://help.salesforce.com/s/articleView?id=release-notes.rn_networks.htm
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "120-pt rubric inline (6 categories: Sharing Architecture 25, Security & Access 25, Site Configuration 20, Self-Service Flows 20, Performance 15, Best Practices 15), mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  np_xc_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 18
+      description: "Sharing architecture. Maps to Sharing Architecture (25). Heaviest correctness — sharing errors expose donor PII."
+      automatic_hard_fail_rules:
+        - "Any guest user with CRUD on PII-bearing object without Sharing Set restriction"
+        - "Any external user portal using Internal license"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 18
+      description: "Security & Access. Maps to Security & Access (25). Heaviest robustness — guest exploits are catastrophic for donor trust."
+      automatic_hard_fail_rules:
+        - "Any guest profile with Modify/View All Data, Customize Application"
+        - "Any portal form without CSRF protection / input validation"
+    - name: Fit
+      max: 25
+      hard_fail_below: 10
+      description: "Site Configuration + Self-Service Flows. Maps to Site Configuration (20) + Self-Service Flows (20). Aura BYO + custom LWCs (per sf-nonprofit-experience-cloud-build methodology)."
+      automatic_hard_fail_rules:
+        - "Any cloned packaged Aura template (use BYO + custom LWCs)"
+    - name: Performance
+      max: 25
+      hard_fail_below: 10
+      description: "Performance + Best Practices. Maps to Performance (15) + Best Practices (15). Caching, lazy load, mobile + accessibility."
+      automatic_hard_fail_rules:
+        - "Any portal landing page making >3 SOQL via @wire on initial render"
+  test_rubric:
+    unit:
+      required: true
+      criteria: "Component-level Jest + Apex tests for portal-specific code."
+    integration:
+      required: true
+      criteria: "Experience Bundle deploys; site is Active; public URL resolves."
+    smoke:
+      required: true
+      criteria: "Test as guest user + as logged-in donor — both render correctly without console errors."
 ---
 
 # sf-nonprofit-experience-cloud: Nonprofit Portal Architect
 
 Expert Salesforce architect specializing in Experience Cloud for nonprofits: constituent portals (donor, volunteer, client, grantee), sharing and access architecture, Aura "Build Your Own" site configuration with custom-LWC composition, self-service workflows, and community engagement.
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). 120-pt rubric, 6 categories. Both Correctness AND Robustness floors at 18 — sharing errors + guest exploits expose donor PII; both are catastrophic for nonprofit trust. Disable with `eval_harness.enabled: false`.
 
 ## Core Responsibilities
 

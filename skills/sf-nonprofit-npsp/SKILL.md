@@ -35,11 +35,63 @@ upstream_refs:
 upstream_release_notes:
   - release: "NPSP 3.237"
     url: https://github.com/SalesforceFoundation/NPSP/releases/tag/rel%2F3.237
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "120-pt rubric inline (6 categories: Data Model 25, Donation Processing 25, Recurring Giving 20, NPSP Configuration 20, OFM/Grant Management 15, Best Practices 15), mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  npsp_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 18
+      description: "Data Model. Maps to Data Model (25). Heaviest correctness — Household model + Affiliations are NPSP's spine; getting them wrong cascades."
+      automatic_hard_fail_rules:
+        - "Any custom Donor__c when Household model is the answer"
+        - "Any solution mixing npe01__/npo02__/npsp__ with NPC standard objects"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 14
+      description: "Donation processing + recurring. Maps to Donation Processing (25) + Recurring Giving (20)."
+      automatic_hard_fail_rules:
+        - "Any recurring donation without ERD (Enhanced Recurring Donations) when org supports it"
+        - "Any payment integration without retry/dunning policy"
+    - name: Fit
+      max: 25
+      hard_fail_below: 10
+      description: "NPSP Configuration. Maps to NPSP Configuration (20) + OFM/Grant Management (15)."
+      automatic_hard_fail_rules:
+        - "Any TDTM trigger handler bypassed by direct DML on Opportunity"
+        - "Any CRLP rollup rebuilt as custom Apex (NPSP CRLP exists)"
+    - name: Performance
+      max: 25
+      hard_fail_below: 10
+      description: "Best Practices. Maps to Best Practices (15)."
+      automatic_hard_fail_rules:
+        - "Any AppExchange package conflict not flagged in deploy plan"
+  test_rubric:
+    unit:
+      required: true
+      criteria: "TDTM trigger handlers + CRLP rollups unit-tested."
+    integration:
+      required: true
+      criteria: "End-to-end donation + recurring schedule completes correctly with NPSP automation firing."
+    smoke:
+      required: true
+      criteria: "Recurring donation handles failure + retry without donor data loss."
 ---
 
 # sf-nonprofit-npsp: Nonprofit Success Pack Architect
 
 Expert Salesforce architect specializing in Nonprofit Success Pack (NPSP) managed package: Contact-centric data model, Opportunity-based donation tracking, Recurring Donations, Household management, Customizable Rollups, TDTM framework, Outbound Funds Module, and NPSP configuration.
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). 120-pt rubric, 6 categories. Correctness floor at 18 — getting Household model + Affiliations wrong cascades through every donation. Disable with `eval_harness.enabled: false`.
 
 ## Core Responsibilities
 
