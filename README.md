@@ -18,7 +18,7 @@ What this collection makes possible:
 
 - **Fully automated demo generation** — hand Cursor a set of raw discovery notes from a client meeting and it produces a complete, presentation-ready demo: a structured narrative with named personas, a verbatim step-by-step click path, seeded Salesforce data matched to the story, and a Playwright test suite that runs as an automated pre-flight check before you walk into the room. What used to take days of prep now takes minutes.
 - **Autonomous demo validation and repair** — `sf-demo-validate` reads your demo script and simulates delivering the demo end-to-end: it walks every click path step, takes Playwright screenshots to visually verify the UI matches what you expect, executes the full demo flow as the specific named demo user (shift sign-ups, intake form submissions), and loads the Experience Cloud portal as both a guest and a logged-in member. Anything that fails, it fixes: missing metadata gets generated and deployed, stale data gets re-seeded, broken flows get repaired, permission gaps get patched. Then it re-validates and gives you a scored pass/fail report -- all without a human touching the org.
-- **Adversarial evaluation harness on every artifact-producing skill** — 80 of the 84 `sf-*` skills are wrapped by `sf-skill-eval-harness`. When any of them produces an artifact (Apex class, LWC, demoscript, FlexCard, Integration Procedure, segment, etc.), three fresh-context subagents run in sequence — a planner writes acceptance criteria, an implementer builds against them blind to the rubric, and an evaluator grades in fresh context against hard-fail floors. The result: production-grade output, not "first draft that scored itself a 196/200." See [**Adversarial Eval Harness**](#adversarial-eval-harness) below for the full architecture.
+- **Adversarial evaluation harness on every artifact-producing skill** — 79 of the 84 `sf-*` skills are wrapped by `sf-skill-eval-harness`. When any of them produces an artifact (Apex class, LWC, demoscript, FlexCard, Integration Procedure, segment, etc.), three fresh-context subagents run in sequence — a planner writes acceptance criteria, an implementer builds against them blind to the rubric, and an evaluator grades in fresh context against hard-fail floors. The result: production-grade output, not "first draft that scored itself a 196/200." See [**Adversarial Eval Harness**](#adversarial-eval-harness) below for the full architecture.
 - **Integration storytelling and "art of the possible" simulation** — for demo environments where a live integration doesn't exist, the agent can show what an integration *would* look like: a Mermaid sequence diagram with a verbatim presenter talking track and a prepared answer for "is this live?", or Anonymous Apex that simulates the integration as real data (fake inbound payloads, records stamped as if they arrived from an external system, Platform Events fired as if triggered by third-party software). The audience sees the capability. No external system required.
 - **Deep Salesforce domain expertise on demand** — 84 `sf-*` skills covering every layer of the Salesforce platform: Apex, LWC, Flow, Metadata, SOQL, Deployment, Data Operations, Permissions, Integration, Connected Apps; Data Cloud (all 7 phases — orchestrator + Connect/Prepare/Harmonize/Segment/Act/Retrieve); Agentforce (build, test, observe, persona, script); OmniStudio (OmniScript, Integration Procedure, Data Mapper, FlexCard, Callable Apex, Analyze); Sales Cloud (orchestrator + opportunity, forecasting, engagement); Service Cloud (orchestrator + case, omnichannel, knowledge); Marketing (MC Growth, Account Engagement); Revenue Cloud; Tableau; MuleSoft; Slack; Industry Clouds (FSC, Health, Education, Public Sector, Field Service, Manufacturing, CG, Comms, Media, Energy); AI primitives (Prompt Builder, Model Builder + Trust Layer); Platform Builder (Lightning App Builder, Flow Orchestration, Reports + Dashboards, Experience Cloud); Trust + Ops (Shield, Backup + Data Mask, DevOps Center, Identity + SSO); and the full Nonprofit Cloud stack (fundraising, grants, program management, Experience Cloud trio). Industry-first routing ensures industry skills win over generic cloud skills when detected. Each skill encodes the standards, patterns, and scoring rubrics I use -- so the agent produces production-quality output, not generic boilerplate.
 - **End-to-end nonprofit-specific intelligence** — from NPSP migration guidance and NPC data modeling to donor lifecycle management, grant pipelines, volunteer intake, program enrollment, and the portal experiences that serve constituents -- the agent knows the nonprofit platform the way a specialized architect does.
@@ -30,7 +30,7 @@ These skills encode my approach to Salesforce architecture, coding standards, an
 The 84 `sf-*` skills are the *domain knowledge* layer. A complete development workflow also needs a **project lifecycle**, **engineering methodology**, **cognitive-gear specialists**, and an **adversarial evaluation harness** that wraps the artifacts every domain skill produces. The four layers compose:
 
 1. **`sf-*` skills (84)** — domain knowledge, auto-triggered from natural language. No slash commands.
-2. **`sf-skill-eval-harness` (cross-cutting)** — wraps 80 of 84 sf-* skills. Three-agent loop (planner / implementer / evaluator in fresh contexts) with hard-fail floors. The 4 unwrapped are genuine non-fits (pure retrieval, orchestrator-internal, policy/router, library-bootstrap). See [**Adversarial Eval Harness**](#adversarial-eval-harness).
+2. **`sf-skill-eval-harness` (cross-cutting)** — wraps 79 of 84 sf-* skills. Three-agent loop (planner / implementer / evaluator in fresh contexts) with hard-fail floors. The 4 unwrapped are genuine non-fits (pure retrieval, orchestrator-internal, policy/router, library-bootstrap). See [**Adversarial Eval Harness**](#adversarial-eval-harness).
 3. **Vendored phase-lifecycle + methodology + cognitive-gears** — three upstream packs at pinned SHAs, composed on top of the sf-* track:
    - **[get-shit-done (gsd)](https://github.com/gsd-build/get-shit-done)** — phase-based spec→plan→execute→verify→ship lifecycle, invoked as `/gsd-*` (65 commands, 33 phase agents)
    - **[superpowers](https://github.com/obra/superpowers)** — TDD, subagent-driven development, systematic debugging, plus 14 auto-triggering skills that fire on pattern match (e.g., `brainstorming`, `test-driven-development`, `executing-plans`)
@@ -197,7 +197,7 @@ The agent will auto-route to `sf-demo-orchestrate` Phase 1 (org connect + baseli
 
 Most skills follow a "builder-grades-own-work" pattern: the same agent that produces the artifact also scores it against the rubric. **Self-evaluation is a trap** — the producer has every incentive to score itself favorably, and rubrics applied in the same context as production drift toward post-hoc rationalization. The classic failure mode: an agent self-rates its work 196/200, but a fresh-context evaluator finds three real bugs the producer rationalized away.
 
-`sf-skill-eval-harness` solves this with a **three-agent closed-loop pattern** that wraps 80 of the 84 `sf-*` skills.
+`sf-skill-eval-harness` solves this with a **three-agent closed-loop pattern** that wraps 79 of the 84 `sf-*` skills.
 
 ![Eval Harness — Three-Agent Loop with Hard-Fail Floors](assets/images/eval-harness-flow.png)
 
@@ -236,7 +236,7 @@ The harness has been validated across four real LLM-driven runs:
 
 Every pilot caught at least one defect that would have shipped under self-evaluation. The four-of-four success rate exceeds the SPEC §8 keep-criterion (3/4).
 
-### Wrap coverage — 80 of 84 sf-* skills
+### Wrap coverage — 79 of 84 sf-* skills
 
 The 4 unwrapped sf-* skills are intentional non-fits, not deferrals:
 
@@ -436,13 +436,13 @@ The entire workflow -- from pasting discovery notes to having a validated, prese
 ## Repository Structure
 
 ```
-skills/                          # Salesforce-domain skills (84 sf-* skills, 80 wrapped by sf-skill-eval-harness)
+skills/                          # Salesforce-domain skills (84 sf-* skills, 79 wrapped by sf-skill-eval-harness)
 skills-cursor/                   # Cursor-ecosystem utilities (babysit, create-hook,
                                  #   statusline, update-cli-config) + sf-skill-maintenance
                                  #   meta-skill (authoring contract + 4-layer auto-refresh)
                                  #   + sf-skill-learning (continuous learning system)
                                  #   + sf-skill-eval-harness (adversarial eval orchestrator
-                                 #     wrapping 80 of 84 sf-* skills — planner / implementer /
+                                 #     wrapping 79 of 84 sf-* skills — planner / implementer /
                                  #     evaluator subagents in fresh contexts; see
                                  #     content/specs/skill-eval-harness-SPEC.md)
 references/
@@ -509,7 +509,7 @@ references/
 
 ## Vendored skill packs: gsd × superpowers × gstack
 
-NGOSkills owns the 84 `sf-*` domain skills + the cross-cutting `sf-skill-eval-harness` (which wraps 80 of them), but a complete development workflow needs more than just domain knowledge — it needs a project lifecycle (spec → plan → execute → verify), engineering methodology (TDD, brainstorming, code review), and cognitive-gear specialists (founder taste, paranoid review, browser-based QA, design exploration). Rather than reinvent those, NGOSkills vendors three upstream skill packs at pinned SHAs and composes them with the `sf-*` track.
+NGOSkills owns the 84 `sf-*` domain skills + the cross-cutting `sf-skill-eval-harness` (which wraps 79 of them), but a complete development workflow needs more than just domain knowledge — it needs a project lifecycle (spec → plan → execute → verify), engineering methodology (TDD, brainstorming, code review), and cognitive-gear specialists (founder taste, paranoid review, browser-based QA, design exploration). Rather than reinvent those, NGOSkills vendors three upstream skill packs at pinned SHAs and composes them with the `sf-*` track.
 
 | Pack | Owns | Invocation |
 |---|---|---|
@@ -577,7 +577,7 @@ Read [`references/vendor-policy.md`](references/vendor-policy.md) before bumping
 
 After `scripts/setup.sh` runs (or after `auto-update-skills.sh` applies a pending update):
 
-- `~/.claude/skills/sf-*` → `NGOSkills/skills/` (84 domain skills, 80 wrapped by sf-skill-eval-harness)
+- `~/.claude/skills/sf-*` → `NGOSkills/skills/` (84 domain skills, 79 wrapped by sf-skill-eval-harness)
 - `~/.claude/skills/gstack-*` → `NGOSkills/.vendor/gstack/<name>/SKILL.md` (≈47 cognitive-gear skills)
 - `~/.claude/skills/<superpowers-skill>` → `NGOSkills/.vendor/superpowers/skills/` (14 auto-triggering skills)
 - `~/.claude/agents/gsd-*.md` → `NGOSkills/.vendor/gsd/agents/` (33 phase subagents)
@@ -623,14 +623,14 @@ Every user request flows through the **Phase 0 industry pre-check** before any s
 
 ![NGO Salesforce Skills — Domain Architecture](assets/images/domain-architecture.png)
 
-The 84 skills organize into five tiers that mirror the routing decision above, plus a cross-cutting Eval Harness layer that wraps 80 of them:
+The 84 skills organize into five tiers that mirror the routing decision above, plus a cross-cutting Eval Harness layer that wraps 79 of them:
 
 - **Tier 1 — Vertical / Industry (12)** — FSC, Health, Education, Public Sector, Field Service, Manufacturing, Consumer Goods, Communications, Media, Energy, NPC, NPSP. *First line of defense; wins over generic clouds when detected.*
 - **Tier 2 — Horizontal / Generic clouds (14)** — Sales (×4: orchestrator + opportunity + forecasting + engagement), Service (×4: orchestrator + case + omnichannel + knowledge), Marketing (×2: MCG + MCAE), Revenue, Experience, Reports + Dashboards, Lightning App Builder. *Runs Phase 0 industry pre-check before emitting output; halts and forwards to Tier 1 on detection.*
 - **Tier 3 — Shared capabilities (30)** — AI (7: agentforce build/persona/testing/observe/script + Prompt Builder + Model Builder/Trust Layer), Data Cloud (7: orchestrator + Connect/Prepare/Harmonize/Segment/Act/Retrieve), OmniStudio (6: OmniScript + IP + DataMapper + FlexCard + Callable Apex + Analyze), Integration (3: integration + connected-apps + MuleSoft), Tableau, Slack, Trust + Ops (4: Shield + Backup/DataMask + DevOps Center + Identity/SSO), Flow Orchestration. *Consumed by both vertical and horizontal tracks.*
 - **Tier 4 — Core Platform (10)** — Apex, LWC, Flow, Metadata, SOQL, Data, Testing, Deploy, Debug, Permissions. *Foundation; every other skill depends on one or more of these.*
 - **Tier 5 — Demo lifecycle + Nonprofit-portal + Meta (18)** — Demo pipeline (orchestrate/author/validate/playwright + demo-data × 2 + ui-fallback-playwright), Nonprofit-portal trio (experience-cloud / -ux / -build), Nonprofit domain (fundraising / grants / program-case), Meta (subagent-orchestration), Visualization + Docs (mermaid + nanobananapro + docs).
-- **Cross-cutting — Eval Harness (1 skill, wraps 80)** — `sf-skill-eval-harness` (lives in `skills-cursor/`, fan-out via the harness wrap pattern in 80 of the 84 sf-* skills).
+- **Cross-cutting — Eval Harness (1 skill, wraps 79)** — `sf-skill-eval-harness` (lives in `skills-cursor/`, fan-out via the harness wrap pattern in 79 of the 84 sf-* skills).
 
 Diagram sources: [`assets/diagrams/domain-architecture.mmd`](assets/diagrams/domain-architecture.mmd), [`assets/diagrams/routing-flow.mmd`](assets/diagrams/routing-flow.mmd), and [`assets/diagrams/eval-harness-flow.mmd`](assets/diagrams/eval-harness-flow.mmd). Regenerate PNGs after edits with:
 
