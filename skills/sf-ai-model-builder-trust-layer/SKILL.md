@@ -35,6 +35,61 @@ compatibility: "Einstein Generative AI add-on; Trust Layer enabled by default; M
 metadata:
   version: "1.0.0"
   author: "NGOSkills"
+  scoring: "130 points across 8 categories — Masking 25 / Zero-retention 15 / Model Card 15 / Named Credential 15 / Content Safety+Prompt Defense 15 / Audit Trail 15 / Change-control 15 / Industry policy alignment 15 (92 is passing)"
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "130-pt rubric (8 categories) extracted from existing 'Scoring rubric (130 points)' section in this SKILL.md (line 213). Mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  trust_layer_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 16
+      description: "Masking coverage + Industry policy alignment. Maps to Masking (25) + Industry policy alignment (15). Trust Layer is a regulated boundary; missing masking patterns or paraphrased industry policies leak regulated data."
+      automatic_hard_fail_rules:
+        - "Applicable masking pattern category turned OFF (PII / PHI / financial / credit-card / SSN — every category that matches the data domain must be ON)"
+        - "Masking disabled to 'improve output' (compliance violation — fix the template's output contract or add a custom de-masking rule instead)"
+        - "Industry policy paraphrased here instead of cross-referenced from sf-industry-health / -fsc / -education / -public-sector"
+        - "HIPAA / PHI masking policy authored here instead of inherited from sf-industry-health"
+        - "PCI / financial masking policy authored here instead of inherited from sf-industry-fsc"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 18
+      description: "Zero-retention + Audit Trail + Content Safety + Prompt Defense. Maps to Zero-retention (15) + Audit Trail (15) + Content Safety+Prompt Defense (15). Heaviest robustness floor — Trust Layer is the prompt-injection / data-residency / audit-evidence boundary; weak posture = compliance incident."
+      automatic_hard_fail_rules:
+        - "Zero-retention posture not recorded per endpoint"
+        - "BYOM endpoint without confirmed zero-retention contract from the provider (Azure / Bedrock / Vertex / direct)"
+        - "Toxicity threshold not set"
+        - "Prompt Defense disabled (prompt injection / jailbreak vector)"
+        - "Provider-side filters (e.g., Bedrock Content Filters, Azure Content Safety) OFF when the provider supports them"
+        - "Audit Trail DMO not populating (silent telemetry hole)"
+        - "Audit Trail retention shorter than industry requirement (HIPAA 6yr / PCI varying / GDPR 7yr varies)"
+        - "Audit Trail data space owner not identified (governance / DSAR escalation gap)"
+    - name: Fit
+      max: 25
+      hard_fail_below: 14
+      description: "Model Card + Named Credential hygiene. Maps to Model Card (15) + Named Credential (15). Provider/region/context-window/compliance/cost documented; no inline keys; credentials rotated per policy."
+      automatic_hard_fail_rules:
+        - "Model Card missing provider / region / context-window / compliance posture / cost (admins can't make routing decisions)"
+        - "Inline API keys in Model Card or Apex (must use Named Credential — credential management belongs to sf-integration)"
+        - "Named Credential not rotated per policy (key rotation cadence not honored)"
+        - "Credential authoring done here instead of delegated to sf-integration (skill scope violation)"
+        - "Region mismatch — provider region not aligned with Salesforce data residency requirement"
+    - name: Performance
+      max: 25
+      hard_fail_below: 14
+      description: "Change-control + activation hygiene. Maps to Change-control (15). Baseline exported, template+agent regression run before activate, rollback plan documented, prior Model Card retained."
+      automatic_hard_fail_rules:
+        - "Baseline (current Trust Layer + Model Card config) not exported before change"
+        - "Template + agent regression not run before activating the new model / config"
+        - "Rollback plan not documented (no path to revert if regression appears in production)"
+        - "Prior Model Card not retained for one-click revert"
+        - "Model swap activated without a sampling of agent tests run via sf-ai-agentforce-testing first"
 release_pinned: "Spring '26"
 docs_last_verified: 2026-05-04
 upstream_refs:
@@ -55,6 +110,10 @@ upstream_refs:
 # sf-ai-model-builder-trust-layer
 
 Owns the **model endpoint** and the **trust perimeter** around every generative AI call Salesforce makes. Everything that happens *before* the prompt reaches the model (masking, prompt defense, grounding attribution) and *after* the response comes back (toxicity scan, Content Safety, de-masking, Audit Trail logging, zero-retention enforcement) is configured here. Nothing about prompt *authoring* is configured here — that lives in `sf-ai-prompt-builder`.
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). 130-pt rubric across 8 Trust Layer + Model Builder categories, extracted from this skill's existing Scoring rubric section (line 213) and mapped onto the 4-dim shape. Robustness floor at 18 — Trust Layer is the prompt-injection / data-residency / audit-evidence boundary; weak posture = compliance incident. Hard-fail rules block masking-OFF for compliance escape, BYOM endpoints without zero-retention contract, missing toxicity threshold, Prompt Defense disabled, Audit Trail DMO not populating, retention shorter than industry requirement, inline API keys, region mismatch with data residency, paraphrased industry policies, and missing rollback plan before model swap. Disable with `eval_harness.enabled: false`.
 
 ---
 
