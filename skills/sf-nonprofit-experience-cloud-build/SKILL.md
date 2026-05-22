@@ -41,11 +41,86 @@ upstream_refs:
 upstream_release_notes:
   - release: "Spring '26"
     url: https://help.salesforce.com/s/articleView?id=release-notes.rn_networks.htm
+metadata:
+  scoring: "140 points across 6 categories — newly authored 2026-05-22 to fill the harness coverage gap on portal-build methodology (brand mining, design tokens, runtime choice, standard-first composition, routing, deployment)"
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "140-pt rubric (6 categories: Brand Fidelity 25 / Design System 20 / Standard-First Composition 25 / Runtime + Routing Correctness 25 / Guest Access + Deployment 25 / Verification 20) — newly authored 2026-05-22 — mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  exp_build_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 16
+      description: "Runtime + routing correctness. Maps to Runtime + Routing Correctness (25). Aura BYO default honored, no packaged-template clones, route/view/devName rules correct per runtime, viewType matches routeType, basePath rule honored."
+      automatic_hard_fail_rules:
+        - "Site created via 'Customer Service' / 'Partner Central' / 'Customer Account Portal' packaged Aura template (siteforce:serviceBody / sldsTwoCol84SidebarFeaturedLayout regions cannot be themed away)"
+        - "LWR runtime chosen for a new build without a named blocker documented in the plan"
+        - "ExperienceBundle cloned from another org / repo as starting point (carries stale IDs, dead refs, foreign IA)"
+        - "LWR route devName missing __c suffix, OR Aura route devName carrying a __c suffix it shouldn't have"
+        - "view.viewType doesn't match route.routeType (deploy rejects)"
+        - "URL constructed as `${basePath}/s/donate` instead of `${basePath}/donate` (basePath already includes /s — produces /s/s/ double-prefix)"
+        - "LWR view using siteforce:sldsOneColLayout instead of siteforce:dynamicLayout (or vice versa for Aura)"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 18
+      description: "Guest access + deployment integrity. Maps to Guest Access + Deployment (25). Heaviest robustness floor — guest access misconfig causes either silent login redirects or unintended public exposure of authenticated data."
+      automatic_hard_fail_rules:
+        - "experiences/<Site>/config/<siteName>.json missing isAvailableToGuests:true on a public site (every guest request redirects to /login regardless of route pageAccess)"
+        - "Guest profile missing classAccesses for any Apex class a public LWC/Aura component imports (Aura controllers + @wire fire before render — site breaks for guests)"
+        - "Guest profile granting Create on an object without paired Read on the same object (deploy fails) — or granting object permissions to Sensitive PII / financial objects without business justification"
+        - "Required fields included in fieldPermissions on guest profile (Salesforce rejects deploy)"
+        - "Network status not set to <status>Live</status> in network-meta.xml (status can't be flipped via Apex DML)"
+        - "Single-deploy attempt of LWCs + ExperienceBundle together (validation fails — split into two deploys; ExperienceBundle validates component refs before LWCs exist)"
+        - "Authenticated dashboard LWC with @wire Apex calls but no @salesforce/user/isGuest gate (guest sessions throw)"
+    - name: Fit
+      max: 25
+      hard_fail_below: 16
+      description: "Standard-first composition + brand mining. Maps to Standard-First Composition (25) + Brand Fidelity (25). Phase 1 brand-mine performed against actual reference site, design tokens drive theme customCSS, standard components used unless explicit justification, custom LWCs only where standard demonstrably can't serve."
+      automatic_hard_fail_rules:
+        - "No Phase 1 brand-mining performed (no reference site mined for palette / typography / IA / voice)"
+        - "Lorem ipsum / generic placeholder copy shipped instead of brand-mined real content"
+        - "Standard-component audit (Phase 3 mandatory deliverable) skipped — custom LWCs spawned without the section-by-section audit table in the plan"
+        - "Custom LWC justification reduces to 'for branding' or 'to look nicer' (brand belongs at theme layer; theme covers standard + custom alike)"
+        - "Form requirement built as custom multi-step LWC when a Screen Flow embedded via the standard Flow component would have served (Flow-first audit skipped)"
+        - "Mega-LWC pattern (one LWC composing the entire page) instead of one-LWC-per-story composed in views/home.json"
+        - "Wrapping standard components inside a custom shell to unify styling instead of theming them"
+    - name: Performance
+      max: 25
+      hard_fail_below: 12
+      description: "Verification + publish hygiene. Maps to Verification (20) + portions of Design System (20). Final standard:custom ratio recorded, all Phase 5 verification checks pass, Google Fonts and assets loaded efficiently, multi-step forms route to dedicated thank-you page (not modal)."
+      automatic_hard_fail_rules:
+        - "Phase 5 verification skipped or partial — public routes not curl-tested, deep-link query params not verified, guest navigation untested"
+        - "Standard:custom ratio not recorded in the review summary"
+        - "Multi-step form confirms to a modal instead of a dedicated thank-you route (breaks bookmarking / refresh / analytics)"
+        - "Static resources (logos / hero photography / icon sets) not bundled as a single staticresources/<orgName>Assets/ ZIP with cacheControl: Public — produces serial fetches"
+        - "Google Fonts @import landing inside a per-LWC stylesheet instead of theme customCSS (refetches per component instead of once site-wide)"
+  test_rubric:
+    unit:
+      required: true
+      criteria: "ExperienceBundle metadata validates against XSD. routes/<page>.json and views/<page>.json honor runtime-correct devName/routeType/viewType/componentName rules. Theme customCSS @imports both fonts. BrandingSet HeaderFonts + PrimaryFont set. Static resource declared with contentType + cacheControl. Guest profile classAccesses present for every Apex class imported by public components."
+    integration:
+      required: true
+      criteria: "Deploy succeeds in two-step order (LWCs+SR+Apex+Profile first, then ExperienceBundle). sf community publish succeeds. curl https://<domain>/<site>/s/ returns 200 with expected LWCs in bootstrap payload. curl every public route returns 200. Network status reads Live."
+    smoke:
+      required: true
+      criteria: "Guest navigation: home → tile → form → thank-you completes without login. Deep links with query params (?fund=X&amount=Y) pre-fill form. Authenticated user sees dashboard LWCs guests don't. Standard:custom ratio recorded with one-line justification per custom component. No custom component justified by 'branding' alone."
 ---
 
 # sf-nonprofit-experience-cloud-build: Nonprofit Portal Build Methodology
 
 Build Experience Cloud sites that feel like the organization's real marketing website, not a generic Salesforce template. This skill codifies a methodology that has produced Experience Cloud sites with measurably better UI/UX than default builds.
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). 140-pt rubric across 6 portal-build categories, newly authored 2026-05-22 to fill the harness coverage gap. Robustness floor at 18 — guest access misconfig either redirects every visitor to login or exposes authenticated data publicly. Fit floor at 16 — Phase 1 brand-mining and the Phase 3 standard-component audit are the methodology's core; skipping either produces a site indistinguishable from a stock template clone. Hard-fail rules block packaged-template clones, default-to-LWR without blocker, missing isAvailableToGuests, classAccesses gaps, mega-LWCs, and "for branding" custom-LWC justifications. Disable with `eval_harness.enabled: false`.
+
+---
 
 **Default runtime: Aura "Build Your Own" + custom LWCs in Aura regions.** Never clone a packaged Aura template; never default to LWR without a named, irreplaceable blocker. See Phase 0 for the runtime gate.
 
