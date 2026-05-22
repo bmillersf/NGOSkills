@@ -33,12 +33,77 @@ upstream_refs:
 upstream_release_notes:
   - release: "Spring '26"
     url: https://ai.google.dev/gemini-api/docs/release-notes
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "80-pt rubric (5 categories: Source Faithfulness 25 / Brand Fidelity 20 / Prompt Quality 15 / Workflow Hygiene 10 / Output Hygiene 10) — categories authored 2026-05-22 to fill the harness coverage gap (frontmatter declared 80pt across 5 categories but no inline breakdown). Mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  diagram_nano_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 14
+      description: "Source faithfulness. Maps to Source Faithfulness (25). The image must reflect the actual data model / UI being diagrammed — invented relationships and hallucinated objects are worse than no image because they encode the wrong mental model."
+      automatic_hard_fail_rules:
+        - "Object / entity in the rendered ERD that doesn't exist in the org metadata (hallucination — query sf-metadata first; do not invent)"
+        - "Relationship cardinality wrong vs the actual schema (1:1 where 1:N, missing junction object on M:N)"
+        - "Field listed on an entity that doesn't exist on that object in the source metadata"
+        - "Mockup of a record page / Experience Cloud page showing fields the org doesn't have or layouts the page doesn't use"
+        - "Generation requested but prerequisites check (check-prerequisites.sh) skipped — broken environment ships an empty / error image"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 12
+      description: "Brand fidelity to architect.salesforce.com aesthetic. Maps to Brand Fidelity (20). Cloud auto-detected from object set; cloud-specific border colors honored; signature dark-border / light-fill style applied unless user explicitly opts out."
+      automatic_hard_fail_rules:
+        - "Hardcoded colors that don't match the cloud-specific palette (Sales=#0B827C, Service=#9E2A7D, Platform=#5A67D8, Industries=#BA4383) when cloud is auto-detectable"
+        - "Solid-fill entities used when the documented signature look is dark-border + 25%-opacity light fill"
+        - "Required architect.salesforce.com elements missing (page title, header banner, legend bar, footer) on a primary deliverable"
+        - "Cloud detection skipped — generic blue used on a Service Cloud ERD when magenta is the documented mapping"
+        - "Brand fidelity broken without a documented stylistic justification (user-requested artistic variation OK; silent drift NOT)"
+    - name: Fit
+      max: 25
+      hard_fail_below: 12
+      description: "Prompt quality + interview-first workflow. Maps to Prompt Quality (15). Prompt is concrete enough for the image gen to produce the documented look; interview triggered when ambiguity warrants; iterative /edit used over wholesale regeneration."
+      automatic_hard_fail_rules:
+        - "Vague prompt that doesn't specify cloud / object set / style (image gen will produce generic stock visual)"
+        - "Interview triggers met (ambiguous user intent, multi-cloud detection, mixed-purpose request) but interview skipped — single-shot generation with wrong assumptions"
+        - "Wholesale regeneration done when /edit on the previous image would have been correct (cost amplifier + diff harder to review)"
+        - "Mermaid code committed without invoking nanobananapro for visual rendering when the use case is end-user delivery (sf-diagram-mermaid handoff target ignored)"
+        - "Prompt asks for SLDS components but doesn't reference the actual SLDS pattern names (button-brand, modal, datatable) — image gen produces lookalike, not real SLDS"
+    - name: Performance
+      max: 25
+      hard_fail_below: 10
+      description: "Workflow + output hygiene. Maps to Workflow Hygiene (10) + Output Hygiene (10). Draft→final pattern honored (1K iterate, 4K final), output filename meaningful, paired with Mermaid source where applicable."
+      automatic_hard_fail_rules:
+        - "Final 4K rendered before iterating at 1K (cost wasted on prompt-still-wrong output)"
+        - "Generation runs straight to 4K Python pathway without confirming the draft prompt produces the right image"
+        - "Output filename auto-generated default (no semantic name — clutters ~/nanobanana-output/, can't be located later)"
+        - "Image delivered without the Mermaid source kept in version control when the diagram is referenced from docs / SKILL.md"
+        - "macOS Preview display step skipped on the default workflow (caller can't review before committing)"
+  test_rubric:
+    unit:
+      required: true
+      criteria: "Prerequisites check passes (GEMINI_API_KEY present, gemini CLI installed, nanobanana extension installed, on macOS for Preview display). Object metadata queried via sf-metadata before prompt construction. Cloud detection (object-set → cloud) ran or N/A justified."
+    integration:
+      required: true
+      criteria: "Image generated at 1K draft completes without API error. Image opens in Preview app. Object / field / relationship sample-check confirms it matches the source metadata (no hallucination at 5-record spot check)."
+    smoke:
+      required: true
+      criteria: "Audience reviewing the rendered image alone (no Mermaid source) can identify the cloud, the entities, the relationship semantics, and the title/legend/footer. /edit iteration produces the requested change without regenerating from scratch."
 ---
 
 # sf-diagram-nanobananapro: Salesforce Visual AI Skill
 
 Visual content generation and AI sub-agent for Salesforce development using
 Gemini CLI with Nano Banana Pro extension.
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). 80-pt rubric across 5 visual-AI categories (Source Faithfulness 25 / Brand Fidelity 20 / Prompt Quality 15 / Workflow Hygiene 10 / Output Hygiene 10) — categories authored 2026-05-22 to fill the harness coverage gap (frontmatter declared the 80pt total but no inline breakdown). Correctness floor at 14 — hallucinated objects + wrong relationship cardinality on a rendered ERD encode the wrong mental model and are worse than no image. Hard-fail rules block invented entities, wrong cardinality, fields that don't exist on the source object, hardcoded colors that ignore cloud auto-detection, draft skipped (straight to 4K), and /edit workflow bypassed for wholesale regeneration. Disable with `eval_harness.enabled: false`.
 
 ## ⚠️ IMPORTANT: Prerequisites Check
 
