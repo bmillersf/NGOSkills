@@ -38,11 +38,79 @@ upstream_refs:
 upstream_release_notes:
   - release: "Spring '26"
     url: https://help.salesforce.com/s/articleView?id=release-notes.rn_sales.htm
+metadata:
+  scoring: "150 points across 10 categories — orchestrator-style rubric (Phase 0 pre-check 25 / Scope 20 / Data Model 20 / Process 20 / Intelligence 15 / Edition gates 10 / Delegation 15 / Adjacent skills 10 / Anti-patterns 10 / Verification 5)"
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "150-pt rubric (10 categories) — extracted from existing 'Scoring rubric (150 pts)' section in this SKILL.md (lines 188-203); mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  sales_cloud_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 16
+      description: "Phase 0 industry pre-check + data model baseline. Maps to Phase 0 (25) + Data Model (20). The pre-check is the single most important orchestrator step — silently overriding an industry data model corrupts package upgrades."
+      automatic_hard_fail_rules:
+        - "Phase 0 industry pre-check skipped — generic Sales Cloud design produced for an org with FSC / Health Cloud / EDA / PSS / Manufacturing / Consumer Goods / Communications / Media / Energy / nonprofit installed"
+        - "Industry signal positive (industry namespace detected) but no deferral emitted — orchestrator silently routes industry-owned work to itself"
+        - "Custom field added to an industry-owned Account / Lead / Opportunity without first deferring to the matching industry skill"
+        - "Each object's record-type / stage / status strategy missing in the data model baseline (Account / Contact / Lead / Opportunity / Product / Campaign)"
+        - "Standard Quote used when org has Revenue Cloud / CPQ — should defer to sf-revenue-cloud"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 14
+      description: "Process + automation coverage. Maps to Process & Automation (20) + Edition + License gates (10). Lead routing, stage gates, territory assignment, activity capture all addressed; every feature tagged with required edition / license / Permission Set License."
+      automatic_hard_fail_rules:
+        - "Recommendation references a feature that requires a specific edition / license / PSL without tagging the requirement (e.g., recommending Sales Engagement without flagging the High Velocity Sales / Sales Engagement PSL)"
+        - "Forecast Category silence — Opportunity stage model proposed without mapping every stage to a Forecast Category (Pipeline / Best Case / Commit / Closed / Omitted) — forecasts break silently if any stage is unmapped"
+        - "Lead routing recommended without addressing both lead assignment rules AND territory assignment when both are in scope"
+        - "Einstein Opportunity Scoring / Forecasting recommended for an org with <12 months of closed-won + closed-lost history (model has no signal)"
+        - "Cadence pattern recommended where Omni-Channel Routing is the right pattern (or vice versa) — license + UX mismatch"
+    - name: Fit
+      max: 25
+      hard_fail_below: 14
+      description: "Delegation hygiene + scope classification. Maps to Scope (20) + Delegation (15) + Adjacent skills (10). Single-phase work routed to phase skills (sf-sales-opportunity / sf-sales-forecasting / sf-sales-engagement); cross-cloud boundaries drawn explicitly; orchestrator stays thin."
+      automatic_hard_fail_rules:
+        - "Single-phase work (just opportunity, just forecasts, just engagement) handled in this orchestrator instead of routed to the focused phase skill"
+        - "Forecast configuration / cadence design / opportunity splits authored in sf-sales-cloud instead of delegated to sf-sales-forecasting / sf-sales-engagement / sf-sales-opportunity"
+        - "Cross-cloud work (Service / Marketing / Data Cloud / Field Service / Revenue) handled here without explicit boundary + handoff"
+        - "Stage explosion — recommending more than ~8 Opportunity stages (stages are a funnel, not a project plan)"
+        - "Cadence + Omni-Channel Routing conflated (they serve different licenses + UX)"
+    - name: Performance
+      max: 25
+      hard_fail_below: 12
+      description: "Anti-patterns avoided + verification. Maps to Anti-patterns (10) + Intelligence (15) + Verification (5). Final report matches the documented output format; Pipeline Inspection used as inline editing surface (not as report); Einstein activated only with sufficient data maturity."
+      automatic_hard_fail_rules:
+        - "Treating Pipeline Inspection as a tabular report / dashboard (it's an inline-editing + metric-change surface)"
+        - "Einstein Opportunity Scoring activated without confirming ≥12 months closed-won + closed-lost history"
+        - "Final orchestrator output skips the documented Verification + report structure (industry pre-check confirmation + per-phase delegation status + scoring summary)"
+        - "Score below 120 / 150 returned to the user without a revise pass"
+  test_rubric:
+    unit:
+      required: true
+      criteria: "Phase 0 industry pre-check executed: ApexClass NamespacePrefix scan for industry namespaces, Permission Set License check, feature-flag + edition check. Result documented in deliverable. Object record-type / stage / status strategy explicit per Account / Contact / Lead / Opportunity / Product / Campaign."
+    integration:
+      required: true
+      criteria: "Recommended changes deploy to a Sales Cloud sandbox without industry-package upgrade conflicts. Stage → Forecast Category map verified (every OpportunityStage row matches a forecast category). Lead routing rules + Territory assignment fire correctly on test records."
+    smoke:
+      required: true
+      criteria: "Sales rep walks the lead-to-cash path: Lead captured → routed → qualified → converted → Opportunity created → stage progression hits forecast category → activities captured → forecast role-up reflects the deal. End-to-end runs without industry-pack collision; cross-cloud handoffs to Service / Revenue / Marketing succeed at their boundaries."
 ---
 
 # sf-sales-cloud: Sales Cloud Orchestrator
 
-Use this skill when the user needs **product-level Sales Cloud workflow guidance** that crosses more than one capability area: lead-to-cash pipeline design, forecasting alignment, sales engagement rollout, territory assignment, or Revenue Intelligence enablement. Sales Cloud is not a single feature — it is the union of Leads, Accounts, Contacts, Opportunities, Activities, Campaigns, Quotes, Orders, Contracts, Products / Price Books, Territory Management, Enterprise Territory Management, Collaborative Forecasts, Sales Engagement, Sales Dialer, Einstein for Sales, Pipeline Inspection, Deal Insights, and Revenue Intelligence.
+Use this skill when the user needs **product-level Sales Cloud workflow guidance** that crosses more than one capability area: lead-to-cash pipeline design, forecasting alignment, sales engagement rollout, territory assignment, or Revenue Intelligence enablement.
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). 150-pt rubric across 10 orchestrator categories, extracted from this skill's existing Scoring rubric section and mapped onto the 4-dim shape. Correctness floor at 16 — the Phase 0 industry pre-check is the single most important orchestrator step; silently overriding an industry data model corrupts package upgrades. Hard-fail rules block missing pre-check, industry-signal-positive without deferral, forecast-category silence on stage models, Einstein activated without data maturity, single-phase work hijacked by the orchestrator instead of delegated, and stage explosion (>8 Opportunity stages). Disable with `eval_harness.enabled: false`.
+
+--- Sales Cloud is not a single feature — it is the union of Leads, Accounts, Contacts, Opportunities, Activities, Campaigns, Quotes, Orders, Contracts, Products / Price Books, Territory Management, Enterprise Territory Management, Collaborative Forecasts, Sales Engagement, Sales Dialer, Einstein for Sales, Pipeline Inspection, Deal Insights, and Revenue Intelligence.
 
 This orchestrator is the first stop for multi-capability asks. It routes into focused phase skills once the task is localized and halts with an industry-first hand-off whenever an industry solution is installed and the request touches industry-owned objects.
 
