@@ -22,6 +22,60 @@ compatibility: "Available in Lightning Experience across all editions. Dynamic F
 metadata:
   version: "1.0.0"
   author: "NGOSkills"
+  scoring: "120 points across 7 categories — Page plan+template 15 / Dynamic Forms 25 / Dynamic Actions/Interactions 15 / Component Visibility 20 / Record Page Assignment 15 / Performance 15 / Accessibility+mobile 15 (90 is passing)"
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "120-pt rubric (7 categories) extracted from existing 'Scoring Rubric — 120 Points' section in this SKILL.md (line 213). Mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  lab_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 14
+      description: "Page plan + Dynamic Forms migration + Component Visibility logic. Maps to Page plan (15) + Dynamic Forms (25) + Component Visibility (20). FlexiPage shape + Dynamic Forms migration accuracy + correct visibility filters drive whether the page renders the right thing for the right user."
+      automatic_hard_fail_rules:
+        - "Record page on a Dynamic-Forms-supported object still using Record Detail component instead of Dynamic Forms"
+        - "Page Layout raw-copied to Dynamic Forms without semantic re-grouping (carries Page Layout debt forward)"
+        - "Visibility filter set to 'show always' on a component that should be conditional"
+        - "Component Visibility filter logic doesn't reflect business conditions (silent always-show or always-hide)"
+        - "Per-field visibility / read-only / required conditions absent where the business case requires them"
+        - "30-component single-column sprawl (cognitive overload + render-time hit)"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 12
+      description: "Record Page Assignment coverage. Maps to Record Page Assignment (15). Every relevant profile × record type × app × form factor must be covered; orphaned users fall back to Org Default which is rarely the intended page."
+      automatic_hard_fail_rules:
+        - "Assignment combinations not all covered (profile × record type × app × form factor — orphan users fall back to Org Default)"
+        - "Orphaned users falling back to Org Default page when they shouldn't"
+        - "Form-factor-specific page (mobile / phone) absent when the audience uses both desktop + mobile"
+        - "Assignment combination changes not regression-tested (every combination must be opened on a real account in that combination)"
+        - "Industry-pack-shipped record page template overridden silently (industry skill should own the template)"
+    - name: Fit
+      max: 25
+      hard_fail_below: 12
+      description: "Dynamic Actions + Dynamic Interactions + template choice. Maps to Dynamic Actions (15) + Page plan template (15). Right pattern for the use case; declarative wiring over Aura app events; tabs used for dense content."
+      automatic_hard_fail_rules:
+        - "Static actions used on a record page when Dynamic Actions cover the conditional case"
+        - "Aura application event used when Dynamic Interactions express the same wiring declaratively"
+        - "Single-column sprawl when tabs / accordion would group dense content"
+        - "Template chosen doesn't match the page shape (e.g., Header+Right Sidebar where 3-column is needed)"
+        - "Dynamic Action without visibility filter on conditional actions (action visible to everyone regardless of context)"
+    - name: Performance
+      max: 25
+      hard_fail_below: 12
+      description: "Performance + Accessibility + Mobile. Maps to Performance+composition (15) + Accessibility+mobile (15). >12 data-fetching components on first render = render cliff; mobile / a11y not optional."
+      automatic_hard_fail_rules:
+        - ">12 data-fetching components on first render (record-detail render cliff on mid-tier devices)"
+        - "Heavy components not lazy-loaded behind tabs / visibility filters"
+        - "Page load >3s on a typical record"
+        - "Mobile preview not run / not passing"
+        - "Tab order illogical / screen reader labels absent on custom LWCs"
+        - "Contrast inadequate / keyboard-only navigation broken"
 release_pinned: "Spring '26"
 docs_last_verified: 2026-05-01
 upstream_refs:
@@ -43,6 +97,10 @@ upstream_release_notes:
 ---
 
 # sf-lightning-app-builder: Lightning App Builder + Dynamic Forms + Dynamic Actions + FlexiPage
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). 120-pt rubric across 7 LAB categories, extracted from this skill's existing Scoring Rubric section (line 213) and mapped onto the 4-dim shape. Correctness floor at 14 — FlexiPage shape + Dynamic Forms migration accuracy drive whether the page renders the right thing for the right user. Hard-fail rules block Record Detail used when Dynamic Forms is supported, Page Layout raw-copy to Dynamic Forms, 'show always' on conditional components, 30-component single-column sprawl, missing assignment combinations (profile × record type × app × form factor), >12 data-fetching components on first render, and mobile/accessibility skip. Disable with `eval_harness.enabled: false`.
 
 Use this skill when the user is composing or editing a **Lightning page** — a record page, app page, home page, or email application page — in **Lightning App Builder**, serialized as `.flexipage-meta.xml`. This includes Dynamic Forms (field-level region composition that replaces classic Page Layouts), Dynamic Actions (per-component button bars that replace the static object action list), Dynamic Interactions (cross-component event wiring), Component Visibility filters (conditional display), page-template choice, Record Page Assignments (per profile / record type / app / form factor), and Utility Bar configuration.
 
