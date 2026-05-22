@@ -127,7 +127,7 @@ For N independent units, fire all subagents in **a single tool-call message** so
 - Build LWC: donorPortalHeader (spec: ...)
 - Build LWC: donorHeroBanner (spec: ...)
 - Build LWC: givingOpportunitiesGrid (spec: ...)
-- Build LWC: bishopQuoteBanner (spec: ...)
+- Build LWC: pullQuoteBanner (spec: ...)
 - Build LWC: upcomingEvents (spec: ...)
 ```
 

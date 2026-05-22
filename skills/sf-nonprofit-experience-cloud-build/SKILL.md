@@ -212,7 +212,7 @@ If the engagement is to extend an existing site, identify and inspect — do not
    sf data query --query "SELECT Name, UrlPathPrefix FROM Site WHERE UrlPathPrefix LIKE '<prefix>%'"
    ```
 
-   The `Site.Name` (e.g. `CSEA1`) is the `sf project retrieve --metadata "ExperienceBundle:<Name>"` target — NOT the Network name (`CSEA`). A numeric suffix is common for Aura sites.
+   The `Site.Name` (e.g. `MySite1`) is the `sf project retrieve --metadata "ExperienceBundle:<Name>"` target — NOT the Network name (`MySite`). A numeric suffix is common for Aura sites.
 
 2. **First publish materializes the bundle.** Until `sf community publish --name "<Network Name>"` runs once, `ExperienceBundle:<Name>` retrieves as "Entity cannot be found." Publish first, wait 30-60s, then retrieve.
 
@@ -392,24 +392,24 @@ If a route returns "Page not available," 95% of the time it is one of:
 
 ## Reference implementation — read for patterns, do NOT clone
 
-This skill was originally distilled from building the **Arlington Donor Portal**, modeled after `arlingtondiocese.org`. Use it as a **pattern reference only**, never as a source to copy files from. (The Arlington site shipped on LWR; the methodology has since shifted to Aura "Build Your Own" + custom LWCs as the stronger visual baseline. The brand-mining, decomposition, and standard-first patterns transfer cleanly to Aura BYO; the route/view/profile gotchas differ — see Phase 0 for the runtime gate.)
+This skill was originally distilled from building a real nonprofit donor portal modeled after a faith-based reference org website. Use any reference build as a **pattern reference only**, never as a source to copy files from. (The original reference shipped on LWR; the methodology has since shifted to Aura "Build Your Own" + custom LWCs as the stronger visual baseline. The brand-mining, decomposition, and standard-first patterns transfer cleanly to Aura BYO; the route/view/profile gotchas differ — see Phase 0 for the runtime gate.)
 
-**Read the Arlington repo to see:**
+**Read a reference repo to see:**
 
-- How a brand-mined static resource is organized: `staticresources/arlingtonDioceseAssets/`
-- How design tokens flow into theme customCSS: `experiences/Arlington_Donor_Portal1/themes/customerAccountPortal.json` `customCSS`
-- The shape of a standard-first homepage decomposition: `lwc/donorPortalHeader`, `donorHeroBanner`, `givingOpportunitiesGrid`, `bishopQuoteBanner`, `upcomingEvents`, `donorDashboard`
+- How a brand-mined static resource is organized: `staticresources/<orgName>Assets/`
+- How design tokens flow into theme customCSS: `experiences/<SiteName>/themes/customerAccountPortal.json` `customCSS`
+- The shape of a standard-first homepage decomposition: `lwc/donorPortalHeader`, `donorHeroBanner`, `givingOpportunitiesGrid`, `pullQuoteBanner`, `upcomingEvents`, `donorDashboard`
 - The multi-step form pattern: `lwc/donationForm` + `lwc/donationThankYou`
-- The shape of custom route metadata: `experiences/Arlington_Donor_Portal1/routes/donate.json` + `views/donate.json`
-- The shape of a guest access profile: `profiles/Arlington Donor Portal Profile.profile-meta.xml`
+- The shape of custom route metadata: `experiences/<SiteName>/routes/donate.json` + `views/donate.json`
+- The shape of a guest access profile: `profiles/<Site Name> Profile.profile-meta.xml`
 
 **Do NOT:**
 
-- Copy Arlington's `routes/*.json`, `views/*.json`, or `brandingSets/*.json` into a new project. Those files carry Arlington-specific IDs, component references, and layout choices that produce a low-quality result when dropped into a different brand.
+- Copy a reference repo's `routes/*.json`, `views/*.json`, or `brandingSets/*.json` into a new project. Those files carry org-specific IDs, component references, and layout choices that produce a low-quality result when dropped into a different brand.
 - Copy any Aura ExperienceBundle (Customer Service, Customer Account Portal, Partner Central) as a starting point. Packaged Aura layouts (`siteforce:sldsTwoCol84SidebarFeaturedLayout`, `serviceBody`, forced sidebar/featured regions) cannot be themed away and will override your brand work.
-- Copy LWCs across organizations without first re-deriving the component list from *this* engagement's Phase 1 brand-mine. A component that served Arlington's IA may be wrong for another org.
+- Copy LWCs across organizations without first re-deriving the component list from *this* engagement's Phase 1 brand-mine. A component that served one org's IA may be wrong for another org.
 
-**Instead:** author every `routes/*.json`, `views/*.json`, `brandingSets/*.json`, and `themes/*.json` file fresh from the metadata schema, using the Arlington files only to confirm the shape of a valid file. LWCs are re-derived from Phase 1 brand-mining and Phase 3 standard-first composition every time.
+**Instead:** author every `routes/*.json`, `views/*.json`, `brandingSets/*.json`, and `themes/*.json` file fresh from the metadata schema, using reference files only to confirm the shape of a valid file. LWCs are re-derived from Phase 1 brand-mining and Phase 3 standard-first composition every time.
 
 ## Additional resources
 

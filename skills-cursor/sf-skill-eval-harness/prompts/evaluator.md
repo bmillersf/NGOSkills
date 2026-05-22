@@ -36,7 +36,7 @@ For every dimension, check whether the score is below its hard-fail floor. Any b
 When grading the **Wow_Moment_Delivery** dimension, the following are automatic hard-fail breaches (drop the dimension score below its floor regardless of other criteria):
 
 - **Beat-step mismatch.** Any `wow_moment_delivery.deliveries[].narration_beat` whose `step` references a click-path step whose `description` is NOT semantically consistent with the beat's `narration` text. The narration describes what the audience hears; the step describes what they see. If they don't match — e.g., narration_beat.step="step-6" but narration text describes the action that happens in step-5 — that is automatic Wow_Moment_Delivery hard-fail. The same rule applies to `pain_context_beat`, `watch_this_cue`, and `moment_step`.
-  - Calibration source: Riverside Food Network pilot (2026-05-21) shipped a SHIP verdict at 95/100 with REQ-001's narration_beat anchored to step-6 while describing step-5 content. A presenter following the JSON literally would have delivered the wow at the wrong moment. This rule prevents that class of defect from soft-grading to a SHIP again.
+  - Calibration source: a real pilot run shipped a SHIP verdict at 95/100 with REQ-001's narration_beat anchored to step-6 while describing step-5 content. A presenter following the JSON literally would have delivered the wow at the wrong moment. This rule prevents that class of defect from soft-grading to a SHIP again.
 
 - **Beat ordering inversion.** The four beats per delivery must satisfy click-path step order: `pain_context_beat.step ≤ watch_this_cue.step ≤ moment_step ≤ narration_beat.step`. Any inversion is automatic Wow_Moment_Delivery hard-fail (a presenter cannot deliver narration before the moment).
 
