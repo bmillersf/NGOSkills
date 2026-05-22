@@ -33,6 +33,58 @@ upstream_refs:
 upstream_release_notes:
   - release: "Spring '26"
     url: https://help.salesforce.com/s/articleView?id=release-notes.rn_flow.htm
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "110-pt rubric (6 categories: Naming, Security, Performance, Architecture, Testing, Error Handling — derived from enhanced_validator.py 6-category validation per references/governance-checklist.md), mapped onto the 4-dimension default rubric from skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  flow_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 15
+      description: "Flow does what it claims AND handles bulk records. Maps to Architecture + Testing categories."
+      automatic_hard_fail_rules:
+        - "Any DML element inside a Loop element (record-by-record DML kills bulk processing)"
+        - "Any Get Records inside a Loop without bulk-collected lookup pattern"
+        - "Any record-triggered flow with empty entry conditions running on EVERY save"
+        - "Any IMPL-NOTES claim of bulk-safety contradicting actual XML structure"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 12
+      description: "Flow survives bad data, transient errors, and concurrent execution. Maps to Error Handling category."
+      automatic_hard_fail_rules:
+        - "Any callout or DML element with no Fault path connector"
+        - "Any Fault path that ends at End without logging or notifying (silent swallow)"
+        - "Any multi-DML flow without explicit transaction boundary"
+    - name: Fit
+      max: 25
+      hard_fail_below: 10
+      description: "Flow matches platform conventions. Maps to Naming + architectural fit. Triangle pattern, subflow extraction, Custom Metadata-driven config, PascalCase_With_Underscores naming."
+      automatic_hard_fail_rules:
+        - "Any hardcoded record Id (00*) or hardcoded URL/endpoint in a flow expression"
+        - "Any flow >150 elements without subflow extraction"
+    - name: Performance
+      max: 25
+      hard_fail_below: 12
+      description: "Flow respects governor limits at scale. Maps to Performance category."
+      automatic_hard_fail_rules:
+        - "Any record-triggered flow firing on EVERY save without entry conditions"
+        - "Any Get Records returning >2000 records without explicit limit"
+  test_rubric:
+    unit:
+      required: true
+      criteria: "Flow test coverage via Apex test class + Flow.Interview methods OR flow_simulator.py bulk testing simulation."
+    integration:
+      required: true
+      criteria: "Flow deploys to a connected org and is Active. Triggered flow fires verified via Anonymous Apex simulation."
+    smoke:
+      required: true
+      criteria: "Bulk invocation test (200+ records) does not exceed governor limits. Limits deltas measured in IMPL-NOTES."
 ---
 
 # sf-flow: Salesforce Flow Creation and Validation
@@ -46,6 +98,20 @@ python3 ~/.claude/plugins/marketplaces/sf-skills/sf-flow/hooks/scripts/validate_
 ```
 
 **Scoring**: 110 points across 6 categories. Minimum 88 (80%) for deployment.
+
+---
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (set in frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md) — an adversarial three-agent loop (planner → implementer → evaluator) that grades the generated flow XML against the rubric in fresh context.
+
+**Composition:** this skill owns the rubric (110-pt, 6 categories) and the 5-phase implementer workflow. The harness skill owns the loop control + fresh-context evaluation. The 4-dimension hard-fail mapping in the frontmatter `flow_dimensions` block (Correctness/Robustness/Fit/Performance) encodes the SPEC §5.1 default shape.
+
+**Why Flow needs adversarial eval:** the most damaging Flow failures aren't compile errors — they're DML-in-loops that work at N=1 but fail under bulk insert; missing Fault paths that silently swallow errors; record-triggered flows with empty entry conditions firing on every save (cumulative governor pressure). Self-eval misses these because the flow "works" in single-record testing.
+
+**Disabling:** set `eval_harness.enabled: false` in frontmatter or remove the block. The 5-phase workflow runs as before.
+
+See [the harness skill's SKILL.md](../../skills-cursor/sf-skill-eval-harness/SKILL.md) for full orchestration playbook.
 
 ---
 

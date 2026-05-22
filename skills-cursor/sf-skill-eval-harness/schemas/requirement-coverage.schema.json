@@ -1,0 +1,37 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "requirement-coverage.schema.json",
+  "title": "Phase 4 self-reported coverage matrix",
+  "description": "Phase 4 emits this; evaluator independently rebuilds it to detect divergence.",
+  "type": "object",
+  "required": ["version", "requirements_file", "coverage", "uncovered_requirements"],
+  "additionalProperties": false,
+  "properties": {
+    "version": {"type": "string", "enum": ["1.0"]},
+    "requirements_file": {"type": "string"},
+    "coverage": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["requirement_id", "covered_by_steps", "demonstration_quality"],
+        "additionalProperties": false,
+        "properties": {
+          "requirement_id": {"type": "string", "pattern": "^REQ-[0-9]{3,}$"},
+          "covered_by_steps": {
+            "type": "array",
+            "minItems": 1,
+            "items": {"type": "string", "pattern": "^step-[0-9]+$"}
+          },
+          "demonstration_quality": {"type": "string", "enum": ["primary", "incidental"]}
+        }
+      }
+    },
+    "uncovered_requirements": {
+      "type": "array",
+      "items": {"type": "string", "pattern": "^REQ-[0-9]{3,}$"}
+    },
+    "rationale_for_uncovered": {
+      "type": ["string", "null"]
+    }
+  }
+}

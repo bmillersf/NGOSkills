@@ -67,11 +67,75 @@ upstream_refs:
 upstream_release_notes:
   - release: "Spring '26"
     url: https://help.salesforce.com/s/articleView?id=release-notes.rn_industries_health.htm
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "150-pt rubric (7 categories: Regulatory 25 / Data Model 25 / Clinical Workflow 25 / FHIR 20 / UX 20 / PHI 20 / Testing 15) — mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  health_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 16
+      description: "Clinical data-model correctness. Maps to Data Model (25) + Clinical Workflow (25). Patient as Person Account, Care Plan / Care Request / Clinical Encounter wired correctly, lifecycle states honored, no shadow data model on top of Health Cloud objects."
+      automatic_hard_fail_rules:
+        - "Patient modeled as a Business Account when the org has Health Cloud's Person Account configuration enabled"
+        - "Custom object created to model a clinical concept that already has a first-class Health Cloud object (e.g., custom Care_Plan__c when CarePlan exists)"
+        - "Care Request lifecycle state transition that bypasses HealthCloudGA__ status enums (writing arbitrary Status values via DML)"
+        - "Clinical Encounter or Care Plan written without the required HealthcareProvider / Patient lookups populated — orphan records"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 18
+      description: "PHI + HIPAA safeguards. Maps to PHI (20) + Regulatory (25). Heaviest robustness floor — PHI exposure is a regulated breach with mandatory disclosure. Shield Platform Encryption, Event Monitoring, Field Audit Trail, signed BAA are baseline for any covered entity / BA workflow."
+      automatic_hard_fail_rules:
+        - "PHI-bearing custom field created on a clinical object without Shield Platform Encryption when the org is a Covered Entity or Business Associate"
+        - "Care Team membership granting clinician access to a patient outside their assigned panel without role-based sharing rule justification"
+        - "EHR / FHIR integration writing PHI to a non-encrypted staging object or to Platform Events without encrypted-payload guarantee"
+        - "Reports or dashboards exposing PHI to roles below the patient's care team without runtime sharing enforcement"
+        - "Audit trail (Field Audit Trail or Event Monitoring) not enabled on the PHI fields the workflow writes"
+    - name: Fit
+      max: 25
+      hard_fail_below: 12
+      description: "Pattern adherence to Health Cloud + FHIR conventions. Maps to FHIR (20) + portions of Data Model (25). Use OmniStudio Assessments for clinical questionnaires (not custom Visualforce), respect FHIR R4 resource boundaries on integration, follow Salesforce naming for custom extensions."
+      automatic_hard_fail_rules:
+        - "Custom clinical questionnaire built without OmniStudio Assessment when Assessment is the documented Salesforce pattern"
+        - "FHIR resource mapping that splits a single FHIR resource across multiple unrelated Salesforce objects (e.g., FHIR Patient mapped to Account + Contact + custom object)"
+        - "Custom field naming on Health Cloud objects without HealthCloudGA__-aware namespace consideration (causes upgrade collisions)"
+        - "Care Plan written via raw Apex instead of using Health Cloud Care Plan templates / Care Plan Goal / Care Plan Activity hierarchy"
+    - name: Performance
+      max: 25
+      hard_fail_below: 12
+      description: "UX + testing + scale. Maps to UX (20) + Testing (15). Console layout works under clinical-workflow load, FHIR callouts respect API limits, Apex test coverage on the clinical write paths is real (not mocked)."
+      automatic_hard_fail_rules:
+        - "Care Team console FlexiPage exceeding 25 components on a single page (Lightning performance cliff)"
+        - "FHIR callout pattern firing N callouts in a loop instead of using Composite API or batched Integration Procedure"
+        - "Apex coverage on clinical write paths below 75% OR coverage achieved purely via mocked HealthCloudGA__ stubs without an integration test"
+        - "Report on PHI fields without selective filter that would scale beyond 50k rows in production volume"
+  test_rubric:
+    unit:
+      required: true
+      criteria: "Health Cloud object metadata validates. Lifecycle state transitions enumerate valid HealthCloudGA__ Status values. Apex unit tests on Care Plan / Care Request / Clinical Encounter write paths assert lookup integrity and PHI field encryption."
+    integration:
+      required: true
+      criteria: "End-to-end clinical workflow runs against a Health Cloud sandbox: Patient → Care Plan → Care Team assignment → Clinical Encounter logged → Care Gap surfaced. FHIR integration round-trips a representative R4 resource (Patient / Observation / Condition) without data loss."
+    smoke:
+      required: true
+      criteria: "Care Team member opens the patient console, sees only patients in their panel (sharing enforced), can document an encounter, and PHI fields appear encrypted in reports/exports for users without explicit decrypt permission."
 ---
 
 # sf-industry-health: Health Cloud Architect
 
 Expert Salesforce architect specializing in **Health Cloud**: payer and provider data models, Care Plans, Care Requests, Clinical Encounters, EHR/FHIR integration, OmniStudio-powered Assessments, Care Team coordination, Utilization Management, Provider Network Management, Intelligent Appointment Management, Patient Services, Home Health, Social Determinants of Health (SDoH), and Care Gap closure.
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). 150-pt rubric across 7 clinical/regulatory categories, mapped onto the 4-dim shape with Robustness floor at 18 — PHI exposure is a regulated breach with mandatory disclosure. Hard-fail rules block unencrypted PHI fields, cross-panel Care Team access, FHIR mappings that fracture R4 resources, custom Care_Plan__c when CarePlan exists, and audit-trail-disabled PHI write paths. Disable with `eval_harness.enabled: false`.
+
+---
 
 This is an **industry skill**. Health Cloud introduces a first-class clinical data model (Patient as Person Account, Care Plan, Care Request, Clinical Encounter, etc.) that generic Sales Cloud or Service Cloud skills must not override. When Health Cloud is installed and the request touches clinical objects, this skill owns the task end-to-end.
 

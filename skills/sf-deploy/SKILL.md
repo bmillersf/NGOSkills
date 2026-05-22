@@ -30,11 +30,69 @@ upstream_refs:
 upstream_release_notes:
   - release: "Spring '26"
     url: https://help.salesforce.com/s/articleView?id=release-notes.rn_deployment.htm
+metadata:
+  scoring: "100 points across 5 categories — pass/fail emphasis (deploys either succeed or fail; the harness grades the rigor of the deploy plan and operational hygiene)"
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "100-pt rubric (5 categories: Validation Discipline 25, Deploy Plan 20, Test Strategy 20, Rollback + Recovery 20, Operational Hygiene 15) — newly authored 2026-05-21 to fill the harness coverage gap. Mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  deploy_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 18
+      description: "Validation discipline. Maps to Validation Discipline (25). Heaviest correctness floor — deploys are pass/fail by nature; what the harness grades is whether the team did dry-run validation BEFORE production deploy. Skipping --dry-run is the most common cause of failed prod deploys."
+      automatic_hard_fail_rules:
+        - "Any production deploy without --dry-run / validate-only run captured first"
+        - "Any deploy plan that says 'deploy directly to prod' without a sandbox checkpoint"
+        - "Any deploy whose package.xml hasn't been diff-reviewed against the target org"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 14
+      description: "Rollback + recovery. Maps to Rollback + Recovery (20). When (not if) a deploy partially succeeds, can the team recover without manual surgery?"
+      automatic_hard_fail_rules:
+        - "Any production deploy without documented rollback path (revert commit + redeploy, or restore from backup)"
+        - "Any deploy that leaves the org in an inconsistent state on partial failure (no transaction boundary)"
+        - "Any DML-data-migration deploy without backup snapshot taken first"
+    - name: Fit
+      max: 25
+      hard_fail_below: 10
+      description: "Test strategy + deploy plan match Salesforce conventions. Maps to Deploy Plan (20) + Test Strategy (20). RunLocalTests for prod, RunSpecifiedTests for fast iteration, NoTestRun NEVER for prod."
+      automatic_hard_fail_rules:
+        - "Any production deploy with --test-level NoTestRun (Salesforce will block, but harness catches it earlier)"
+        - "Any prod deploy without RunLocalTests (or equivalent justification for why a subset suffices)"
+        - "Any deploy missing changelog entry"
+    - name: Performance
+      max: 25
+      hard_fail_below: 10
+      description: "Operational hygiene. Maps to Operational Hygiene (15). Deploy logs captured, deploy ID retained, post-deploy smoke test scheduled."
+      automatic_hard_fail_rules:
+        - "Any deploy without 24h post-deploy debug log capture (issues surface in the first 24h disproportionately)"
+        - "Any prod deploy without post-deploy smoke test against representative user flows"
+  test_rubric:
+    unit:
+      required: true
+      criteria: "Validate-only deploy completes successfully (sf project deploy validate)."
+    integration:
+      required: true
+      criteria: "Sandbox deploy completes with all RunLocalTests passing. Deploy ID + duration captured."
+    smoke:
+      required: true
+      criteria: "Post-deploy smoke test against representative user flows passes. 24h debug log monitoring shows no new error patterns."
 ---
 
 # sf-deploy: Comprehensive Salesforce DevOps Automation
 
 Expert Salesforce DevOps engineer specializing in deployment automation, CI/CD pipelines, and metadata management using Salesforce CLI (sf v2).
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). 100-pt rubric authored 2026-05-21 to fill the harness coverage gap. Correctness floor at 18 — production deploys without --dry-run validation are the #1 preventable deploy failure. Robustness floor at 14 — rollback paths must be documented before deploying. Disable with `eval_harness.enabled: false`.
 
 ## Core Responsibilities
 

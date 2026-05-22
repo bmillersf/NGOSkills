@@ -35,6 +35,67 @@ upstream_refs:
 upstream_release_notes:
   - release: "Spring '26"
     url: https://help.salesforce.com/s/articleView?id=release-notes.rn_omnistudio.htm
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "120-pt rubric (7 categories: Contract & Dispatch 20 / Input Validation 20 / Security 20 / Error Handling 15 / Bulkification & Limits 20 / Testing 15 / Documentation 10) — mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  callable_apex_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 15
+      description: "Contract + dispatch correctness. Maps to Contract & Dispatch (20) + Input Validation (20). Explicit versioned action list, switch-on action with default-throws, args.get('inputMap') / args.get('options') extracted with null guards, return envelope shape consistent across actions."
+      automatic_hard_fail_rules:
+        - "Dynamic method invocation or reflection driven by user-supplied action string (security + maintainability hole)"
+        - "Default switch case that returns silently or returns success=false without typed exception or error envelope"
+        - "Input map keys accessed without containsKey / null check (NullPointerException on missing key)"
+        - "Inconsistent response shape across actions (some return Map, some return String, some return Boolean — caller can't trust the contract)"
+        - "VlocityOpenInterface migration that changes action string names — breaks existing IP / OmniScript callers"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 18
+      description: "Security floor. Maps to Security (20). Heaviest robustness floor — Industries callables are entry points invoked from declarative components; weak CRUD/FLS handling propagates security holes across every consumer."
+      automatic_hard_fail_rules:
+        - "Class declared without 'with sharing' (defaults to inherited or without — silent record-access escalation)"
+        - "DML on user-supplied SObjects without Security.stripInaccessible() or explicit FLS check"
+        - "SOQL on objects without WITH USER_MODE / WITH SECURITY_ENFORCED when callable runs in user context"
+        - "Empty catch block or exception swallowed (catch (Exception e) {}) — silent failure"
+        - "global class without an exception path — implementer can't surface errors to caller"
+    - name: Fit
+      max: 25
+      hard_fail_below: 12
+      description: "Pattern adherence + documentation. Maps to Documentation (10) + portions of Contract & Dispatch. Thin call() that delegates, ApexDoc on class + actions, action names documented + versioned, both Callable and Open Interface delegate to identical private methods when dual-supported."
+      automatic_hard_fail_rules:
+        - "Business logic inside call() / invokeMethod() instead of delegating to private methods (untestable + violates SRP)"
+        - "Missing ApexDoc on the class and on each action's private method"
+        - "Action names not documented — caller has to read source to know what's supported"
+        - "Dual Callable + Open Interface implementations with diverging logic instead of shared private methods"
+        - "Generic class name (Industries_Helper, MyCallable) instead of action-domain-named (Industries_OrderCallable)"
+    - name: Performance
+      max: 25
+      hard_fail_below: 14
+      description: "Bulkification + testing. Maps to Bulkification & Limits (20) + Testing (15). No SOQL/DML in loops, list inputs handled in single transaction, positive/negative/contract/bulk tests present."
+      automatic_hard_fail_rules:
+        - "SOQL or DML inside a for loop on input collection (governor-limit failure on bulk caller)"
+        - "Single-record assumption when input map's documented schema includes a list (silently drops everything past the first record)"
+        - "Test class missing the unsupported-action negative test"
+        - "Test class with no bulk test (single-record only) when the action accepts list inputs"
+        - "Long-running synchronous work (>5s expected duration) without async / Queueable handoff"
+  test_rubric:
+    unit:
+      required: true
+      criteria: "Apex compiles. ApexDoc present on class + action methods. Action dispatch is switch-based, default-throws, no reflection. Input null/contains-key guards in place."
+    integration:
+      required: true
+      criteria: "Class deploys to a connected org. Test class achieves ≥75% coverage on each action method. Positive, negative (unsupported action), contract (missing/invalid input), and bulk tests all green. Security.stripInaccessible / FLS checks fire correctly under restricted-profile runAs."
+    smoke:
+      required: true
+      criteria: "Real Industries consumer (Integration Procedure / OmniScript / Vlocity Open Interface caller) invokes the class via its action string and receives the documented envelope shape. Bulk invocation with list inputs completes within governor + CPU budgets."
 ---
 
 # sf-industry-commoncore-callable-apex: Callable Apex for Salesforce Industries Common Core
@@ -42,6 +103,12 @@ upstream_release_notes:
 Specialist for Salesforce Industries Common Core callable Apex implementations. Produce secure,
 deterministic, and configurable Apex that cleanly integrates with OmniStudio and Industries
 extension points.
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). 120-pt rubric across 7 categories, mapped onto the 4-dim shape with Robustness floor at 18 — Industries callables are entry points called from declarative components; weak CRUD/FLS handling propagates security holes across every consumer. Hard-fail rules block reflection-based dispatch, without-sharing classes, swallowed exceptions, SOQL/DML in loops, and inconsistent response envelopes. Disable with `eval_harness.enabled: false`.
+
+---
 
 ## Core Responsibilities
 

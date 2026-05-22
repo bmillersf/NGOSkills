@@ -35,6 +35,16 @@ upstream_refs:
 upstream_release_notes:
   - release: "Spring '26"
     url: https://help.salesforce.com/s/articleView?id=release-notes.rn_summary.htm
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "200-pt rubric in this SKILL.md (Scoring Rubric section)"
+  hard_fail_dimensions: [Correctness, Robustness]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
 ---
 
 # sf-demo-validate: Autonomous Demo Script Validation & Repair
@@ -65,6 +75,7 @@ Expert Salesforce demo environment engineer specializing in end-to-end validatio
 | **Fix strategies** | [references/fix-strategies.md](references/fix-strategies.md) | Fix patterns per issue type, cross-skill delegation rules |
 | **Starter template** | [assets/demoscript-template.md](assets/demoscript-template.md) | Blank demoscript.md users can copy and fill in |
 | **Screenshot script** | [scripts/screenshot.js](scripts/screenshot.js) | Playwright utility for headless page screenshots |
+| **Eval harness (pilot)** | [skills-cursor/sf-skill-eval-harness/SKILL.md](../../skills-cursor/sf-skill-eval-harness/SKILL.md) | Three-agent adversarial loop wrapping the 7-phase workflow. See "Eval Harness Wrap" section below. |
 
 ---
 
@@ -102,6 +113,38 @@ Each step may include a `type` hint to direct the validation strategy:
 | `omnistudio` | OmniScripts, FlexCards, Integration Procedures, Data Mappers deployed and active |
 
 When no type is given, the skill infers the appropriate strategy from the step description.
+
+---
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (set in frontmatter above), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md) — a separate skill that owns the orchestration of planner / implementer / evaluator subagents and the 200-pt rubric grading in fresh context.
+
+**This skill provides the rubric (the 200-pt scoring section below) and the implementer playbook (the 7-phase workflow below). The harness skill provides the loop control and adversarial evaluation.**
+
+The 7-phase workflow is **unchanged** by the harness — it's what the implementer subagent executes. Only the surrounding evaluation flow changes:
+
+- The harness skill spawns a fresh evaluator subagent (no memory of prior iterations) to re-grade the result against the same 200-pt rubric, catching gaps that self-evaluation tends to gloss over.
+- The harness skill writes structured handoffs in `.eval-harness/` so artifacts can't drift between iterations.
+- A planner subagent owns the SPEC.md the implementer builds against.
+
+### How the harness composes with this skill
+
+| What | Owned by |
+|---|---|
+| 200-pt scoring rubric (and cross-cloud add-ons) | This skill ("Scoring Rubric" section below) |
+| 7-phase implementer workflow (Parse → Connect → Validate → Report → Fix → Re-Validate → Summary) | This skill ("Workflow" section below) |
+| Fix strategies, CLI commands, cross-skill delegation | This skill (existing references) |
+| Three-agent loop control (SHIP / ITERATE / SPEC-DEFECT verdicts, hard-fail floors, replan budget) | sf-skill-eval-harness |
+| Subagent prompts (planner / implementer / evaluator) | sf-skill-eval-harness/prompts/ |
+| JSON Schemas for cross-phase contracts | sf-skill-eval-harness/schemas/ |
+| Append-only TRACE.md primary debugging loop | sf-skill-eval-harness |
+
+See [the harness skill's SKILL.md](../../skills-cursor/sf-skill-eval-harness/SKILL.md) for the full orchestration playbook.
+
+### Disabling the harness
+
+Set `eval_harness.enabled: false` in this skill's frontmatter (or remove the `eval_harness:` block entirely). The 7-phase workflow runs as before with no harness wrap.
 
 ---
 

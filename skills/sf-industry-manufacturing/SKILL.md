@@ -22,6 +22,51 @@ compatibility: "Requires Manufacturing Cloud license (standard namespace — no 
 metadata:
   version: "1.0.0"
   author: "NGOSkills"
+  scoring: "50 points across 5 categories — Industry detection 10 / Object model 10 / Process routing 10 / Namespace hygiene 10 / License gating 10"
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "50-pt rubric (5 categories) extracted from existing 'Scoring rubric (50 points)' section in this SKILL.md (line 72). Mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  manufacturing_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 14
+      description: "Industry detection + Object model. Maps to Industry detection (10) + Object model (10). Manufacturing Cloud detection + correct first-class object usage (SalesAgreement / AccountForecast / RebateProgram / ManufacturingWorkOrder)."
+      automatic_hard_fail_rules:
+        - "Manufacturing Cloud detected but Sales Cloud objects (Opportunity / Quote) used instead of SalesAgreement / AccountForecast (industry override)"
+        - "Sales agreements modeled as custom Opportunities instead of SalesAgreement"
+        - "Account forecasting rolled up via Apex when AccountForecast auto-calculates"
+        - "Rebate calculation built in Flow when Rebate Management engine handles it"
+        - "Field Service WorkOrder reused for plant-floor work instead of ManufacturingWorkOrder"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 12
+      description: "License gating. Maps to License gating (10). Add-ons (Rebate Management, Advanced Account Forecast) confirmed present before recommending features that depend on them."
+      automatic_hard_fail_rules:
+        - "Rebate Management features recommended without confirming Rebate Management license"
+        - "Advanced Account Forecast features recommended without confirming Advanced add-on license"
+        - "Distributor portal / Partner Channel features recommended without confirming Experience Cloud / Partner license"
+    - name: Fit
+      max: 25
+      hard_fail_below: 12
+      description: "Process routing + Delegation hygiene. Maps to Process routing (10). OmniStudio work delegated to common-core; standard automation to sf-flow/sf-apex; domain rules stay here."
+      automatic_hard_fail_rules:
+        - "OmniScript / IP / Data Mapper / FlexCard / Callable Apex authoring done here instead of delegated to sf-industry-commoncore-*"
+        - "Standard automation work (Record-Triggered Flow / Apex) authored in this skill instead of routed to sf-flow / sf-apex"
+        - "Generic Sales Cloud pipeline work handled here (route to sf-sales-cloud)"
+    - name: Performance
+      max: 25
+      hard_fail_below: 12
+      description: "Namespace hygiene. Maps to Namespace hygiene (10). Manufacturing Cloud uses standard namespace; vlocity_*__ namespace assumption is wrong."
+      automatic_hard_fail_rules:
+        - "vlocity_cmt__ / vlocity_*__ namespace assumed (Manufacturing Cloud is STANDARD namespace — no managed package)"
+        - "API names hardcoded with namespace prefix that doesn't exist on the org"
 release_pinned: "Spring '26"
 docs_last_verified: 2026-05-01
 upstream_refs:
@@ -37,6 +82,10 @@ upstream_release_notes:
   - release: "Spring '26"
     url: https://help.salesforce.com/s/articleView?id=release-notes.rn_industries_manufacturing.htm
 ---
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). 50-pt rubric across 5 router categories, mapped onto the 4-dim shape. Correctness floor at 14 — Manufacturing Cloud uses standard namespace + first-class objects (SalesAgreement / AccountForecast / RebateProgram / ManufacturingWorkOrder); custom Opportunity / Apex rollup / Field-Service WorkOrder reuse are the dominant defects. Hard-fail rules block sales agreements as Opportunities, custom Apex forecast rollups, Rebate calc in Flow when Rebate Management handles it, FS WorkOrder reuse, license gating skips, and vlocity_cmt__ namespace assumption. Disable with `eval_harness.enabled: false`.
 
 ## When this skill owns the task
 

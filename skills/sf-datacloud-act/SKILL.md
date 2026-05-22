@@ -15,6 +15,56 @@ metadata:
   version: "1.0.0"
   author: "Gnanasekaran Thoppae"
   phase: "Act"
+  scoring: "100 points across 4 categories — newly authored 2026-05-22 (Activation Target + Schema 30 / Consent + Compliance 30 / Refresh + Delivery Cadence 20 / Verification 20)"
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "100-pt rubric (4 categories) newly authored 2026-05-22 — mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  dc_act_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 14
+      description: "Activation target + schema. Right activation target type for the destination (Marketing Cloud / Slack / Ad platforms / data action target); schema attributes match destination needs."
+      automatic_hard_fail_rules:
+        - "Activation target type doesn't match destination (e.g., generic file target wired to a system that has a native target)"
+        - "Activation attributes mapped without confirming destination supports the field (silent drop)"
+        - "Activation built on a segment that hasn't been published"
+        - "Data Action wired without confirming the destination consumer can handle the cadence + payload shape"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 18
+      description: "Consent + compliance. Heaviest robustness floor — activation is the egress point; compliance failures (TCPA / GDPR / CCPA / PECR) all manifest at this layer."
+      automatic_hard_fail_rules:
+        - "Activation runs without consulting Data Cloud Contact Point Consent (egress to channels the user opted out of)"
+        - "Suppression list / DSAR / right-to-be-forgotten not respected"
+        - "Cross-border data transfer activation (e.g., EU → US) without documented Standard Contractual Clauses / Adequacy Decision"
+        - "PII / PHI activated to a destination the destination provider has no BAA / DPA in place to receive"
+        - "Consent expiry not respected — activations include records whose consent has lapsed"
+        - "Activation logs not retained per regulatory requirement (audit gap)"
+    - name: Fit
+      max: 25
+      hard_fail_below: 12
+      description: "Generic templates + downstream handoff. Use generic activation templates; segment work belongs to sf-datacloud-segment; STDM / observability to sf-ai-agentforce-observability."
+      automatic_hard_fail_rules:
+        - "Org-specific activation JSON written when generic activation-target.template.json / activation.template.json would serve"
+        - "Segment creation authored here instead of routed to sf-datacloud-segment"
+        - "Observability / STDM telemetry handled here instead of routed to sf-ai-agentforce-observability"
+        - "Custom Apex authored here for activation logic when Data Cloud activation handles it natively"
+    - name: Performance
+      max: 25
+      hard_fail_below: 12
+      description: "Refresh + delivery cadence + verification. Cadence aligns with destination consumer needs; first-publish smoke verified; failure-mode handling (retry, dead-letter) defined."
+      automatic_hard_fail_rules:
+        - "Activation cadence faster than destination ingestion limits (rate-limit storm)"
+        - "First-publish smoke not run (full audience pushed before single-record validation)"
+        - "Activation failure mode undefined (no retry / dead-letter / alerting on partial delivery)"
+        - "Audience size on first publish not measured against destination capacity (e.g., pushing 5M records to a destination with 100k/day cap)"
 release_pinned: "Spring '26"
 docs_last_verified: 2026-05-01
 upstream_refs:
@@ -38,6 +88,10 @@ upstream_release_notes:
 # sf-datacloud-act: Data Cloud Act Phase
 
 Use this skill when the user needs **downstream delivery work**: activations, activation targets, data actions, or pushing Data Cloud outputs into other systems.
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). 100-pt rubric across 4 Act-phase categories, newly authored 2026-05-22. Robustness floor at 18 — activation is the egress point; compliance failures (TCPA / GDPR / CCPA / PECR) manifest here. Hard-fail rules block activation without consulting Contact Point Consent, ignored suppression / DSAR / right-to-be-forgotten, cross-border transfers without SCCs, PII/PHI activated to destinations without BAA/DPA, missing first-publish smoke test, undefined failure mode (no retry / dead-letter), and audience size mismatched with destination capacity. Disable with `eval_harness.enabled: false`.
 
 ## When This Skill Owns the Task
 

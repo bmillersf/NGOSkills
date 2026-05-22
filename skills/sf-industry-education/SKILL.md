@@ -29,6 +29,60 @@ compatibility: "Education Cloud (native) OR EDA managed package (namespace hed__
 metadata:
   version: "1.0.0"
   author: "NGOSkills"
+  scoring: "150 points across 7 categories — Edition fit 20 / Data model 30 / Workflow 25 / Process automation 20 / UX 15 / Integration 20 / Testing+compliance 20 (105 is passing). Category thresholds: Edition fit <14 / Data model <20 / Workflow <17 / Testing+compliance <12 = automatic fail."
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "150-pt rubric (7 categories) extracted from existing 'Scoring Rubric' section in this SKILL.md (line 263). Mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  education_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 16
+      description: "Edition fit + Data model correctness. Maps to Edition fit (20) + Data model (30). Education Cloud (native) vs EDA (hed__ namespace) is the foundational decision; wrong platform assumption poisons everything downstream."
+      automatic_hard_fail_rules:
+        - "EDA (hed__) and native Education Cloud confused — wrong objects used for the org's edition (per the rubric: Edition fit <14 = automatic fail)"
+        - "Student modeled on Account or Lead instead of native Student object (Education Cloud) or appropriate Contact-with-hed__-record-type (EDA)"
+        - "Program Enrollment / Course Connection / Term / Course Offering objects not used for academic operations (custom shadow objects)"
+        - "Affiliation modeled with custom junction object when hed__Affiliation__c (EDA) or native Affiliation (EdC) exists"
+        - "Migration mid-flight org built as if it were EDA-only or native-only (transition state requires both data models present)"
+        - "Data model correctness <20 → automatic fail per the rubric"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 16
+      description: "Testing + FERPA compliance. Maps to Testing+compliance (20). FERPA is non-negotiable; restricted-record FLS, Shield posture, persona UAT coverage are how the org survives an audit."
+      automatic_hard_fail_rules:
+        - "Testing+compliance <12 → automatic fail per the rubric (FERPA is not optional)"
+        - "FERPA-restricted record fields not masked for non-privileged personas via FLS"
+        - "Shield Platform Encryption not configured for the org's regulated student data when Shield is in scope"
+        - "Apex tests / Flow tests missing on student-lifecycle write paths"
+        - "Persona UAT coverage missing for student / faculty / advisor / admissions roles"
+        - "Directory information vs PII fields not classified per FERPA — entire student record treated as one access tier"
+    - name: Fit
+      max: 25
+      hard_fail_below: 14
+      description: "Workflow correctness + Process automation + UX. Maps to Workflow (25) + Process automation (20) + UX (15). Right module for lifecycle stage (recruiting ≠ admissions ≠ advising); Flow-first; persona-appropriate pages."
+      automatic_hard_fail_rules:
+        - "Workflow correctness <17 → automatic fail per the rubric"
+        - "Recruiting / admissions / advising workflows conflated (one process covering all three — module mismatch)"
+        - "Apex trigger written when a Record-Triggered Flow expresses the same logic"
+        - "Trigger logic without TriggerHandler pattern (handler proliferation; recursion-prone)"
+        - "Persona pages (student / faculty / advisor / admissions) not differentiated by Record Page Assignment"
+        - "Course Catalog / Term / Course Offering hand-rolled when native objects cover it"
+    - name: Performance
+      max: 25
+      hard_fail_below: 12
+      description: "Integration. Maps to Integration (20). SIS / LMS / National Student Clearinghouse / FAFSA / Common App wired correctly via documented patterns."
+      automatic_hard_fail_rules:
+        - "SIS / LMS integration without Named Credential / External Service / Platform Event pattern (raw HTTP / inline auth)"
+        - "Synchronous SIS callouts in triggers (governor-limit / SIS-rate-limit exposure)"
+        - "End-to-end test (SIS inbound → Program Enrollment → Course Connection → LMS grade writeback) skipped"
+        - "FAFSA / Common App / Clearinghouse integration without staging-data smoke test"
 release_pinned: "Spring '26"
 docs_last_verified: 2026-05-04
 upstream_refs:
@@ -53,6 +107,10 @@ upstream_release_notes:
 # sf-industry-education: Education Cloud + EDA Architect
 
 Expert Salesforce architect for **Education Cloud (native, 2024+)** and the **legacy Education Data Architecture (EDA) managed package** (namespace `hed__`). This skill owns the full student lifecycle on Salesforce: recruiting, admissions, enrollment, advising, retention, student success, alumni engagement, and academic operations (courses, terms, programs, plans).
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). 150-pt rubric across 7 Education categories, extracted from this skill's existing Scoring Rubric section (line 263) and mapped onto the 4-dim shape. Two heaviest floors: Correctness 16 (Edition fit + Data model — wrong platform poisons everything downstream) and Robustness 16 (FERPA is non-negotiable). Hard-fail rules block EDA/Education-Cloud confusion, Student modeled on Account/Lead, FERPA-restricted fields exposed to non-privileged personas, recruiting/admissions/advising workflows conflated, persona pages undifferentiated, SIS/LMS integration via raw HTTP, and end-to-end test skipped. Disable with `eval_harness.enabled: false`.
 
 This is an **industry skill**. When the org has Education Cloud or EDA installed and the request touches a student, program, course, term, affiliation, advising, recruiting, retention, or admissions concept, this skill wins over `sf-sales-cloud`, `sf-service-cloud`, and `sf-service-case` and they must defer here.
 

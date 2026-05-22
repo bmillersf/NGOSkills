@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "click-path.schema.json",
+  "title": "Phase 4 → 7 click-path contract with POV tagging",
+  "description": "Phase 4 emits this. Phase 7 generates Playwright tests directly from it. Each step is POV-tagged for ratio enforcement.",
+  "type": "object",
+  "required": ["version", "steps"],
+  "additionalProperties": false,
+  "properties": {
+    "version": {"type": "string", "enum": ["1.0"]},
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "description", "pov", "actions"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {"type": "string", "pattern": "^step-[0-9]+$"},
+          "description": {"type": "string", "minLength": 5},
+          "pov": {"type": "string", "enum": ["end_user", "admin", "mixed", "narrative"]},
+          "url_pattern": {"type": "string"},
+          "actions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["type"],
+              "additionalProperties": true,
+              "properties": {
+                "type": {"type": "string", "enum": ["click", "wait_for", "screenshot", "type", "navigate", "narrate"]},
+                "selector": {"type": "string"},
+                "name": {"type": "string"},
+                "value": {"type": "string"}
+              }
+            }
+          },
+          "expected_visible": {
+            "type": "array",
+            "items": {"type": "string"}
+          }
+        }
+      }
+    }
+  }
+}

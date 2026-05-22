@@ -21,6 +21,62 @@ compatibility: "Requires Data Cloud enabled + Marketing Cloud Growth (Starter / 
 metadata:
   version: "1.0.0"
   author: "NGOSkills"
+  scoring: "130 points across 6 categories — Audience+DC integration 25 / Journey design 25 / Content 20 / Compliance+deliverability 25 / Einstein 15 / Reporting+validation 20 (98 is passing)"
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "130-pt rubric (6 categories) extracted from existing 'Scoring Rubric — 130 Points' section in this SKILL.md (line 276). Mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  marketing_growth_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 16
+      description: "Audience + Data Cloud integration + Journey design. Maps to Audience+DC integration (25) + Journey design (25). Wrong audience source or hand-populated CampaignMember workarounds break MCG's foundational pattern (DC segment → activation → MCG send)."
+      automatic_hard_fail_rules:
+        - "MCG and legacy Marketing Cloud Engagement (ExactTarget / SFMC) treated as the same product (AMPscript / Automation Studio / Data Extensions / separate-tenant auth all belong to MCE — won't deploy on MCG)"
+        - "Manually adding CampaignMember records to feed a journey instead of activating a Data Cloud segment (creates divergence between Campaign rollups and send counts; manual-add path never gets unwound)"
+        - "Identity resolution unverified before send activation (audience targets duplicates / wrong individuals)"
+        - "Custom Apex replacing native Journey Builder branch / wait / frequency-cap functionality"
+        - "Single Journey covering multiple unrelated business scenarios (transactional + promotional + nurture collapsed — mediocre compromise for all)"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 18
+      description: "Compliance + deliverability floor. Maps to Compliance+deliverability (25). Heaviest robustness floor — TCPA / CASL / PECR / GDPR / CAN-SPAM violations are regulated; SMS non-compliance can be a 5-7 figure settlement; DMARC misalignment silently downgrades inbox placement in 2024+."
+      automatic_hard_fail_rules:
+        - "SPF / DKIM / DMARC not all passing on the sending domain"
+        - "Preference center not live"
+        - "Suppression list / DC Contact Point Consent not respected by the send (bypass flag turning off consent — compliance incident)"
+        - "Consent model not documented for the audience geography"
+        - "Unsubscribe doesn't propagate back to Data Cloud Contact Point Consent (next send still includes the unsubscriber)"
+        - "SMS send without country-required STOP / HELP language + on-file consent (TCPA / CASL / PECR / ePrivacy violation)"
+        - "CAN-SPAM / GDPR requirements for the audience geography unmet (e.g., no physical postal address, no consent record, no Article 6 lawful basis)"
+    - name: Fit
+      max: 25
+      hard_fail_below: 14
+      description: "Content quality + Einstein license alignment. Maps to Content (20) + Einstein (15). Brand tokens not hardcoded values; merge fields with safe defaults; Einstein features within the licensed tier (Copy Insights = Advanced only)."
+      automatic_hard_fail_rules:
+        - "Hardcoded brand colors / fonts / logo URLs in Content Builder assets instead of BrandKit tokens (rebrand collision waiting)"
+        - "Merge fields without safe defaults (recipient sees 'Hi {{firstName}},' literal when null)"
+        - "Plain-text version of email missing (deliverability + accessibility hit)"
+        - "SMS over single-segment length without acknowledged multi-part design (cost surprise)"
+        - "Advanced-tier Einstein features (generative Copy Insights, advanced frequency optimization, multi-language generative) designed for an org on Starter / Growth — stalls at deployment"
+        - "STO activated globally instead of on the Send step (loses per-step optimization)"
+        - "Generative Copy Insights output not human-edited before activation (brand voice + factual accuracy drift)"
+    - name: Performance
+      max: 25
+      hard_fail_below: 12
+      description: "Reporting reconciliation + test-send hygiene. Maps to Reporting+validation (20). Campaign rollup ≈ journey send count ≈ DC activation count within 1%; seed send tested on real inbox providers + mobile; branch paths individually tested."
+      automatic_hard_fail_rules:
+        - "Reporting variance >1% between Campaign rollup, Journey send count, and Data Cloud activation count (reporting-wiring bug, not statistical noise)"
+        - "Test-send skipped on real inbox providers (Gmail / Outlook 365 / Apple Mail / Yahoo + mobile) — Preview button uses webview that doesn't match real-client rendering"
+        - "Branch paths not individually tested with synthetic recipients (silent dead branches)"
+        - "Regression / pre-flight script missing for demo-bound sends"
+        - "Frequency cap not configured (audience over-mailed across journeys)"
 release_pinned: "Spring '26"
 docs_last_verified: 2026-05-01
 upstream_refs:
@@ -42,6 +98,10 @@ upstream_release_notes:
 ---
 
 # sf-marketing-cloud-growth: Marketing Cloud Growth (Data Cloud-Native)
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). 130-pt rubric across 6 MCG categories, extracted from this skill's existing Scoring Rubric section (line 276) and mapped onto the 4-dim shape. Robustness floor at 18 — TCPA / CASL / PECR / GDPR / CAN-SPAM violations are regulated; SMS non-compliance can be a 5-7 figure settlement; DMARC misalignment silently downgrades inbox placement in 2024+. Hard-fail rules block MCG/MCE confusion, manual CampaignMember workarounds, identity-resolution-unverified sends, hardcoded brand assets, Advanced-tier Einstein features on Starter/Growth, missing SPF/DKIM/DMARC, consent bypass flags, and reporting variance >1%. Disable with `eval_harness.enabled: false`.
 
 Use this skill when the user is designing, building, or troubleshooting marketing on **Marketing Cloud Growth** (MCG) — the Core-org, Data-Cloud-backed Marketing Cloud introduced in 2024 and sold as the Starter, Growth, and Advanced tiers. MCG is a fundamentally different product from legacy Marketing Cloud Engagement (ExactTarget / SFMC) and from Marketing Cloud Account Engagement (Pardot). It runs **inside the Core org**, it uses **Data Cloud as its system of record** for audiences, and it uses the Core-org Campaign object as the campaign primitive.
 

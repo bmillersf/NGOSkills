@@ -39,6 +39,58 @@ upstream_refs:
 upstream_release_notes:
   - release: "Spring '26"
     url: https://help.salesforce.com/s/articleView?id=release-notes.rn_experience_cloud.htm
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "120-pt rubric in section 5 (7 categories: Runtime/license choice 15, Sharing architecture 25, Guest user hardening 25, Experience Builder composition 20, Audiences and Branding Sets 15, Deployment and activation 10, Testing and audit 10), mapped onto the 4-dimension default rubric from skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  experience_cloud_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 15
+      description: "Site renders correctly + license model fits the audience. Maps to Runtime/license choice (15) + Experience Builder composition (20)."
+      automatic_hard_fail_rules:
+        - "Any LWR site referenced as 'Aura site' or vice versa (license + capability mismatch)"
+        - "Any external user portal using Internal license (compliance violation)"
+        - "Any guest user accessing PII-bearing object without explicit guest profile + Sharing Set"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 15
+      description: "Site survives security probes + bad input. Maps to Guest user hardening (25). Hardest hard-fail floor in this rubric — guest exploits are catastrophic."
+      automatic_hard_fail_rules:
+        - "Any guest user profile granting Modify All Data, View All Data, or Customize Application"
+        - "Any object with guest user CRUD without Sharing Set restricting record visibility"
+        - "Any public-facing form without CSRF protection / input validation"
+        - "Any guest profile with Apex class access to a class that does DML on user-input data without Security.stripInaccessible"
+    - name: Fit
+      max: 25
+      hard_fail_below: 10
+      description: "Site matches Experience Cloud conventions. Maps to Sharing architecture (25) + Audiences and Branding Sets (15). Sharing Sets for record visibility, Share Groups for partner hierarchies, Audiences for targeted experiences, Branding Sets for visual identity."
+      automatic_hard_fail_rules:
+        - "Any custom sharing logic via Apex when Sharing Sets / Share Groups would suffice"
+        - "Any Branding Set hardcoded into a component instead of referenced via styling hooks"
+    - name: Performance
+      max: 25
+      hard_fail_below: 12
+      description: "Site deploys cleanly and renders fast. Maps to Deployment and activation (10) + Testing and audit (10). Experience Bundle deploys without errors, CDN caching enabled, lazy load components, no N+1 SOQL on landing pages."
+      automatic_hard_fail_rules:
+        - "Any landing page making >3 SOQL queries via @wire on initial render"
+        - "Any Experience Bundle deploy with package.xml referencing components that don't exist (deploy fails)"
+  test_rubric:
+    unit:
+      required: true
+      criteria: "Component-level Jest + Apex tests for any custom code in the bundle. ≥80% coverage of the public surface."
+    integration:
+      required: true
+      criteria: "Experience Bundle deploys to a connected org without errors. Site is Active. Public URL responds 200 (or 401 for auth-required pages)."
+    smoke:
+      required: true
+      criteria: "Guest-user flow (if any) and member-user flow both render their primary pages without console errors. Sharing Set + Share Group rules verified by inserting a test record + querying as the external user."
 ---
 
 # sf-experience-cloud: General (Non-Nonprofit) Experience Cloud
@@ -46,6 +98,18 @@ upstream_release_notes:
 Use this skill when the user is building, branding, or troubleshooting a **general-purpose Experience Cloud site** — a customer community, partner community, self-service portal, help center, or public-facing microsite — for a **non-nonprofit** org. Nonprofit Experience Cloud has its own dedicated trio of skills (architecture, UX, build methodology) that handle donor / volunteer / client / grantee / program-participant portals; industry clouds (FSC / Health / EDU / PSS / Field Service / Manufacturing / CG / Comms / Media / Energy) own their industry-specific portal patterns.
 
 This skill owns: LWR site architecture, Aura site legacy patterns, Experience Builder, Audiences (rule-based targeting), Branding Sets, Theme editor, Site Navigation, CMS channels and content, Topics / Navigational Topics, Guest user access patterns, External user licenses (Customer Community / Customer Community Plus / Partner Community / External Apps), Sharing Sets, Share Groups, Account Relationships, external account hierarchies, external user permission sets, and deployment of Experience Bundles.
+
+---
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). Three subagents (planner / implementer / evaluator) loop against the 120-pt rubric in fresh context.
+
+**Why Experience Cloud needs the harness:** the most damaging failures are guest-user exploits (CRUD on PII without Sharing Set, profile granting Modify All Data, missing CSRF protection on public forms). These look fine in dev because the developer is logged in as admin. Self-eval misses them. Adversarial eval runs the guest-hardening probe deterministically.
+
+**Composition:** rubric stays in section 5 below (120 pts, 7 categories). Frontmatter `experience_cloud_dimensions` block maps onto 4 SPEC dimensions with hard-fail floors. Robustness floor is 15 (highest in the rubric) because guest exploits are catastrophic.
+
+**Disabling:** set `eval_harness.enabled: false` in frontmatter.
 
 ---
 

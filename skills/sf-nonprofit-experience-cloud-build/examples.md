@@ -1,6 +1,6 @@
 # Examples — Nonprofit Experience Cloud Build
 
-Concrete LWC patterns distilled from the Arlington Donor Portal reference implementation. Adapt the shapes; replace the content with the target organization's brand and content.
+Concrete LWC patterns distilled from the <Org> Donor Portal reference implementation. Adapt the shapes; replace the content with the target organization's brand and content.
 
 ## Example 1 — Branded header with navigation
 
@@ -12,7 +12,7 @@ Renders a logo from a static resource, navigates via `basePath`, and has a prima
 import { LightningElement, api } from 'lwc';
 import { NavigationMixin } from 'lightning/navigation';
 import basePath from '@salesforce/community/basePath';
-import ASSETS from '@salesforce/resourceUrl/arlingtonDioceseAssets';
+import ASSETS from '@salesforce/resourceUrl/orgAssets';
 
 export default class DonorPortalHeader extends NavigationMixin(LightningElement) {
     @api donorName;
@@ -77,15 +77,15 @@ Tiles that pre-fill the donation form's fund selection via URL parameters.
 import { LightningElement } from 'lwc';
 import { NavigationMixin } from 'lightning/navigation';
 import basePath from '@salesforce/community/basePath';
-import ASSETS from '@salesforce/resourceUrl/arlingtonDioceseAssets';
+import ASSETS from '@salesforce/resourceUrl/orgAssets';
 
 export default class GivingOpportunitiesGrid extends NavigationMixin(LightningElement) {
     opportunities = [
         {
-            id: 'bishops-lenten-appeal',
-            title: "Bishop's Lenten Appeal",
+            id: 'annual-appeal-2026',
+            title: "Annual Appeal 2026",
             description: 'Support diocesan ministries and services.',
-            fund: "Bishop's Lenten Appeal",
+            fund: "Annual Appeal 2026",
             image: ASSETS + '/tile-bla.jpg'
         },
         {
@@ -261,7 +261,7 @@ export default class DonorDashboard extends LightningElement {
         { "componentName": "c:donorHeroBanner" },
         { "componentName": "c:givingOpportunitiesGrid" },
         { "componentName": "c:donorDashboard" },
-        { "componentName": "c:bishopQuoteBanner" },
+        { "componentName": "c:pullQuoteBanner" },
         { "componentName": "c:upcomingEvents" }
       ]
     }
@@ -273,11 +273,11 @@ export default class DonorDashboard extends LightningElement {
 
 ## Reference implementation
 
-All patterns above are live in the **Arlington Donor Portal** reference repo:
+All patterns above are live in the **<Org> Donor Portal** reference repo:
 
-- Static resource: `force-app/main/default/staticresources/arlingtonDioceseAssets/`
-- Theme `customCSS`: `force-app/main/default/experiences/Arlington_Donor_Portal1/themes/customerAccountPortal.json`
-- LWCs: `force-app/main/default/lwc/donorPortalHeader`, `donorHeroBanner`, `givingOpportunitiesGrid`, `bishopQuoteBanner`, `upcomingEvents`, `donorDashboard`, `donationForm`, `donationThankYou`
-- Routes and views: `force-app/main/default/experiences/Arlington_Donor_Portal1/routes/donate.json`, `views/donate.json`, `routes/donateThankYou.json`, `views/donateThankYou.json`
-- Guest profile config: `force-app/main/default/profiles/Arlington Donor Portal Profile.profile-meta.xml`
-- Network live status: `force-app/main/default/networks/Arlington Donor Portal.network-meta.xml`
+- Static resource: `force-app/main/default/staticresources/orgAssets/`
+- Theme `customCSS`: `force-app/main/default/experiences/Donor_Portal1/themes/customerAccountPortal.json`
+- LWCs: `force-app/main/default/lwc/donorPortalHeader`, `donorHeroBanner`, `givingOpportunitiesGrid`, `pullQuoteBanner`, `upcomingEvents`, `donorDashboard`, `donationForm`, `donationThankYou`
+- Routes and views: `force-app/main/default/experiences/Donor_Portal1/routes/donate.json`, `views/donate.json`, `routes/donateThankYou.json`, `views/donateThankYou.json`
+- Guest profile config: `force-app/main/default/profiles/<Org> Donor Portal Profile.profile-meta.xml`
+- Network live status: `force-app/main/default/networks/<Org> Donor Portal.network-meta.xml`

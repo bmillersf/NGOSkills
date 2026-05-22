@@ -35,11 +35,70 @@ upstream_refs:
 upstream_release_notes:
   - release: "Spring '26"
     url: https://help.salesforce.com/s/articleView?id=release-notes.rn_integration.htm
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "120-pt rubric in references/scoring-rubric.md (6 categories: Security 30, Error Handling 25, Bulkification 20, Architecture 20, Best Practices 15, Documentation 10), mapped onto the 4-dimension default rubric from skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  integration_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 15
+      description: "Integration is bulk-safe and uses correct patterns. Maps to Bulkification (20) + Architecture (20). No callouts in loops, async pattern (Queueable / Future / @InvocableMethod) for callouts triggered by DML."
+      automatic_hard_fail_rules:
+        - "Any HTTP callout inside a for/while loop"
+        - "Any callout from a trigger context without async wrapper (Salesforce blocks this at compile)"
+        - "Any synchronous callout chain >5 calls per transaction (callout limit risk)"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 15
+      description: "Integration handles transient errors + bad input. Maps to Error Handling (25). Heaviest hard-fail floor — integration failures cascade across systems. Retry logic, timeout handling, idempotency, dead-letter queue."
+      automatic_hard_fail_rules:
+        - "Any callout without timeout configured (default 10s may be wrong for the endpoint)"
+        - "Any HTTP error response code (4xx/5xx) treated as success (status code not checked)"
+        - "Any Platform Event publisher with no error handler (events lost silently on failure)"
+        - "Any retry logic with no exponential backoff (retry storm risk)"
+    - name: Fit
+      max: 25
+      hard_fail_below: 15
+      description: "Integration uses Salesforce-native patterns. Maps to Security (30) — heaviest category in the rubric. Named Credentials only (NEVER hardcoded URLs/tokens), External Credentials for OAuth, no inline auth headers."
+      automatic_hard_fail_rules:
+        - "Any HTTP request with hardcoded URL (use Named Credential)"
+        - "Any HTTP request with hardcoded auth token, API key, or password"
+        - "Any callout to an external endpoint not registered in Remote Site Settings or Named Credentials"
+        - "Any unencrypted credential stored in custom setting / custom metadata"
+    - name: Performance
+      max: 25
+      hard_fail_below: 12
+      description: "Integration scales + is documented. Maps to Best Practices (15) + Documentation (10). Composite API for chained calls, batch async patterns, ApexDoc on public surface."
+      automatic_hard_fail_rules:
+        - "Any sequence of >3 dependent callouts that doesn't use Composite API (latency multiplier)"
+  test_rubric:
+    unit:
+      required: true
+      criteria: "Apex test class uses Test.setMock for HTTP callouts. Covers happy path, error path, retry path, timeout."
+    integration:
+      required: true
+      criteria: "Named Credential resolves and authentication succeeds against the target endpoint (verified via Anonymous Apex test callout)."
+    smoke:
+      required: true
+      criteria: "End-to-end roundtrip: trigger event → external system receives payload → response processed correctly."
 ---
 
 # sf-integration: Salesforce Integration Patterns Expert
 
 Expert integration architect specializing in secure callout patterns, event-driven architecture, and external service registration for Salesforce.
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). Three subagents (planner / implementer / evaluator) loop against the 120-pt rubric in fresh context. Robustness AND Fit floors are 15 (highest in any wrapped skill so far) — integration failures cascade across systems and hardcoded credentials are catastrophic. Disable with `eval_harness.enabled: false`.
+
+---
 
 ## Core Responsibilities
 

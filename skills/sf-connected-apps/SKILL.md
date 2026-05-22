@@ -36,11 +36,75 @@ upstream_refs:
 upstream_release_notes:
   - release: "Spring '26"
     url: https://help.salesforce.com/s/articleView?id=release-notes.rn_identity.htm
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "120-pt rubric (6 categories: Security 30 / OAuth Config 25 / Metadata 20 / Best Practices 20 / Scopes 15 / Documentation 10) — mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  connected_apps_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 15
+      description: "OAuth configuration correctness. Maps to OAuth Config (25). Callback URLs explicit (no wildcards), correct flow chosen for the use case, token expiration set, OIDC claims wired when SSO is in scope."
+      automatic_hard_fail_rules:
+        - "Any callback URL containing a wildcard (e.g., https://*.example.com/cb) — token-hijacking vector"
+        - "JWT Bearer flow declared without a <certificate> element bound to a deployed certificate"
+        - "OAuth flow choice contradicts use case (e.g., public-client SPA wired to Authorization Code with consumer secret required, or CI/CD wired to Authorization Code instead of JWT Bearer)"
+        - "OpenID Connect declared but no OpenID scope or no signing certificate configured"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 18
+      description: "Security floor. Maps to Security (30). Heaviest robustness floor — Connected Apps are an authentication boundary; weak configuration is a direct compromise path."
+      automatic_hard_fail_rules:
+        - "PKCE not required on any public-client flow (SPA, mobile, native) — code-interception vector"
+        - "Consumer secret marked optional (isConsumerSecretOptional=true) on a confidential-client flow"
+        - "Refresh token rotation disabled on a long-lived integration"
+        - "ipRelaxation set to BYPASS without documented business justification + IP-allowlist elsewhere"
+        - "Spring '26+ project creating a new ConnectedApp metadata file when an ExternalClientApp would do (Connected App creation is restricted Spring '26+ — must use ECA unless Salesforce Support exception is documented)"
+    - name: Fit
+      max: 25
+      hard_fail_below: 12
+      description: "Pattern adherence + scope hygiene. Maps to Best Practices (20) + Scopes (15). Minimal scopes, named-principal Named Credentials downstream, no Full when api+refresh_token suffices, ECA file naming matches Salesforce conventions."
+      automatic_hard_fail_rules:
+        - "Granting Full scope when Api + RefreshToken (or narrower) covers the documented use case"
+        - "Consumer secret stored in source code, .env committed to repo, or any non-Named-Credential location"
+        - "ECA file suffix wrong (e.g., .ecaGlobalOauth instead of .ecaGlblOauth) — deploy will fail"
+        - "Same Connected App reused across unrelated integrations (each integration deserves its own app for least-privilege scope and audit isolation)"
+    - name: Performance
+      max: 25
+      hard_fail_below: 12
+      description: "Metadata + documentation hygiene. Maps to Metadata (20) + Documentation (10). Required fields populated, API version current, contactEmail real, description explains who/why."
+      automatic_hard_fail_rules:
+        - "Missing contactEmail or contactEmail is a placeholder (admin@example.com, noreply@, etc.)"
+        - "Missing or one-word description that doesn't explain the integration's purpose"
+        - "API version below 61.0 on an ExternalClientApp file (ECA requires 61.0+)"
+        - "Required ConnectedApp fields missing: label, oauthConfig with at least one scope"
+  test_rubric:
+    unit:
+      required: true
+      criteria: "Connected App / ECA XML validates against Salesforce metadata XSD. Scope set is a subset of the documented use case. Callback URLs are HTTPS (or http://localhost:* for dev only)."
+    integration:
+      required: true
+      criteria: "Metadata deploys to a connected org without error. OAuth flow completes end-to-end against the deployed app: authorization-code/JWT/client-credentials each return a valid access token. Consumer Key retrieved successfully from Setup > App Manager."
+    smoke:
+      required: true
+      criteria: "Real downstream integration (Named Credential, mulesoft callout, or external service) authenticates against this app and performs a representative API call. Token refresh works on a second invocation past the access-token TTL."
 ---
 
 # sf-connected-apps: Salesforce Connected Apps & External Client Apps
 
 Expert in creating and managing Salesforce Connected Apps and External Client Apps (ECAs) with OAuth configuration, security best practices, and metadata compliance.
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). 120-pt rubric across 6 security/config/metadata categories, mapped onto the 4-dim shape with Robustness floor at 18 — Connected Apps are an authentication boundary, weak configuration is a direct compromise path. Hard-fail rules block wildcard callbacks, PKCE-disabled public clients, full-scope grants, secrets in source, and Spring '26+ Connected App creation when ECA is required. Disable with `eval_harness.enabled: false`.
+
+---
 
 ## Core Responsibilities
 

@@ -1,0 +1,74 @@
+{
+  "version": "1.0",
+  "value_moments_file": "fixtures/simple-volunteer-demo/value-moments.json",
+  "deliveries": [
+    {
+      "value_moment_requirement_id": "REQ-001",
+      "delivered_in_steps": ["step-1", "step-2", "step-3"],
+      "pain_context_beat": {
+        "step": "step-1",
+        "narration": "Sarah just heard about Helping Hands from a friend. She's on her phone. She doesn't have a login and doesn't want one."
+      },
+      "watch_this_cue": {
+        "step": "step-1",
+        "narration": "Watch the URL — no login, no Salesforce."
+      },
+      "moment_step": "step-1",
+      "narration_beat": {
+        "step": "step-3",
+        "narration": "That's a public page rendering live shift data from Salesforce. No auth. No branding. The NGO's own site."
+      }
+    },
+    {
+      "value_moment_requirement_id": "REQ-002",
+      "delivered_in_steps": ["step-4", "step-5", "step-6"],
+      "pain_context_beat": {
+        "step": "step-4",
+        "narration": "Sarah just wants to volunteer Saturday. She's not creating an account."
+      },
+      "watch_this_cue": {
+        "step": "step-5",
+        "narration": "Watch Maya's screen on the right when Sarah submits."
+      },
+      "moment_step": "step-6",
+      "narration_beat": {
+        "step": "step-6",
+        "narration": "Two clicks for Sarah. A new Person Account, a new flag, a new entry in Maya's view — all from one form submit."
+      }
+    },
+    {
+      "value_moment_requirement_id": "REQ-003",
+      "delivered_in_steps": ["step-8", "step-9", "step-10"],
+      "pain_context_beat": {
+        "step": "step-8",
+        "narration": "Three hours every Monday. Email, spreadsheet, Salesforce. Reconciliation."
+      },
+      "watch_this_cue": {
+        "step": "step-9",
+        "narration": "Watch the flags."
+      },
+      "moment_step": "step-9",
+      "narration_beat": {
+        "step": "step-10",
+        "narration": "Maya's three hours just turned into three personal calls. The system did the reconciliation."
+      }
+    },
+    {
+      "value_moment_requirement_id": "REQ-004",
+      "delivered_in_steps": ["step-12", "step-13"],
+      "pain_context_beat": {
+        "step": "step-12",
+        "narration": "Tom needs one number for the board: are we keeping volunteers, or are we churning them?"
+      },
+      "watch_this_cue": {
+        "step": "step-13",
+        "narration": "Watch retention when I refresh."
+      },
+      "moment_step": "step-13",
+      "narration_beat": {
+        "step": "step-13",
+        "narration": "Retention just ticked up because Sarah completed her first shift two minutes ago. That's not a quarterly report — that's live."
+      }
+    }
+  ]
+}

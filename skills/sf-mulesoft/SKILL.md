@@ -44,11 +44,66 @@ upstream_refs:
 upstream_release_notes:
   - release: "Spring '26"
     url: https://help.salesforce.com/s/articleView?id=release-notes.rn_mulesoft.htm
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "140-pt rubric inline (7 categories: API Design 20, Mule Implementation 25, DataWeave Quality 20, Policies + Security 20, Testing 20, Deployment + Ops 20, Boundary Respect 15), mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  mulesoft_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 14
+      description: "Mule app + DataWeave correct. Maps to Mule Implementation (25) + DataWeave Quality (20)."
+      automatic_hard_fail_rules:
+        - "Any DataWeave script with mutable state (impure functions break test reproducibility)"
+        - "Any error handler catching generic exception type without specific handlers (silent failure cascade)"
+        - "Any Mule flow using Java where DataWeave would suffice (unmaintainable, test-resistant)"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 14
+      description: "Policies + security applied. Maps to Policies + Security (20) + Testing (20). OAuth/Client ID Enforcement, rate limit, secrets in Secure Properties."
+      automatic_hard_fail_rules:
+        - "Any API without OAuth or Client ID Enforcement (open endpoint)"
+        - "Any secret in plain config file (must be in Secure Properties or vault)"
+        - "Any API without rate limit policy (DDoS risk)"
+    - name: Fit
+      max: 25
+      hard_fail_below: 10
+      description: "Spec-first + boundary respect. Maps to API Design (20) + Boundary Respect (15) — most-failed category. Don't re-implement Salesforce-side concerns inside Mule."
+      automatic_hard_fail_rules:
+        - "Any duplicate Named-Credential / OAuth logic in Mule when sf-integration / sf-connected-apps owns it"
+        - "Any API built without RAML/OAS spec drafted first (no contract for consumers)"
+    - name: Performance
+      max: 25
+      hard_fail_below: 14
+      description: "Deployment + ops correct. Maps to Deployment + Ops (20). CloudHub 2.0 / Fabric chosen correctly, per-env params, alerts + log retention."
+      automatic_hard_fail_rules:
+        - "Any deploy without per-env config (prod creds in dev YAML)"
+        - "Any API without alerts on error rate / latency"
+  test_rubric:
+    unit:
+      required: true
+      criteria: "MUnit coverage ≥ 80%. DataWeave fixture-based tests."
+    integration:
+      required: true
+      criteria: "Integration test against real connector (not just mocked)."
+    smoke:
+      required: true
+      criteria: "End-to-end API call from external consumer through Mule to Salesforce returns expected payload."
 ---
 
 # sf-mulesoft: MuleSoft Anypoint + MuleSoft for Flow + DataWeave
 
 Owns everything that runs on **Anypoint Platform** or extends Salesforce via a MuleSoft runtime: Mule applications, flows, DataWeave transforms, API specifications (RAML / OAS), Exchange assets, API Manager policies, Runtime Manager / CloudHub 2.0 / Runtime Fabric deployments, MuleSoft Composer (low-code iPaaS), and MuleSoft for Flow (low-code Mule connector inside Salesforce Flow Builder).
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). Three subagents grade against the 140-pt rubric in fresh context. Boundary Respect is the most-failed category in the rubric — Mule engineers commonly re-implement Salesforce-side concerns inside Mule, fragmenting ownership. Hard-fail rule prevents duplicate Named-Credential logic. Disable with `eval_harness.enabled: false`.
 
 ---
 

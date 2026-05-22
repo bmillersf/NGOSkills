@@ -4,15 +4,17 @@ flowchart TB
 
     ROUTE{"<b>Phase 0</b><br/>Industry pre-check"}
 
-    IND["<b>TIER 1 &middot; Vertical / Industry (11)</b><br/>FSC &nbsp;&middot;&nbsp; Health &nbsp;&middot;&nbsp; Education &nbsp;&middot;&nbsp; Public Sector &nbsp;&middot;&nbsp; Field Service<br/>Manufacturing &nbsp;&middot;&nbsp; Consumer Goods &nbsp;&middot;&nbsp; Communications<br/>Media &nbsp;&middot;&nbsp; Energy &nbsp;&middot;&nbsp; Nonprofit NPC/NPSP"]
+    IND["<b>TIER 1 &middot; Vertical / Industry (12)</b><br/>FSC &nbsp;&middot;&nbsp; Health &nbsp;&middot;&nbsp; Education &nbsp;&middot;&nbsp; Public Sector &nbsp;&middot;&nbsp; Field Service<br/>Manufacturing &nbsp;&middot;&nbsp; Consumer Goods &nbsp;&middot;&nbsp; Communications<br/>Media &nbsp;&middot;&nbsp; Energy &nbsp;&middot;&nbsp; NPC &nbsp;&middot;&nbsp; NPSP"]
 
-    GEN["<b>TIER 2 &middot; Horizontal / Generic clouds (14)</b><br/>Sales 4 &nbsp;&middot;&nbsp; Service 4 &nbsp;&middot;&nbsp; Marketing MCG &nbsp;&middot;&nbsp; Marketing MCAE<br/>Revenue &nbsp;&middot;&nbsp; Experience &nbsp;&middot;&nbsp; Reports and Dashboards"]
+    GEN["<b>TIER 2 &middot; Horizontal / Generic clouds (14)</b><br/>Sales 4 &nbsp;&middot;&nbsp; Service 4 &nbsp;&middot;&nbsp; Marketing MCG &nbsp;&middot;&nbsp; Marketing MCAE<br/>Revenue &nbsp;&middot;&nbsp; Experience &nbsp;&middot;&nbsp; Reports + Dashboards<br/>Lightning App Builder"]
 
-    SHARED["<b>TIER 3 &middot; Shared capabilities (28)</b><br/>AI 7 &nbsp;&middot;&nbsp; Data Cloud 7 &nbsp;&middot;&nbsp; OmniStudio 6 &nbsp;&middot;&nbsp; Integration 3<br/>Platform Builder 2 &nbsp;&middot;&nbsp; Tableau &nbsp;&middot;&nbsp; Slack &nbsp;&middot;&nbsp; Trust + Ops 4"]
+    SHARED["<b>TIER 3 &middot; Shared capabilities (28)</b><br/>AI 7 &nbsp;&middot;&nbsp; Data Cloud 7 &nbsp;&middot;&nbsp; OmniStudio 6 &nbsp;&middot;&nbsp; Integration 3<br/>Flow Orchestration &nbsp;&middot;&nbsp; Tableau &nbsp;&middot;&nbsp; Slack &nbsp;&middot;&nbsp; Trust + Ops 4"]
 
     CORE["<b>TIER 4 &middot; Core Platform (10)</b><br/>Apex &middot; LWC &middot; Flow &middot; Metadata &middot; SOQL<br/>Data &middot; Testing &middot; Deploy &middot; Debug &middot; Permissions"]
 
-    DEMO["<b>Demo lifecycle + Meta (13)</b><br/>orchestrate/author/validate/playwright<br/>demo-data (x2) &nbsp;&middot;&nbsp; ui-fallback-playwright<br/>sf-skill-maintenance &nbsp;&middot;&nbsp; subagent-orchestration &nbsp;&middot;&nbsp; Viz 3"]
+    DEMO["<b>TIER 5 &middot; Demo lifecycle + Meta + Nonprofit-portal (20)</b><br/>orchestrate / author / validate / playwright<br/>demo-data x2 &nbsp;&middot;&nbsp; ui-fallback-playwright<br/>nonprofit fundraising / grants / program-case<br/>nonprofit experience-cloud / -ux / -build<br/>subagent-orchestration &nbsp;&middot;&nbsp; Visualization 3"]
+
+    HARNESS["<b>Eval Harness (cross-cutting)</b><br/>sf-skill-eval-harness wraps 79 of 84 skills<br/>fresh planner / implementer / evaluator subagents<br/>hard-fail floors + structured handoffs<br/>4-dim default rubric per SPEC v7"]
 
     REQ --> ROUTE
     ROUTE ==>|industry detected| IND
@@ -22,6 +24,11 @@ flowchart TB
     GEN --> SHARED
     SHARED --> CORE
     CORE -.-> DEMO
+    HARNESS -.wraps.-> IND
+    HARNESS -.wraps.-> GEN
+    HARNESS -.wraps.-> SHARED
+    HARNESS -.wraps.-> CORE
+    HARNESS -.wraps.-> DEMO
 
     classDef request fill:#F9FAFB,stroke:#374151,stroke-width:2px,color:#111827,font-size:18px
     classDef route fill:#FEF3C7,stroke:#B45309,stroke-width:3px,color:#111827,font-size:18px
@@ -30,6 +37,7 @@ flowchart TB
     classDef shared fill:#DDD6FE,stroke:#5B21B6,stroke-width:2px,color:#111827,font-size:16px
     classDef core fill:#A7F3D0,stroke:#065F46,stroke-width:3px,color:#111827,font-size:16px
     classDef delivery fill:#CFFAFE,stroke:#0E7490,stroke-width:2px,color:#111827,font-size:14px
+    classDef harness fill:#FBCFE8,stroke:#9D174D,stroke-width:3px,color:#111827,font-size:15px
 
     class REQ request
     class ROUTE route
@@ -38,3 +46,4 @@ flowchart TB
     class SHARED shared
     class CORE core
     class DEMO delivery
+    class HARNESS harness

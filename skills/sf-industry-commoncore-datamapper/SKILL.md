@@ -35,11 +35,76 @@ upstream_refs:
 upstream_release_notes:
   - release: "Spring '26"
     url: https://help.salesforce.com/s/articleView?id=release-notes.rn_omnistudio.htm
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "100-pt rubric (5 categories: Design & Naming 20 / Field Mapping 25 / Data Integrity 25 / Performance 15 / Documentation 15) — mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  datamapper_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 15
+      description: "Field mapping correctness. Maps to Field Mapping (25). Explicit field list, correct input/output paths, proper type conversions, lookup resolution for Load types, namespace prefixes resolved against target org."
+      automatic_hard_fail_rules:
+        - "Wildcard / all-fields extraction (no explicit field list specified)"
+        - "Load Data Mapper referencing a lookup field with no resolution rule (e.g., AccountId without external ID or upsert key) — DML failure / null FK"
+        - "Hardcoded 15/18-char Salesforce ID literal in filter or mapping (breaks deploy across environments)"
+        - "Foreign-key field name typo on OmniDataTransformItem (the field is OmniDataTransformationId, full word — typo silently orphans field mappings)"
+        - "Type conversion missing on a mapped field where source and destination types differ (silent truncation / data loss)"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 15
+      description: "Data integrity. Maps to Data Integrity (25). Heaviest robustness floor — Load Data Mappers do DML; FLS / upsert keys / duplicate handling are how silent corruption is prevented."
+      automatic_hard_fail_rules:
+        - "Load Data Mapper without FLS validation on the fields it writes"
+        - "Load Data Mapper for upsert without explicit upsert key (External ID) configured"
+        - "Load Data Mapper without duplicate-rule consideration when writing Lead, Contact, or Account"
+        - "Transform Data Mapper attempting DML or callout — Transform is in-memory only, will fail at runtime"
+        - "Extract with relationship depth >3 (SOQL complexity limit + performance cliff)"
+    - name: Fit
+      max: 25
+      hard_fail_below: 10
+      description: "Pattern adherence + naming. Maps to Design & Naming (20). Correct type chosen (Extract / Turbo Extract / Transform / Load), DR_[Type]_[Object]_[Purpose] PascalCase naming, single responsibility per Data Mapper."
+      automatic_hard_fail_rules:
+        - "Wrong type chosen for the use case (e.g., Turbo Extract used when source has formula fields, related lists, or polymorphic lookups — Turbo doesn't support those)"
+        - "Naming missing the DR_ prefix or the type-tag (DR_Extract_, DR_TurboExtract_, DR_Transform_, DR_Load_)"
+        - "Single Data Mapper trying to do multiple responsibilities (e.g., Extract + Transform combined when separation would compose better)"
+        - "Naming using kebab-case, snake_case, or inconsistent casing"
+    - name: Performance
+      max: 25
+      hard_fail_below: 12
+      description: "Performance + documentation. Maps to Performance (15) + Documentation (15). Bounded queries, indexed filter fields, Turbo Extract for read-heavy scenarios, description on the OmniDataTransform record explaining intent + consumers."
+      automatic_hard_fail_rules:
+        - "Extract query with no LIMIT and no selective filter — governor-limit / timeout risk on large objects"
+        - "Filter clause uses a non-indexed field on a large-volume object (formula field, multi-select picklist) when an indexed alternative exists"
+        - "Read-heavy Data Mapper (>10k record reads in production volume) implemented as standard Extract instead of Turbo Extract"
+        - "OmniDataTransform record with no description / no consuming-component documentation — non-discoverable in OmniStudio"
+  test_rubric:
+    unit:
+      required: true
+      criteria: "OmniDataTransform + OmniDataTransformItem records validate. Field mappings reference fields that exist on the target object. Type conversions defined where source/destination types differ. No hardcoded IDs."
+    integration:
+      required: true
+      criteria: "Deploys + activates in target org. Preview output in OmniStudio Designer matches expected JSON shape. For Load: DML succeeds against test record + FLS enforced for restricted-profile user. For Extract: query returns under governor limits at representative volume."
+    smoke:
+      required: true
+      criteria: "Consuming Integration Procedure / OmniScript / FlexCard receives the Data Mapper output and renders / processes it without shape mismatch. Bulk run at production volume completes within heap + CPU budgets."
 ---
 
 # sf-industry-commoncore-datamapper: OmniStudio Data Mapper Creation and Validation
 
 Expert OmniStudio Data Mapper developer specializing in Extract, Transform, Load, and Turbo Extract configurations. Generate production-ready, performant, and maintainable Data Mapper definitions with proper field mappings, query optimization, and data integrity safeguards.
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). 100-pt rubric across 5 categories, mapped onto the 4-dim shape with a Robustness floor at 15 — Load Data Mappers do DML, and unguarded writes are the dominant data-corruption path. Hard-fail rules block wildcard extracts, FLS-bypass writes, missing upsert keys, hardcoded IDs, depth-3+ relationships, and Transform-with-side-effects. Disable with `eval_harness.enabled: false`.
+
+---
 
 ## Core Responsibilities
 

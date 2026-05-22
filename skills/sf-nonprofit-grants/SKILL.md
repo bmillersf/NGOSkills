@@ -33,11 +33,78 @@ upstream_refs:
 upstream_release_notes:
   - release: "Spring '26"
     url: https://help.salesforce.com/s/articleView?id=release-notes.rn_industries_nonprofit.htm
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "110-pt rubric (6 categories: Application Pipeline 20 / Review Process 20 / Award Management 20 / Funding Disbursement 20 / Compliance & Reporting 15 / Best Practices 15) — converted from existing weighted-criterion rubric (1-5 × weight%) into point-based 4-dim shape per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  grants_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 15
+      description: "Grant data-model + lifecycle correctness. Maps to Application Pipeline (20) + Award Management (20). Native NPC objects (Application / Funding Award / Funding Disbursement / Funding Award Requirement) used in correct lifecycle order; no shadow custom objects; grantmaker / grantee direction explicit."
+      automatic_hard_fail_rules:
+        - "Opportunity used for grant tracking in an NPC org (wrong cloud — Application is the native object)"
+        - "OFM objects (outfunds__Funding_Request__c, outfunds__Disbursement__c) used in an NPC org (wrong namespace — native Application/Funding Award exist)"
+        - "NPC native objects used in an NPSP+OFM org (should route to sf-nonprofit-npsp instead)"
+        - "Custom Grant_Application__c built when native Application exists"
+        - "Funding Disbursement records without parent Funding Award (orphan disbursements)"
+        - "Mixed grantmaker + grantee records in shared Application records without direction indicator or separate record types"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 14
+      description: "Review integrity + audit trail. Maps to Review Process (20) + portions of Compliance & Reporting (15). Conflicts of interest checked, scoring rubric applied consistently, decision rationale captured, status changes auditable."
+      automatic_hard_fail_rules:
+        - "Application Review without conflict-of-interest check before reviewer assignment (org affiliation / personal relationship)"
+        - "Single-reviewer-per-application pattern (no second reviewer for cross-check or panel review)"
+        - "Application Decision recorded without ApplicationDecision record (decision but no decider / no rationale captured)"
+        - "Application status field changes without Field History Tracking enabled (no audit trail on advancement / decline)"
+        - "Funding Award amendments applied directly to Funding Award fields without FundingAwardAmendment record (lost change history)"
+    - name: Fit
+      max: 25
+      hard_fail_below: 12
+      description: "Pattern adherence + scoring rubric structure. Maps to Best Practices (15) + portions of Application Pipeline (20). Staged application (LOI → invited full), eligibility pre-check, weighted scoring rubric documented, applicant portal pattern."
+      automatic_hard_fail_rules:
+        - "Review scoring without documented rubric (subjective decisions; rubric pattern is Mission Alignment / Org Capacity / Project Design / Budget / Measurable Outcomes weighted 25/20/25/15/15)"
+        - "Heavy single-shot application with no LOI / pre-check stage when applicant volume warrants (applicant burden + reviewer overload)"
+        - "Application Stage Definition skipped — workflow stages hardcoded in Flow / Apex instead of configurable records"
+        - "Hardcoded grant terms in Apex / Flow instead of configurable Funding Award template"
+        - "Applicant portal built without Experience Cloud (custom Visualforce / forms hosted off-platform — auth + tracking divergence)"
+    - name: Performance
+      max: 25
+      hard_fail_below: 12
+      description: "Disbursement reconciliation + reporting scale. Maps to Funding Disbursement (20) + portions of Compliance & Reporting (15). Disbursements reconciled against Budget categories, milestone-based releases honored, compliance deadlines auto-tracked, audit-ready reporting at portfolio scale."
+      automatic_hard_fail_rules:
+        - "Funding Disbursements without budget reconciliation against Budget object (spent vs budgeted untracked)"
+        - "Compliance deadlines (Funding Award Requirement Due Date) without scheduled reminders / process automation (silent non-compliance)"
+        - "Reports on grants portfolio without selective filter / record-type scope (full-org scan when each program officer manages a sub-portfolio)"
+        - "Closeout step missing — grants reach end-date but no closeout reporting / final disbursement reconciliation triggered"
+  test_rubric:
+    unit:
+      required: true
+      criteria: "Metadata validates: Application + Funding Award + Funding Disbursement + Budget + Funding Award Requirement use native NPC objects with correct lookups. Application Stage Definition records configure documented stages. Field History Tracking enabled on Application.Status, FundingAward.Status."
+    integration:
+      required: true
+      criteria: "End-to-end pipeline runs in NPC sandbox: Funding Opportunity published → Application submitted → Reviewer assigned (with COI check) → ApplicationReview scores recorded → ApplicationDecision logged → FundingAward + Agreement created → milestone-based FundingDisbursement released → FundingAwardRequirement deliverables tracked → Closeout. Budget reconciliation balances disbursed against budgeted amounts."
+    smoke:
+      required: true
+      criteria: "Grantee user submits application via Experience Cloud portal, sees only their own applications + awards. Program officer user reviews, scores, and decides. Funder reporting view aggregates portfolio with filters by program / fiscal year. Compliance deadline triggers reminder before due date."
 ---
 
 # sf-nonprofit-grants: Nonprofit Cloud Grant Management Architect
 
 Expert Salesforce architect specializing in **Nonprofit Cloud (NPC)** grantmaking: grant application pipelines, review workflows, funding awards, disbursement schedules, budget tracking, compliance, and funder reporting.
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). 110-pt rubric across 6 grantmaking categories, converted from the existing weighted-criterion (1-5 × weight%) rubric into the point-based 4-dim shape. Robustness floor at 14 — grant decisions are funded; conflict checks, two-reviewer audit, decision rationale, and field-history tracking are how integrity is demonstrated to funders + auditors. Hard-fail rules block Opportunity-for-grants, NPC objects in OFM orgs (and vice versa), single-reviewer scoring, undocumented rubric, missing budget reconciliation, and absent compliance reminders. Disable with `eval_harness.enabled: false`.
+
+---
 
 > **Platform note**: This skill covers NPC native grantmaking objects (Application, Funding Award, Funding Disbursement). For NPSP orgs using **Outbound Funds Module (OFM)**, see the OFM section in **sf-nonprofit-npsp**.
 

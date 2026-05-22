@@ -1,0 +1,38 @@
+{
+  "version": "1.0",
+  "source_notes": "fixtures/simple-volunteer-demo/notes.md",
+  "requirements": [
+    {
+      "id": "REQ-001",
+      "summary": "Public guest site lists open volunteer shifts without login",
+      "source_quote": "find open shifts on a public landing page without logging in",
+      "source_line": 7,
+      "must_demo": true,
+      "category": "feature"
+    },
+    {
+      "id": "REQ-002",
+      "summary": "Two-click shift signup auto-creates Person Account for new volunteers",
+      "source_quote": "signs up for a shift in two clicks, gets a confirmation, and the system auto-creates a Person Account if they're new",
+      "source_line": 8,
+      "must_demo": true,
+      "category": "feature"
+    },
+    {
+      "id": "REQ-003",
+      "summary": "Coordinator dashboard flags first-time volunteers for personal welcome",
+      "source_quote": "with a flag on anyone who hasn't volunteered before. She wants to send those people a personal welcome",
+      "source_line": 9,
+      "must_demo": true,
+      "category": "feature"
+    },
+    {
+      "id": "REQ-004",
+      "summary": "Programs Director dashboard: shifts filled, new volunteers, retention rate",
+      "source_quote": "shifts filled this week, new volunteers this week, retention rate",
+      "source_line": 10,
+      "must_demo": true,
+      "category": "feature"
+    }
+  ]
+}

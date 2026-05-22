@@ -34,11 +34,74 @@ upstream_refs:
 upstream_release_notes:
   - release: "Spring '26"
     url: https://github.com/mermaid-js/mermaid/releases
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "80-pt rubric (5 categories: Accuracy 20 / Clarity 20 / Completeness 15 / Styling 15 / Best Practices 10) extracted from existing scoring section in this SKILL.md (line 191). Mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  diagram_mermaid_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 14
+      description: "Mermaid syntax + diagram accuracy. Maps to Accuracy (20). Diagram code parses cleanly, actors / steps / relationships match the documented system, no fabricated objects or flows."
+      automatic_hard_fail_rules:
+        - "Mermaid code that doesn't parse (mermaid CLI / live editor returns syntax error)"
+        - "Actor / entity that doesn't exist in the system being diagrammed (hallucination)"
+        - "Flow step or relationship that misrepresents the actual integration / data model (inversion of direction, missing required step, wrong actor on a step)"
+        - "ERD with relationship cardinality wrong (1:1 where 1:N is documented, or vice versa)"
+        - "Sequence diagram with messages that don't match the actual API contract"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 12
+      description: "Completeness + edge-case coverage. Maps to Completeness (15). All relevant steps / entities included; error paths / fallbacks shown when the use case demands it."
+      automatic_hard_fail_rules:
+        - "Critical step in the documented flow missing from the diagram (auth handshake, error retry, state transition)"
+        - "ERD missing a required junction object that the data model uses"
+        - "Sequence diagram showing only the happy path when the user explicitly asked about error handling / fallback"
+        - "Architecture diagram missing the system-of-record boundary when the question is about data residency / sharing"
+    - name: Fit
+      max: 25
+      hard_fail_below: 12
+      description: "Clarity + best-practices conventions. Maps to Clarity (20) + Best Practices (10). Proper Mermaid notation (graph TD/LR, sequenceDiagram, erDiagram, classDiagram), labeled edges, readable layout, no jargon-heavy node names."
+      automatic_hard_fail_rules:
+        - "Wrong Mermaid diagram type chosen (flowchart for what should be sequenceDiagram, ER for what should be classDiagram)"
+        - "Edges unlabeled when the question is about what data flows where"
+        - "Node names exposing internal API names instead of human labels (e.g., 'PersonExamination__c' instead of 'Background Check')"
+        - "Nesting / subgraph depth >3 (cognitive overload + Mermaid renderer struggles)"
+        - "ASCII fallback skipped when explicitly requested or in a no-renderer environment"
+    - name: Performance
+      max: 25
+      hard_fail_below: 10
+      description: "Styling + render hygiene. Maps to Styling (15). Color / theme used consistently, annotations present where helpful, diagram fits intended viewport."
+      automatic_hard_fail_rules:
+        - "Hardcoded color scheme that fails dark mode (light-only colors with no themable token)"
+        - "Diagram exceeds practical viewport without subgraph decomposition (>30 nodes in one flat graph)"
+        - "Talking track / demo storytelling output requested but only the diagram code returned"
+        - "Mermaid code committed without a paired rendered image when sf-diagram-nanobananapro is the expected handoff target"
+  test_rubric:
+    unit:
+      required: true
+      criteria: "Mermaid code parses without syntax errors. Diagram type matches the question shape (flow / sequence / ER / class)."
+    integration:
+      required: true
+      criteria: "Rendered diagram (via Mermaid CLI or the live editor) displays without truncation. Edge labels + node labels readable at intended viewport."
+    smoke:
+      required: true
+      criteria: "Audience can follow the diagram alone (without the talking track) for the documented use case. Demo storytelling mode also produces a presenter narration that matches the diagram step-for-step."
 ---
 
 # sf-diagram-mermaid: Salesforce Diagram Generation
 
 Expert diagram creator specializing in Salesforce architecture visualization and demo integration storytelling. Generate clear, accurate diagrams using Mermaid syntax as the structural source, then render them as polished images via `sf-diagram-nanobananapro` for end-user delivery. Mermaid code is retained for version control and docs; the rendered image is the primary visual output.
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). 80-pt rubric across 5 diagramming categories, extracted from this skill's existing scoring section (line 191) and mapped onto the 4-dim shape. Correctness floor at 14 — diagrams that misrepresent the system (wrong actor on a step, inverted relationship cardinality, fabricated objects) are worse than no diagram, since they encode the wrong mental model. Hard-fail rules block Mermaid syntax errors, hallucinated entities, missing required steps, wrong diagram type, internal API names exposed as node labels, and demo-storytelling mode requested without a paired talking track. Disable with `eval_harness.enabled: false`.
 
 ## Demo Integration Storytelling Mode
 

@@ -21,6 +21,60 @@ compatibility: "Available in all editions with Reports & Dashboards enabled. Dyn
 metadata:
   version: "1.0.0"
   author: "NGOSkills"
+  scoring: "120 points across 7 categories — Report Type 20 / Format+grouping 20 / Filter correctness 20 / Chart+dashboard 20 / Folder+sharing 15 / Subscription 10 / Testing+performance 15 (90 is passing)"
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "120-pt rubric (7 categories) extracted from existing 'Scoring Rubric — 120 Points' section in this SKILL.md (line 220). Mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  reports_dashboards_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 14
+      description: "Report Type + Format/grouping + Filter correctness. Maps to Report Type (20) + Format+grouping (20) + Filter (20). Wrong primary object, wrong format, or wrong filter semantics produces a report that looks right but answers the wrong question."
+      automatic_hard_fail_rules:
+        - "Primary object on the Report Type doesn't match the question being asked (joining the wrong root)"
+        - "Custom Report Type built when a Standard RT covers the need (RT bloat)"
+        - "Format mismatch — Matrix used where Summary suffices, Joined where Matrix suffices, Tabular where any aggregation is needed"
+        - "Filter Logic doesn't resolve business intent (AND/OR placement produces unintended row set)"
+        - "Cross-Filter pattern needed (membership semantics — e.g., Accounts WITH Opportunities) but not applied"
+        - "Industry-pack-owned report (FSC / Health / Nonprofit / Manufacturing) silently produced here instead of deferred"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 12
+      description: "Folder + sharing + access + running user. Maps to Folder+sharing (15) + portions of Chart+dashboard (running user). Reports orphaned in personal folders, dashboards with default running user, or external-user access misconfigured leak data or hide it."
+      automatic_hard_fail_rules:
+        - "Report saved to a personal folder when audience extends beyond the author"
+        - "Folder sharing doesn't match audience (over-shared OR under-shared — both bugs)"
+        - "External user (Experience Cloud / Customer Community) access not considered when reports are surfaced in a portal"
+        - "Dashboard running user defaulted (the silent default — viewer or owner) when explicit static/dynamic choice was needed"
+        - "Dynamic Dashboards used in a sub-Enterprise edition (silently broken; or feature absent)"
+    - name: Fit
+      max: 25
+      hard_fail_below: 12
+      description: "Chart + dashboard design + Subscription. Maps to Chart+dashboard (20) + Subscription (10). Right chart for the question shape, dashboard filters scoped meaningfully, subscription configured where audience won't visit the tab."
+      automatic_hard_fail_rules:
+        - "Chart type doesn't match the question (e.g., pie chart with >5 segments, line chart with categorical x-axis, gauge for time-series)"
+        - "Dashboard filters defaulted broad / unbound when the audience needs targeted views"
+        - "Lightning Table not used when classic table formatting is insufficient (lost conditional formatting)"
+        - "Subscription absent where audience doesn't visit the Reports tab daily (data effectively unread)"
+        - "Subscription recipient list exceeds edition limits"
+        - "Conditional alert pattern not applied where audience only cares about thresholds"
+    - name: Performance
+      max: 25
+      hard_fail_below: 12
+      description: "Testing + performance + analytics-product routing. Maps to Testing+performance (15). Row volume within Reports engine limits OR routed to Tableau / CRMA / Data Cloud if over."
+      automatic_hard_fail_rules:
+        - "Largest-expected query exceeds 2M rows but report still built in native Reports engine instead of routed to sf-tableau / sf-datacloud-retrieve / sf-datacloud-segment"
+        - "Row-level spot-check vs source skipped (silent join multiplication / cross-filter mistake)"
+        - "Impersonation test for sharing skipped (running user sees more / less than test users)"
+        - "In-UI report exceeds 2,000 rows without pagination strategy or volume routing"
+        - "Subscription schedule untested (false-confidence subscription)"
 release_pinned: "Spring '26"
 docs_last_verified: 2026-05-01
 upstream_refs:
@@ -42,6 +96,10 @@ upstream_release_notes:
 ---
 
 # sf-reports-dashboards: Native Salesforce Reports + Dashboards
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). 120-pt rubric across 7 reporting categories, extracted from this skill's existing Scoring Rubric section (line 220) and mapped onto the 4-dim shape. Correctness floor at 14 — wrong primary object, wrong format, or wrong filter semantics produces a report that looks right but answers the wrong question. Hard-fail rules block primary-object/RT mismatch, custom RT when standard covers, format mismatches (Matrix where Summary suffices), missing Cross-Filter for membership semantics, reports orphaned in personal folders, defaulted dashboard running user, mismatched chart type, and >2M row queries not routed to Tableau / CRMA / Data Cloud. Disable with `eval_harness.enabled: false`.
 
 Use this skill when the user needs **native Salesforce Reports and Dashboards** — the reporting surface that ships with every edition, exposed through the Analytics / Reports tab, built on Report Types, authored in the Lightning Report Builder, and visualized with the standard Dashboard components. This is **not Tableau**, **not CRM Analytics**, and **not Data Cloud SQL**. Those three are owned by [sf-tableau](../sf-tableau/SKILL.md), [sf-datacloud-retrieve](../sf-datacloud-retrieve/SKILL.md), and [sf-datacloud-segment](../sf-datacloud-segment/SKILL.md) respectively.
 

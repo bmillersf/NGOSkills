@@ -35,11 +35,76 @@ upstream_refs:
 upstream_release_notes:
   - release: "Spring '26"
     url: https://help.salesforce.com/s/articleView?id=release-notes.rn_omnistudio.htm
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "130-pt rubric (7 categories: Design & Layout 25 / Data Binding 20 / Actions & Navigation 20 / Styling 20 / Accessibility 15 / Testing 15 / Performance 15) — mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  flexcard_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 14
+      description: "Data binding correctness. Maps to Data Binding (20) + Actions & Navigation (20). IP references resolve, merge fields match IP response shape, input params wired to record context, OmniScript launch params mapped, navigation targets valid."
+      automatic_hard_fail_rules:
+        - "DataSourceConfig references an Integration Procedure that doesn't exist or is inactive in the target org"
+        - "Merge field {datasource.X} that doesn't resolve to a field in the IP response — runtime broken-binding"
+        - "DataSource type mistake (e.g., 'IntegrationProcedure' singular instead of 'IntegrationProcedures' plural+capital P, or 'Definition' field used instead of DataSourceConfig + PropertySetConfig)"
+        - "Action button launching an OmniScript without passing required Type/SubType params, or referencing a non-existent OmniScript"
+        - "Hardcoded Salesforce ID in DataSourceConfig or merge field — breaks across environments"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 12
+      description: "Empty + error state coverage. Maps to Testing (15). FlexCards are user-facing — half-rendered cards / unhandled empty data are immediately visible bugs."
+      automatic_hard_fail_rules:
+        - "No empty-state messaging when data source returns zero records (raw blank card / 'No data' default text)"
+        - "No error-state handling when IP data source errors or times out"
+        - "Conditional fields without null-safe visibility rules (rendering 'undefined' / 'null' literals to user)"
+        - "Long text values without truncation strategy (overflows card layout on representative content)"
+    - name: Fit
+      max: 25
+      hard_fail_below: 12
+      description: "SLDS pattern adherence + accessibility. Maps to Styling (20) + Accessibility (15). SLDS design tokens (no hardcoded colors), card/tile patterns, ARIA labels on interactive elements, keyboard navigable, WCAG 2.1 AA contrast."
+      automatic_hard_fail_rules:
+        - "Hardcoded colors (hex / rgb / named colors) instead of SLDS design tokens — breaks dark mode + theming"
+        - "Action button without aria-label / accessible name"
+        - "Interactive element not keyboard reachable (no Tab focus, no Enter/Space activation)"
+        - "Color contrast ratio below WCAG 2.1 AA (4.5:1 for body text, 3:1 for large text) on text-bearing elements"
+        - "FlexCard built when an LWC is the right pattern (custom interactive behavior, animations, complex state) — produces a constrained card that fights the framework"
+    - name: Performance
+      max: 25
+      hard_fail_below: 12
+      description: "Performance + nesting hygiene. Maps to Performance (15). Data source calls minimized, child card nesting ≤2 levels, lazy loading for hidden states (tabs, flyouts), no redundant IP invocations."
+      automatic_hard_fail_rules:
+        - "Child card nesting >2 levels — Lightning performance cliff + maintainability collapse"
+        - "Same Integration Procedure invoked multiple times across siblings/children when one shared invocation would feed all consumers"
+        - "Hidden tab / flyout state eagerly loaded on first render instead of lazily on activation"
+        - "Card list rendering >50 records with no pagination / infinite-scroll budget"
+  test_rubric:
+    unit:
+      required: true
+      criteria: "OmniUiCard metadata validates: DataSourceConfig + PropertySetConfig JSON parses, all merge fields {datasource.X} resolve against the bound IP's documented response shape, no hardcoded IDs / colors."
+    integration:
+      required: true
+      criteria: "Deploys + activates in target org alongside its IP dependencies. FlexCard renders in OmniStudio Designer + on a real Lightning page with populated data. All action buttons trigger their configured destinations (OmniScript launch, navigate, custom)."
+    smoke:
+      required: true
+      criteria: "Card validated across all six data states: populated, empty, error, multi-record, mobile viewport (320px), and accessibility (keyboard tab order + screen reader). Every state passes acceptance per the Testing scoring criteria."
 ---
 
 # sf-industry-commoncore-flexcard: OmniStudio FlexCard Creation and Validation
 
 Expert OmniStudio engineer specializing in FlexCard UI components for Salesforce Industries. Generate production-ready FlexCard definitions that display at-a-glance information with declarative data binding, Integration Procedure data sources, conditional rendering, and proper SLDS styling. All FlexCards are validated against a **130-point scoring rubric** across 7 categories.
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). 130-pt rubric across 7 FlexCard categories, mapped onto the 4-dim shape. Robustness floor at 12 — FlexCards are user-facing and half-rendered cards are immediately visible bugs. Hard-fail rules block broken merge fields, missing empty/error states, hardcoded colors (no SLDS), inaccessible action buttons, and child-card nesting >2 levels. Disable with `eval_harness.enabled: false`.
+
+---
 
 ## Core Responsibilities
 

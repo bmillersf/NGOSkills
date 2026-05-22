@@ -35,6 +35,59 @@ compatibility: "Einstein Generative AI enabled; Prompt Builder license; API v60.
 metadata:
   version: "1.0.0"
   author: "NGOSkills"
+  scoring: "130 points across 9 categories — Template type 15 / Variable declarations 20 / Grounding quality 20 / Body hygiene 20 / System-vs-user separation 10 / Versioning 10 / Test evidence 10 / Invocation wiring 15 / Trust Layer awareness 10 (91 is passing)"
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "130-pt rubric (9 categories) extracted from existing 'Scoring rubric (130 points)' section in this SKILL.md (line 207). Mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  prompt_builder_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 16
+      description: "Template type + Variable declarations + Grounding quality. Maps to Template type (15) + Variable declarations (20) + Grounding quality (20). Wrong type / undeclared variables / freeText for CRM data are the dominant defects — prompts render literal merge fields or skip FLS."
+      automatic_hard_fail_rules:
+        - "Flex template chosen when a typed template fits (Sales Email / Field Generation / Record Summary / Chat) — loses composer card / recipient binding / surface-specific UX"
+        - "Merge field {!Account.Name} without a declared $Input:Account variable (renders as literal text in production)"
+        - "Variable declared with wrong valueType (Salesforce object → typed valueType not 'Text')"
+        - "freeText used for CRM record data instead of recordField / relatedList grounding (skips FLS — regulated data leak)"
+        - "Grounding via DMO not used when the data lives in Data Cloud (reaching back to CRM via Apex when DMO grounding is the documented pattern)"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 14
+      description: "Body hygiene + System-vs-user separation + Trust Layer awareness. Maps to Body hygiene (20) + System-vs-user (10) + Trust Layer (10). The body is for the task; persona + tone + refusal rules belong in Model Instructions; regulated data must defer to Trust Layer."
+      automatic_hard_fail_rules:
+        - "Persona / guardrails / refusal rules in template body instead of Model Instructions (persona drift across versions)"
+        - "freeText input carrying regulated data (PHI / PII / financial) into the prompt without Trust Layer masking / retention strategy"
+        - "Multiple instructions per paragraph (model conflates them)"
+        - "Output contract not stated explicitly (e.g., 'Return JSON with keys X, Y' or 'Reply in <=100 words')"
+        - "Length cap absent on outputs that need bounds (cost + token sprawl)"
+        - "Trust Layer concerns handled here instead of deferred to sf-ai-model-builder-trust-layer (skill scope violation)"
+    - name: Fit
+      max: 25
+      hard_fail_below: 12
+      description: "Versioning + activation + test evidence + invocation wiring. Maps to Versioning (10) + Test evidence (10) + Invocation wiring (15). Single Active version, version notes populated, Builder preview run on representative inputs, deploy order correct."
+      automatic_hard_fail_rules:
+        - "Multiple Active versions of the same PromptTemplate (only one allowed)"
+        - "versionNotes empty on save (refresh PRs indistinguishable; rollback context lost)"
+        - "Prior version not retained — rollback impossible"
+        - "Builder preview not executed on representative record ID / inputs (resolved prompt unverified — injection / truncation / unresolved-token bugs ship)"
+        - "Resolved-prompt inspection skipped (only output reviewed)"
+        - "Template deployed AFTER its Flow / Apex / GenAiFunction caller (deploy order wrong — references break)"
+    - name: Performance
+      max: 25
+      hard_fail_below: 12
+      description: "Invocation hygiene + model-name discipline. Maps to portions of Invocation wiring (15). Async invocation from triggers, no hardcoded model names, callout-limit aware."
+      automatic_hard_fail_rules:
+        - "Synchronous prompt invocation from an Apex trigger (HTTP callout to Einstein gateway — counts against callout limits + CPU time)"
+        - "Hardcoded model name (sfdc_ai__DefaultGPT4Omni) in template body or metadata (Trust Layer / Model Builder concern; admin-configured default)"
+        - "Async path missing on invocation expected to take >1s (user blocks)"
+        - "No bulk awareness on Apex invocation (one-at-a-time call inside a for loop on collection input)"
 release_pinned: "Spring '26"
 docs_last_verified: 2026-05-01
 upstream_refs:
@@ -53,6 +106,10 @@ upstream_refs:
 # sf-ai-prompt-builder
 
 Owns authoring, grounding, versioning, activation, testing, and invocation of **standalone Prompt Templates** — the reusable, policy-governed AI prompts that live under **Setup → Einstein → Prompt Builder** and serialize as `genAiPromptTemplate` metadata. Agent-embedded Prompt Templates (registered via `GenAiFunction` with `invocationTargetType: prompt`) are authored *here* and then consumed by `sf-ai-agentforce`.
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). 130-pt rubric across 9 Prompt Builder categories, extracted from this skill's existing Scoring rubric section (line 207) and mapped onto the 4-dim shape. Correctness floor at 16 — wrong template type / undeclared variables / freeText for CRM data are the dominant defects (prompts render literal merge fields or skip FLS). Hard-fail rules block Flex when a typed template fits, undeclared variables, freeText for record data, persona-in-body, regulated-data freeText, multiple Active versions, deploy order wrong (template after caller), synchronous invocation from triggers, and hardcoded model names. Disable with `eval_harness.enabled: false`.
 
 ---
 

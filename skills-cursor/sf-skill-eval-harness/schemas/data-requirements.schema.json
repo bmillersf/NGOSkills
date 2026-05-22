@@ -1,0 +1,47 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "data-requirements.schema.json",
+  "title": "Phase 4 → 5 data dependency contract",
+  "description": "Phase 4 emits this. Phase 5 reads it directly to drive seeding (no prose interpretation).",
+  "type": "object",
+  "required": ["version", "records"],
+  "additionalProperties": false,
+  "properties": {
+    "version": {"type": "string", "enum": ["1.0"]},
+    "records": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "object", "required_fields", "referenced_by_steps"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "object": {"type": "string", "minLength": 1},
+          "record_type": {"type": "string"},
+          "required_fields": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "referenced_by_steps": {
+            "type": "array",
+            "minItems": 1,
+            "items": {"type": "string", "pattern": "^step-[0-9]+$"}
+          },
+          "relationships": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["to", "via"],
+              "additionalProperties": false,
+              "properties": {
+                "to": {"type": "string"},
+                "via": {"type": "string"}
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

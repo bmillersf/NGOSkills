@@ -31,11 +31,67 @@ upstream_refs:
 upstream_release_notes:
   - release: "Spring '26"
     url: https://help.salesforce.com/s/articleView?id=release-notes.rn_api.htm
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "100-pt rubric inline (5 categories: Selectivity 25, Performance 25, Security 20, Correctness 15, Readability 15), mapped onto the 4-dimension default rubric from skill-eval-harness-SPEC.md §5.1. Note: SPEC §20.5 says pure SOQL lookups don't need the harness, but generated SOQL going into production code does — the wrap activates only via apply_when when the query is being authored as part of a larger artifact, not for one-off lookups."
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  soql_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 15
+      description: "Query returns the right records. Maps to Correctness (15). FROM clause matches the intended object, WHERE filters reflect the user's actual ask, relationship traversal correct."
+      automatic_hard_fail_rules:
+        - "Any query referencing a field that doesn't exist on the named object (will fail at runtime)"
+        - "Any subquery using parent-to-child relationship name where child-to-parent is needed (or vice versa)"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 15
+      description: "Query enforces security + handles unbounded results. Maps to Security (20). WITH USER_MODE on user-input queries, no SOQL injection via dynamic queries, LIMIT clauses to prevent collection overflow."
+      automatic_hard_fail_rules:
+        - "Any user-input-driven query without WITH USER_MODE or WITH SECURITY_ENFORCED"
+        - "Any Database.query() built via string concatenation with user input (SOQL injection)"
+        - "Any query without LIMIT on a collection that could grow unboundedly (collection overflow)"
+    - name: Fit
+      max: 25
+      hard_fail_below: 10
+      description: "Query is readable + matches Salesforce conventions. Maps to Readability (15). PascalCase API names, formatted across lines for >5 fields, consistent indentation."
+      automatic_hard_fail_rules:
+        - "Any query >120 chars on one line without line breaks (review impossible)"
+    - name: Performance
+      max: 25
+      hard_fail_below: 15
+      description: "Query is selective + scales. Maps to Selectivity (25) + Performance (25) — heaviest category combo in this rubric. Indexed-field WHERE clauses, no LIKE '%foo%' on large tables, no N+1 from queries-in-loops."
+      automatic_hard_fail_rules:
+        - "Any WHERE clause with leading wildcard LIKE '%...' on a non-indexed field (full table scan)"
+        - "Any aggregate query without GROUP BY that returns >1 row (will throw QueryException)"
+        - "Any query designed to run inside a loop (N+1 anti-pattern at the calling site)"
+  test_rubric:
+    unit:
+      required: true
+      criteria: "Query parses (sf data query --dry-run or static parse). Field names exist on the queried object."
+    integration:
+      required: true
+      criteria: "Query runs against a connected org and returns expected row count + shape."
+    smoke:
+      required: true
+      criteria: "Query executes within governor limits at the highest expected data volume (test with 200+ records or production-scale data via Bulk API)."
 ---
 
 # sf-soql: Salesforce SOQL Query Expert
 
 Expert database engineer specializing in Salesforce Object Query Language (SOQL). Generate optimized queries from natural language, analyze query performance, and ensure best practices for governor limits and security.
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md) — but only when the query is being authored into a production artifact (apply_when: artifact_produced). One-off SOQL lookups don't trigger the harness per SPEC §20.5. Three subagents grade against the 100-pt rubric in fresh context. Robustness AND Performance hard-fail floors are 15 — selectivity violations and SOQL injection are catastrophic. Disable with `eval_harness.enabled: false`.
+
+---
 
 ## Core Responsibilities
 

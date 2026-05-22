@@ -22,6 +22,57 @@ compatibility: "Requires Sales Cloud edition with Collaborative Forecasts; indus
 metadata:
   version: "1.0.0"
   author: "NGOSkills"
+  scoring: "120 points across 10 categories — Phase 0 20 / Forecast type inventory 15 / Stage→Category mapping 20 / Hierarchy 15 / Quota loading 10 / Adjustment policy 10 / Submission 5 / Cumulative+partner+sharing 10 / Multi-currency 5 / Anti-patterns 10 (96 is passing)"
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "120-pt rubric (10 categories) extracted from existing 'Scoring rubric (120 pts)' section in this SKILL.md (line 177). Mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  sales_forecasting_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 16
+      description: "Industry pre-check + Forecast type + Stage→Category mapping. Maps to Phase 0 (20) + Forecast type inventory (15) + Stage→Category (20). Forecasting math is downstream of these three; any one missing produces a forecast that doesn't tie to pipeline."
+      automatic_hard_fail_rules:
+        - "Phase 0 industry pre-check skipped"
+        - "Industry-owned forecasting model (Manufacturing Account Forecast / FSC AUM / NPC pledged / NPSP donation) silently overridden"
+        - "Active Forecast Type missing measure / object / date / filter explicitness"
+        - "Stage → Forecast Category mapping incomplete (any stage unmapped — forecast skips that pipeline)"
+        - "Closed-won stage mapped to 'Pipeline' or 'Best Case' instead of 'Closed' (forecast double-counts won deals)"
+        - "OpportunityLineItem-level forecast type configured without confirming line items have CloseDate / Amount populated"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 14
+      description: "Hierarchy + Quota + Adjustment integrity. Maps to Hierarchy (15) + Quota loading (10) + Adjustment policy (10). The forecast hierarchy is a separate construct from role hierarchy; quota loading + adjustments are how forecasts diverge from raw pipeline."
+      automatic_hard_fail_rules:
+        - "Forecast hierarchy mismatched to role hierarchy with no rationale (silent forecast misses)"
+        - "Forecast managers not assigned at every level — work falls through gaps"
+        - "Quota loading strategy missing (Data Loader / API path) — quotas hand-managed and drift"
+        - "Period + type alignment unverified on quota load (Q1 2027 quotas loaded against fiscal-year template that doesn't include Q1 2027)"
+        - "Adjustment policy not documented — anyone can adjust at any granularity, no audit retention"
+        - "Adjustment audit trail not retained per regulatory / compliance period"
+    - name: Fit
+      max: 25
+      hard_fail_below: 12
+      description: "Submission + Cumulative + Partner + Sharing + Multi-currency. Maps to Submission (5) + Cumulative+partner+sharing (10) + Multi-currency (5). Right policy decisions documented; not silent defaults."
+      automatic_hard_fail_rules:
+        - "Submission policy (required vs advisory, locking) not documented — managers don't know if their submission counts"
+        - "Cumulative rollup decision not declared (Pipeline vs Best Case vs Commit cumulative — different tools for different cadences)"
+        - "Partner forecasts enabled without partner user sharing rules — partners don't see their own pipeline"
+        - "Multi-currency org without dated rates + display currency decision — forecast values fluctuate on rate change without intent"
+    - name: Performance
+      max: 25
+      hard_fail_below: 12
+      description: "Anti-patterns + revise pass. Maps to Anti-patterns (10). No unmapped stages / role-hierarchy silence / industry override; revise pass on score below 96."
+      automatic_hard_fail_rules:
+        - "Anti-patterns audit not done explicitly (unmapped stages, role-hierarchy silence, industry override)"
+        - "Score below 96 / 120 returned to user without revise pass"
+        - "Forecast performance untested at production volume (forecasts >50k Opportunities exhibit aggregation lag)"
 release_pinned: "Spring '26"
 docs_last_verified: 2026-05-01
 upstream_refs:
@@ -43,6 +94,10 @@ upstream_release_notes:
 ---
 
 # sf-sales-forecasting: Collaborative Forecasts, Types, and Adjustments
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). 120-pt rubric across 10 forecasting categories, extracted from this skill's existing Scoring rubric section (line 177) and mapped onto the 4-dim shape. Correctness floor at 16 — forecasting math is downstream of Phase 0 / forecast type / stage→category mapping; any one missing produces a forecast that doesn't tie to pipeline. Hard-fail rules block Phase 0 skip, industry forecasting overrides, unmapped stages, closed-won mapped to Pipeline/Best Case, role-hierarchy mismatch with forecast hierarchy, missing quota loading strategy, and undocumented adjustment policy. Disable with `eval_harness.enabled: false`.
 
 Owns Collaborative Forecasts end to end: forecast types (Revenue, Quantity, Custom on OLI / Splits / Product Families / custom number fields), forecast categories, hierarchy design, adjustment policy, quota loading, partner forecasts, cumulative rollups, and forecast sharing. Opportunity modeling, splits, and pipeline inspection are upstream of this skill and handed off to `sf-sales-opportunity`; cadences and dialer are out of scope.
 

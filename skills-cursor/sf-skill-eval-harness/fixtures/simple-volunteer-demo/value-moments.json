@@ -1,0 +1,90 @@
+{
+  "version": "1.0",
+  "duration_minutes": 30,
+  "duration_budget": {
+    "end_user_pov_min_pct": 60,
+    "admin_setup_max_pct": 20,
+    "narrative_transitions_pct": 20
+  },
+  "value_moments": [
+    {
+      "requirement_id": "REQ-001",
+      "min_steps": 4,
+      "persona": "Sarah, prospective volunteer",
+      "persona_pain_quote": "heard about Helping Hands from a friend, doesn't have a Salesforce login, just wants to help out at a food drive Saturday",
+      "persona_outcome": "Sarah opens the public site on her phone and sees Saturday's food drive at the top of the list — no signup, no friction",
+      "wow_moment": {
+        "description": "Public page renders with live shift data — no login screen, no Salesforce branding, just a clean shift list",
+        "why_audience_leans_forward": "Audience expects a Salesforce login wall. They see a real public page that looks like the NGO's own site, with live data behind it.",
+        "presenter_cue": "Pause on the public URL. Note: no auth.",
+        "estimated_duration_seconds": 15
+      },
+      "anti_demo": [
+        "Do not show how the guest user profile was configured",
+        "Do not show Experience Builder",
+        "Do not show the Sharing Set"
+      ],
+      "end_user_pov_steps": 4,
+      "admin_pov_steps": 0
+    },
+    {
+      "requirement_id": "REQ-002",
+      "min_steps": 5,
+      "persona": "Sarah, prospective volunteer",
+      "persona_pain_quote": "doesn't have a Salesforce login, just wants to help out",
+      "persona_outcome": "Sarah clicks 'Sign me up,' enters her email, and is done. Person Account created behind the scenes; she sees a confirmation.",
+      "wow_moment": {
+        "description": "Confirmation screen appears in <2s with a personalized message — and Maya's coordinator view, side-by-side, shows the new volunteer flag light up in real time",
+        "why_audience_leans_forward": "The audience sees both ends of the transaction at once: Sarah's perspective and Maya's. The flag appears as Sarah's confirmation does.",
+        "presenter_cue": "Watch Maya's screen on the right.",
+        "estimated_duration_seconds": 12
+      },
+      "anti_demo": [
+        "Do not show the Person Account creation Apex",
+        "Do not show the trigger handler",
+        "Do not show duplicate matching rules"
+      ],
+      "end_user_pov_steps": 5,
+      "admin_pov_steps": 0
+    },
+    {
+      "requirement_id": "REQ-003",
+      "min_steps": 5,
+      "persona": "Maya, Volunteer Coordinator",
+      "persona_pain_quote": "spends ~3 hours every Monday reconciling shift signups across email + spreadsheet + Salesforce",
+      "persona_outcome": "Maya opens her dashboard Monday at 8am. New volunteers are flagged. She has her morning back to call the three first-timers personally.",
+      "wow_moment": {
+        "description": "Dashboard list view with red flags next to first-time volunteers, click-to-call action visible, all in one screen",
+        "why_audience_leans_forward": "Audience realizes Maya's 3 hours of reconciliation is now the time before her first sip of coffee.",
+        "presenter_cue": "Pause on the flags. Mention the 3 hours.",
+        "estimated_duration_seconds": 12
+      },
+      "anti_demo": [
+        "Do not show the report builder",
+        "Do not show how the flag was computed",
+        "Do not show the dashboard config"
+      ],
+      "end_user_pov_steps": 4,
+      "admin_pov_steps": 1
+    },
+    {
+      "requirement_id": "REQ-004",
+      "min_steps": 4,
+      "persona": "Tom, Programs Director",
+      "persona_pain_quote": "wants a dashboard at the end showing shifts filled this week, new volunteers this week, retention rate",
+      "persona_outcome": "Tom checks the dashboard during the all-hands and has a one-glance retention story for the board",
+      "wow_moment": {
+        "description": "Retention metric updates live as Sarah completes her first shift in the demo — going from 'new' to '1-shift volunteer' before the audience's eyes",
+        "why_audience_leans_forward": "The metric that boards care about most — retention — is shown changing because of an action that just happened in the demo.",
+        "presenter_cue": "Watch the retention number when I refresh.",
+        "estimated_duration_seconds": 10
+      },
+      "anti_demo": [
+        "Do not show CRM Analytics setup",
+        "Do not show data source configuration"
+      ],
+      "end_user_pov_steps": 3,
+      "admin_pov_steps": 1
+    }
+  ]
+}

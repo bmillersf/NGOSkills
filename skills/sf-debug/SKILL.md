@@ -32,11 +32,71 @@ upstream_refs:
 upstream_release_notes:
   - release: "Spring '26"
     url: https://help.salesforce.com/s/articleView?id=release-notes.rn_apex.htm
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "100-pt rubric inline (5 categories: Root Cause 25, Fix Accuracy 25, Performance Impact 20, Completeness 15, Clarity 15), mapped onto the 4-dimension default rubric from skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  debug_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 15
+      description: "Root cause analysis is correct. Maps to Root Cause (25). Identifies the actual cause of failure, not a symptom. Distinguishes between trigger of the symptom and underlying defect."
+      automatic_hard_fail_rules:
+        - "Any debug analysis that names a symptom as the root cause (e.g., 'limit exceeded' is the symptom; the cause is N+1 SOQL or unbounded collection)"
+        - "Any analysis attributing the failure to data without showing the data path that produced the limit"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 12
+      description: "Fix actually addresses the root cause + handles edge cases. Maps to Fix Accuracy (25). Fix solves the named root cause, not just the immediate failure. Edge cases (null inputs, empty collections, partial-success batches) handled."
+      automatic_hard_fail_rules:
+        - "Any proposed fix that doesn't logically follow from the named root cause"
+        - "Any fix that introduces a new failure mode (e.g., suppressing the exception with try/catch instead of fixing the underlying issue)"
+    - name: Fit
+      max: 25
+      hard_fail_below: 10
+      description: "Analysis is complete + clear. Maps to Completeness (15) + Clarity (15). All relevant log entries cited (timestamp, line, exception). Explanation suitable for a developer to action."
+      automatic_hard_fail_rules:
+        - "Any analysis that references specific log entries without quoting the actual log line content"
+        - "Any analysis that says 'see the debug log' without extracting the relevant lines"
+    - name: Performance
+      max: 25
+      hard_fail_below: 12
+      description: "Fix improves performance metrics, not just correctness. Maps to Performance Impact (20). Quantifies the before/after Limits or timing impact where applicable."
+      automatic_hard_fail_rules:
+        - "Any performance-related fix without measured before/after numbers (e.g., 'reduces SOQL' without saying from N to M)"
+  test_rubric:
+    unit:
+      required: true
+      criteria: "Debug analysis identifies the failing line + the underlying cause + a falsifiable hypothesis (a specific test case that would reproduce or confirm the fix)."
+    integration:
+      required: true
+      criteria: "Proposed fix can be applied to the codebase. The fix passes existing test suite + introduces a new test case for the regression scenario."
+    smoke:
+      required: true
+      criteria: "Re-running the failing scenario after the fix produces a debug log without the original limit/exception. Performance metrics improve as predicted."
 ---
 
 # sf-debug: Salesforce Debug Log Analysis & Troubleshooting
 
 Expert debugging engineer specializing in Apex debug log analysis, governor limit detection, performance optimization, and root cause analysis. Parse logs, identify issues, and automatically suggest fixes.
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). Three subagents (planner / implementer / evaluator) loop against the 100-pt rubric in fresh context.
+
+**Why debug analysis specifically needs the harness:** the most common debug failure mode is naming a symptom as the root cause. "Limit exceeded" is a symptom; the cause is the N+1 SOQL or unbounded collection that produced the limit. A debug analysis that fixes the symptom (catches the exception, raises the limit) without fixing the cause ships the same bug back the next time data scales. Self-eval rates the analysis "correct" because the immediate failure stops; adversarial eval grades whether the fix follows from the root cause.
+
+**Composition:** rubric inline below (100 pts, 5 categories). Frontmatter `debug_dimensions` block maps onto 4 SPEC dimensions with hard-fail floors. Symptom-as-root-cause is automatic Correctness hard-fail.
+
+**Disabling:** set `eval_harness.enabled: false` in frontmatter.
+
+---
 
 ## Core Responsibilities
 

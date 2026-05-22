@@ -35,11 +35,75 @@ upstream_refs:
 upstream_release_notes:
   - release: "Spring '26"
     url: https://help.salesforce.com/s/articleView?id=release-notes.rn_omnistudio.htm
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "120-pt rubric (6 categories: Design & Structure 25 / Data Integration 20 / Error Handling 20 / Performance 20 / User Experience 20 / Security 15) — mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  omniscript_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 15
+      description: "Structural + data-integration correctness. Maps to Design & Structure (25) + Data Integration (20). Type/SubType/Language triplet unique and active, element hierarchy valid (Levels + Order), all DataRaptor / IP references resolve to active bundles, input/output maps wired."
+      automatic_hard_fail_rules:
+        - "Two active OmniScript versions with the same Type/SubType/Language triplet (only one IsActive allowed)"
+        - "Action element references a DataRaptor or Integration Procedure that doesn't exist or is inactive in the target org"
+        - "Circular OmniScript embedding (A embeds B which embeds A) — infinite-render loop"
+        - "Missing PropertySetConfig on an action element (no inputMap / outputMap)"
+        - "Step element with Level≠0 or input element with Level=0 (hierarchy violation that breaks rendering)"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 14
+      description: "Error handling + validation. Maps to Error Handling (20). Action elements have showError configured, required inputs validate, fallback behavior defined for empty data sources, user-facing error text is actionable."
+      automatic_hard_fail_rules:
+        - "IP / DataRaptor Action element without showError + errorMessage configured (silent failure mode)"
+        - "Required input element (label='*' or required=true) with no Validation element or pattern enforcing format"
+        - "Submit Action with no fallback when postTransformBundle returns empty / errors"
+        - "Hardcoded Salesforce ID (e.g., '0015g00000ABC123') in PropertySetConfig — breaks deploy across orgs"
+    - name: Fit
+      max: 25
+      hard_fail_below: 12
+      description: "Pattern adherence + UX conventions. Maps to User Experience (20). Step grouping logical (≤7-10 input elements / step), elements named PascalCase, navigation controls (Back/Next/Cancel) configured, conditional visibility used instead of always-shown irrelevant fields."
+      automatic_hard_fail_rules:
+        - "OmniScript built when a Salesforce Screen Flow would be the right pattern (single-screen data entry, no IP orchestration needed)"
+        - "Step exceeding 15 elements (UX cliff — split into multiple steps)"
+        - "Element naming with spaces, kebab-case, or non-PascalCase identifiers"
+        - "Inapplicable elements always shown (no conditional show expression on context-dependent fields)"
+    - name: Performance
+      max: 25
+      hard_fail_below: 12
+      description: "Performance + security. Maps to Performance (20) + Security (15). DataRaptor Extracts bounded, lazy loading on step entry, no client-side sensitive data, IP actions own server-side processing, FLS respected."
+      automatic_hard_fail_rules:
+        - "DataRaptor Extract Action with no filter / limit clause (unbounded fetch)"
+        - "All action elements firing on OmniScript load instead of step entry (mass eager-load on first render)"
+        - "Sensitive data (password, SSN, token, PHI/PII) materialized in client-side data JSON instead of staying server-side via IP"
+        - "Loop Block iterating an unbounded array with no pagination / server-side limit"
+  test_rubric:
+    unit:
+      required: true
+      criteria: "OmniScript metadata validates: Type/SubType/Language unique, all element references resolve, PropertySetConfig JSON parses, no circular embeddings."
+    integration:
+      required: true
+      criteria: "Deploys to a connected org. Activation succeeds (IsActive flips with no other active version on the triplet). Each Action element invokes its IP / DataRaptor and receives a non-error response in the deployed org."
+    smoke:
+      required: true
+      criteria: "Walk-through of all paths: happy path completes submission, validation paths surface errors, conditional blocks show/hide correctly, prefill populates from DataRaptor Extract, save-for-later resumes with partial data when configured."
 ---
 
 # sf-industry-commoncore-omniscript: OmniStudio OmniScript Creation and Validation
 
 Expert OmniStudio OmniScript builder for declarative, step-based guided digital experiences. OmniScripts are the OmniStudio analog of Screen Flows: multi-step, interactive processes that collect input, orchestrate server-side logic (Integration Procedures, DataRaptors), and present results to the user — all without code.
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). 120-pt rubric across 6 OmniStudio categories, mapped onto the 4-dim shape. Correctness floor at 15 — a broken element hierarchy or duplicate-active-version takes the OmniScript out of production. Hard-fail rules block circular embeddings, broken IP/DataRaptor references, hardcoded Salesforce IDs, unbounded DataRaptor fetches, and client-side sensitive data. Disable with `eval_harness.enabled: false`.
+
+---
 
 ## Quick Reference
 

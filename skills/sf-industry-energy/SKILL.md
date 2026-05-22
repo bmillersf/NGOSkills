@@ -22,6 +22,53 @@ compatibility: "Requires E&U Cloud license + `vlocity_ins__` package (EnergyAndU
 metadata:
   version: "1.0.0"
   author: "NGOSkills"
+  scoring: "50 points across 5 categories — Industry detection 10 / Object model 10 / Asset hierarchy 10 / Routing to common-core 10 / License gating 10"
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "50-pt rubric (5 categories) extracted from existing 'Scoring rubric (50 points)' section in this SKILL.md (line 72). Mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  energy_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 14
+      description: "Industry detection + Object model. Maps to Industry detection (10) + Object model (10). E&U disambiguated from Insurance (shared vlocity_ins__ namespace); first-class objects (Premise__c / ServicePoint__c / Meter__c)."
+      automatic_hard_fail_rules:
+        - "vlocity_ins__ namespace detected but E&U not disambiguated from Insurance (Premise__c presence vs Claim__c is the discriminator)"
+        - "Premise modeled as plain Account without Premise__c"
+        - "Meter attached directly to Account without ServicePoint__c (skipping the point-of-delivery layer)"
+        - "Interval data modeled as custom child of Asset instead of IntervalData__c"
+        - "Insurance Claim__c objects + automation accidentally referenced in an E&U context (or vice versa)"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 12
+      description: "Asset hierarchy. Maps to Asset hierarchy (10). Substation → feeder → transformer → ServicePoint via AssetHierarchy__c; required for outage clustering + work request dispatch."
+      automatic_hard_fail_rules:
+        - "Asset hierarchy modeled as flat custom object instead of AssetHierarchy__c (outage clustering depends on the graph)"
+        - "Outage clustering built in Flow instead of Industries outage engine / Apex"
+        - "Network graph (substation → feeder → SP) flattened — outage impact can't be computed correctly"
+    - name: Fit
+      max: 25
+      hard_fail_below: 12
+      description: "Routing to common-core + Field Service handoff. Maps to Routing to common-core (10). Heavy OmniStudio + Field Service handoff for crew dispatch."
+      automatic_hard_fail_rules:
+        - "OmniScript / IP / Data Mapper / FlexCard / Callable Apex authored here instead of delegated"
+        - "Field crew dispatch built here instead of routed to sf-field-service"
+        - "Generic Sales/Service Cloud routing in E&U-detected org (industry override)"
+        - "AMI / usage analytics built here instead of routed to sf-datacloud"
+    - name: Performance
+      max: 25
+      hard_fail_below: 12
+      description: "License gating. Maps to License gating (10). EnergyAndUtilities feature flag verified before recommending E&U-specific features."
+      automatic_hard_fail_rules:
+        - "E&U features recommended without confirming EnergyAndUtilities feature flag is enabled"
+        - "Regulated-utility-only features (e.g., Tariff / RatePlan management) recommended for a deregulated retailer org"
+        - "AMI interval-data features recommended for an org that only has summary meter reads"
 release_pinned: "Spring '26"
 docs_last_verified: 2026-05-01
 upstream_refs:
@@ -37,6 +84,10 @@ upstream_release_notes:
   - release: "Spring '26"
     url: https://help.salesforce.com/s/articleView?id=release-notes.rn_industries_energy.htm
 ---
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). 50-pt rubric across 5 router categories, mapped onto the 4-dim shape. Correctness floor at 14 — vlocity_ins__ is shared with Insurance Cloud (EnergyAndUtilities feature flag); misattribution corrupts the routing decision. Hard-fail rules block undisambiguated namespace, Premise as plain Account, meter attached to Account (skipping ServicePoint__c), interval data as custom child of Asset, asset hierarchy flattened, outage clustering in Flow, custom field crew dispatch (Field Service handoff), and license-gated features recommended without entitlement check. Disable with `eval_harness.enabled: false`.
 
 ## When this skill owns the task
 

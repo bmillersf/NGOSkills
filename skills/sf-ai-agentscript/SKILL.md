@@ -41,6 +41,56 @@ upstream_refs:
 upstream_release_notes:
   - release: "Spring '26"
     url: https://help.salesforce.com/s/articleView?id=release-notes.rn_agentforce.htm
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "100-pt rubric in references/scoring-rubric.md (6 categories: Structure & Syntax 20, Deterministic Logic 25, Instruction Resolution 20, FSM Architecture 15, Action Configuration 10, Deployment Readiness 10), mapped onto the 4-dimension default rubric from skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  agentscript_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 15
+      description: "DSL is syntactically valid + deterministic. Maps to Structure & Syntax (20) + Deterministic Logic (25). Block ordering correct, indentation consistent, available-when guards on actions, post-action checks."
+      automatic_hard_fail_rules:
+        - "Any .agent file with parse errors (sf agent publish will fail)"
+        - "Any action without 'available when' guard on a security-sensitive operation (deterministic agent should never silently fail open)"
+        - "Any post-action check that doesn't actually validate the action result"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 12
+      description: "Agent handles bad input + edge cases via FSM. Maps to FSM Architecture (15) + Instruction Resolution (20). Clear topic separation, explicit transitions, slot filling handles missing data, '|' vs '->' usage correct."
+      automatic_hard_fail_rules:
+        - "Any FSM with implicit transitions (next-block-by-default) on a state that has multiple legal exits"
+        - "Any slot filling without fallback for missing data"
+    - name: Fit
+      max: 25
+      hard_fail_below: 10
+      description: "Actions configured per Agent Script conventions. Maps to Action Configuration (10) + Instruction Resolution (20). Correct protocols, input/output mapping, template injection patterns."
+      automatic_hard_fail_rules:
+        - "Any action with input/output schema that doesn't match the underlying invocable's signature"
+        - "Any template injection ('->' or '|') used incorrectly (will produce literal placeholder in agent response)"
+    - name: Performance
+      max: 25
+      hard_fail_below: 12
+      description: "Agent deploys clean. Maps to Deployment Readiness (10). Valid default_agent_user, no compilation errors, metadata complete."
+      automatic_hard_fail_rules:
+        - "Any agent with no default_agent_user set (deploy will warn or fail)"
+        - "Any agent referencing actions, types, or topics that don't exist in the deployed metadata"
+  test_rubric:
+    unit:
+      required: true
+      criteria: ".agent file passes sf agent generate validation (syntax + structure)."
+    integration:
+      required: true
+      criteria: "sf agent publish succeeds against a connected org. Agent appears in Agent Builder."
+    smoke:
+      required: true
+      criteria: "Sample conversation against deployed agent traverses the FSM correctly: topic switching works, available-when guards fire when expected, post-action checks block bad outcomes."
 ---
 
 # SF-AI-AgentScript Skill
@@ -48,6 +98,10 @@ upstream_release_notes:
 > **"Prompt engineering is like writing laws in poetry - beautiful, but not enforceable."**
 
 Agent Script transforms agent development from prompt-based suggestions to **code-enforced guarantees**. This skill guides you through writing, debugging, testing, and deploying Agentforce agents using the Agent Script DSL.
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). Three subagents (planner / implementer / evaluator) loop against the 100-pt rubric in fresh context. Hard-fail rules encode the missing-available-when-guard failure mode (a deterministic agent without security guards is just a fragile imperative one). Disable with `eval_harness.enabled: false`.
 
 ---
 

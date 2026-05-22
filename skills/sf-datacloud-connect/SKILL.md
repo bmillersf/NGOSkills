@@ -19,6 +19,54 @@ metadata:
   version: "1.0.0"
   author: "Gnanasekaran Thoppae"
   phase: "Connect"
+  scoring: "100 points across 4 categories — newly authored 2026-05-22 (Connector Selection 30 / Auth + Credential Hygiene 30 / Source Discovery 20 / Verification 20)"
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "100-pt rubric (4 categories) newly authored 2026-05-22 — mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  dc_connect_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 14
+      description: "Connector selection. Right connector type for the source (S3 / Snowflake / BigQuery / Azure / Salesforce CRM / etc.); --connector-type flag honored on commands that require it."
+      automatic_hard_fail_rules:
+        - "connection list run without --connector-type (the flag is required; command fails or returns subset)"
+        - "Wrong connector type chosen for the source (e.g., generic JDBC when a native Snowflake connector exists)"
+        - "Connection created without confirming the source system's connector is supported in the org's Data Cloud edition"
+        - "Connector created when an existing one already targets the same source (duplication)"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 18
+      description: "Auth + credential hygiene. Heaviest robustness floor — connector credentials are external-system entry points; weak credential management is a direct cross-system compromise path."
+      automatic_hard_fail_rules:
+        - "Inline credentials / API keys in connector metadata or scripts (must use Named Credential / secret store)"
+        - "Credential rotation policy not documented for the connector"
+        - "Long-lived service-account credentials with no expiry / no rotation cadence"
+        - "Connection test (authentication probe) skipped before saving the connector"
+        - "OAuth-based connector wired without confirming the OAuth scope is minimum-privilege for the documented use case"
+    - name: Fit
+      max: 25
+      hard_fail_below: 12
+      description: "Source discovery + downstream handoff. Browse source objects/tables before downstream Prepare phase consumes them; hand off cleanly to sf-datacloud-prepare."
+      automatic_hard_fail_rules:
+        - "Source object/table list not browsed before designing downstream Data Streams (Prepare phase has no menu of what's available)"
+        - "Connect-phase work bleeding into Prepare (creating Data Streams here instead of routing to sf-datacloud-prepare)"
+        - "External CRM connector wired here when the source is another Salesforce org (specific Salesforce-to-Salesforce connector pattern needed)"
+        - "Source schema captured but not communicated downstream (Prepare phase has to re-discover)"
+    - name: Performance
+      max: 25
+      hard_fail_below: 12
+      description: "Verification. Connection authenticates, source list returns expected schema, latency is acceptable for ingestion frequency."
+      automatic_hard_fail_rules:
+        - "Connection test passed but source-list probe never run (auth works, but readability of expected tables/objects unverified)"
+        - "Latency / throughput characteristics of the connector not measured for the documented ingestion cadence (large-table refresh exceeds the window)"
+        - "Connector regression after upgrade not retested (silent breaking changes between versions)"
 release_pinned: "Spring '26"
 docs_last_verified: 2026-05-01
 upstream_refs:
@@ -42,6 +90,10 @@ upstream_release_notes:
 # sf-datacloud-connect: Data Cloud Connect Phase
 
 Use this skill when the user needs **source connection work**: connector discovery, connection metadata, connection testing, browsing source objects, or understanding what connector type to use.
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). 100-pt rubric across 4 Connect-phase categories, newly authored 2026-05-22. Robustness floor at 18 — connector credentials are external-system entry points; weak credential management is a direct cross-system compromise path. Hard-fail rules block missing --connector-type flag, wrong connector type chosen, inline credentials, missing rotation policy, OAuth scopes broader than minimum-privilege, source-discovery skipped, and downstream Prepare work hijacked here. Disable with `eval_harness.enabled: false`.
 
 ## When This Skill Owns the Task
 

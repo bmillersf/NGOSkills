@@ -68,6 +68,73 @@ upstream_refs:
 upstream_release_notes:
   - release: "Spring '26"
     url: https://help.salesforce.com/s/articleView?id=release-notes.rn_industries_fsc.htm
+metadata:
+  scoring: "150 points across 7 categories — Persona Fit 20 / Data Model Correctness 25 / Relationship Integrity 20 / Process Automation 25 / UX (ARC) 20 / Security/Compliance 25 / Testing 15"
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "150-pt rubric (7 categories: Persona Fit 20 / Data Model 25 / Relationship Integrity 20 / Process Automation 25 / UX/ARC 20 / Security/Compliance 25 / Testing 15) — extracted from existing scoring section in this SKILL.md (lines 234-247); mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  fsc_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 16
+      description: "FSC data-model correctness. Maps to Data Model Correctness (25) + Persona Fit (20). Person Account vs Household vs Business Account chosen correctly per persona; ACR Reciprocal Role pairs valid; FinServ__ objects used in place of custom equivalents; anchor object matches persona."
+      automatic_hard_fail_rules:
+        - "Retail banking customer modeled as Business Account when Person Account is the FSC pattern"
+        - "Household modeled as a custom object when Account+ACR Household role is the FSC pattern"
+        - "Account Contact Relationship without reciprocal-role pair (one-sided ACR — relationship invisible from the other side)"
+        - "Custom Financial_Account__c built when FinServ__FinancialAccount__c exists (shadow data model)"
+        - "Custom Life_Event__c built when FinServ__LifeEvent__c exists"
+        - "Custom relationship object built when FinServ__Relationship__c + FinServ__ReciprocalRole__c handles it"
+        - "Anchor object mismatch — wealth advisor view anchored to Account when Person Account is the persona's individual record"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 18
+      description: "Security + Compliance floor. Maps to Security/Compliance (25). Heaviest robustness floor — financial services orgs are regulated (KYC/AML/FINRA/SEC/regional banking); CDS sharing, audit trails, and field-level compliance are non-negotiable."
+      automatic_hard_fail_rules:
+        - "Compliant Data Sharing (CDS) groups not configured when org has CDS enabled and persona requires record-level access scoping (advisors seeing other advisors' clients)"
+        - "Standard Salesforce sharing chosen for an org where regulatory boundaries (broker-dealer affiliation, registered representative scope) require CDS"
+        - "Audit trail (Field History Tracking) not enabled on KYC / AML / suitability / FINRA-flagged fields"
+        - "PII / PHI / SSN-bearing fields without Shield Platform Encryption when org is a regulated entity"
+        - "Interaction Summary / Engagement records exposing client information to roles outside the documented compliance perimeter"
+        - "Mortgage / lending workflow without compliance-required fields populated (HMDA, GFE/Loan Estimate, ECOA-protected attributes)"
+    - name: Fit
+      max: 25
+      hard_fail_below: 14
+      description: "Pattern adherence + relationship + process automation. Maps to Relationship Integrity (20) + Process Automation (25) + UX/ARC (20). Rollups by Lookup over custom aggregation Apex; Flow over Apex when both viable; ARC groups + sections configured; Life Event timeline; Interaction Summary placement."
+      automatic_hard_fail_rules:
+        - "Custom Apex aggregation (SOQL+update on parent) used when Rollups by Lookup Filter handles the same calculation declaratively"
+        - "Apex trigger written when a Record-Triggered Flow is the documented FSC pattern for that scenario"
+        - "ARC enabled but no Relationship Group / Section configuration — relationships render flat without the visual-relationship-map UX"
+        - "Engagement Interactions / Interaction Summary placed only on Account when persona context is Person Account / Household"
+        - "Life Event captured but no timeline placement on the Person Account's ARC view — event invisible to the persona's relationship surface"
+        - "Intelligent Need-Based Referrals enabled but referral routing rules never configured (referrals created but never routed)"
+        - "Same persona built in three skills (sf-industry-fsc + sf-sales-cloud + sf-service-cloud) instead of routing all FSC-touching work here"
+    - name: Performance
+      max: 25
+      hard_fail_below: 12
+      description: "Testing + scale. Maps to Testing (15). Person Account + Household + Financial Account test factory exists; CDS-aware test users; rollup performance bounded; ARC + relationship-map queries selective."
+      automatic_hard_fail_rules:
+        - "Apex tests creating Person Account / Household / Financial Account ad-hoc instead of via a shared TestDataFactory (test brittleness + DML burden)"
+        - "Apex tests run as System (no runAs) when CDS is enabled — tests pass while real users hit access boundaries in production"
+        - "Rollup chain across >3 levels (Person Account → Household → ACR-rolled-up parent → custom rollup) without measured query plan — production-volume cliff"
+        - "Reports / list views on FinServ__FinancialAccount__c without filter scoped to advisor's book (full-org scan when each advisor manages 50-200 households)"
+  test_rubric:
+    unit:
+      required: true
+      criteria: "Metadata validates: FinServ__ objects used (no shadow custom). ACR Reciprocal Role pairs valid. Person Account record types correct per persona. Apex tests exist with TestDataFactory pattern for FSC personas (Person Account, Household ACR, Financial Account, Financial Goal, Life Event)."
+    integration:
+      required: true
+      criteria: "Deploys to FSC sandbox. End-to-end persona path runs: persona walks in (Person Account/Household) → Financial Accounts surface → Life Event captured → Interaction Summary logged → Referral routed to next persona. Rollups compute correctly (AUM / liability / net-worth) at household level. CDS sharing enforced for restricted-profile users."
+    smoke:
+      required: true
+      criteria: "Advisor user opens their book of business via ARC, sees only their assigned households (CDS scoped), can document an interaction summary that surfaces on the household timeline, can fire a referral that lands in the recipient persona's queue. Compliance reports (KYC/AML/suitability) include only records inside the documented regulatory perimeter."
 ---
 
 # sf-industry-fsc: Financial Services Cloud Architect
@@ -75,6 +142,10 @@ upstream_release_notes:
 Owns all Financial Services Cloud (FSC) data model, relationship, process, and UX design work. FSC is a managed package with the `FinServ__` namespace layered on top of core Sales + Service Cloud, so the rules that govern a vanilla org no longer apply: Person Account is usually on; Household is a role, not an object type; Financial Accounts, Financial Goals, and Life Events have first-class objects; Rollups replace custom aggregation Apex; and ARC / Compliant Data Sharing / Intelligent Need-Based Referrals change how records are surfaced and shared.
 
 This skill is the **first line of defence** when FSC is detected. Generic cloud skills (`sf-sales-cloud`, `sf-service-case`) are required to defer here for any work that touches FSC-owned objects or features.
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). 150-pt rubric across 7 FSC categories, extracted from the Scoring Rubric section in this SKILL.md and mapped onto the 4-dim shape. Robustness floor at 18 — financial services orgs are regulated (KYC/AML/FINRA/SEC); CDS sharing, audit trails, and field-level compliance are non-negotiable. Hard-fail rules block shadow data models (custom Financial_Account__c when FinServ__FinancialAccount__c exists), CDS-skipped sharing on advisor books, missing audit trails on regulated fields, custom Apex aggregation when Rollups by Lookup work, and ARC enabled without group/section configuration. Disable with `eval_harness.enabled: false`.
 
 ---
 

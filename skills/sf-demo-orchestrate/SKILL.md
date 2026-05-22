@@ -227,7 +227,7 @@ Switch to plan mode. Present **two** approvals: the recommended product list **a
 | Nonprofit Cloud | Installed | Include |
 | Agentforce | Not enabled — 15 min to provision | Include (audience asked for AI) |
 | Data Cloud | Not enabled | Skip (out of scope for this demo) |
-| Experience Cloud | Active site `arlington-donor` | Include |
+| Experience Cloud | Active site `donor-portal` | Include |
 
 **3b. Demo duration prompt:**
 
@@ -347,7 +347,7 @@ Written to the workspace root and updated after every phase transition. Template
 - **Overall:** IN_PROGRESS
 
 ## Phase 1 — Baseline              [COMPLETE]
-- Packages: NPC, Experience Cloud (Arlington_Donor_Portal1)
+- Packages: NPC, Experience Cloud (Donor_Portal1)
 - Person Accounts: enabled
 - Agentforce: not provisioned
 

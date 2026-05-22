@@ -31,11 +31,80 @@ upstream_refs:
 upstream_release_notes:
   - release: "Spring '26"
     url: https://help.salesforce.com/s/articleView?id=release-notes.rn_networks.htm
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "100-pt rubric (5 categories: User Journey 25 / Visual Design 25 / Accessibility 20 / Content & Microcopy 15 / Responsiveness 15) — newly authored 2026-05-22 — mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  exp_ux_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 14
+      description: "User journey + task completion. Maps to User Journey (25). Each constituent journey (donor, volunteer, grantee, client) has a documented happy path + error recovery; multi-step forms expose progress; success states confirm next steps."
+      automatic_hard_fail_rules:
+        - "User journey shipped without an explicit happy path documented end-to-end (entry → action → confirmation → next step)"
+        - "Multi-step form without progress indicator (step counter or progress bar) — user can't tell where they are"
+        - "Form submission with no confirmation message / page redirect / next-step guidance (silent success)"
+        - "Error path with no recovery (form fails and user has to start over instead of seeing inline validation + retry)"
+        - "Auto-save absent on long forms (>3 steps or >5 minutes typical fill time) — abandonment on session loss"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 14
+      description: "Accessibility floor. Maps to Accessibility (20). WCAG 2.1 AA is the floor — nonprofit audiences are diverse (assistive tech, low bandwidth, varying digital literacy); skipping a11y is a constituent exclusion problem, not a polish issue."
+      automatic_hard_fail_rules:
+        - "Color contrast below WCAG 2.1 AA (4.5:1 body / 3:1 large text) on any text-bearing element"
+        - "Status indicated by color alone (red/green badge) without an icon, label, or pattern (color-blind exclusion)"
+        - "Interactive element (button / link / form control) missing accessible name (no aria-label, no visible label, no associated text)"
+        - "Keyboard inaccessibility — any action requires a mouse / touch (Tab cannot reach it, or Enter/Space cannot activate it)"
+        - "Form field without programmatic label (placeholder-only inputs — screen readers can't announce the field)"
+        - "Auto-playing video / heavy media on landing page without user-initiated control (bandwidth + a11y violation)"
+    - name: Fit
+      max: 25
+      hard_fail_below: 12
+      description: "Visual + content design fidelity. Maps to Visual Design (25) + Content & Microcopy (15). Mission-aligned imagery (not stock), branded color tokens (no hardcoded colors), navigation labels human-readable (not Salesforce API names), microcopy plain-language."
+      automatic_hard_fail_rules:
+        - "Salesforce API names exposed in UI labels (e.g., 'PersonExamination' instead of 'Background Check', 'GiftTransaction' instead of 'My Giving')"
+        - "Hardcoded colors in component styles instead of CSS custom properties / SLDS styling hooks (breaks dark mode + theming)"
+        - "Generic stock photography on hero / landing instead of mission-aligned imagery from the org's brand library"
+        - "Wall-of-text landing page with no progressive disclosure (>3 paragraphs above the fold without a CTA)"
+        - "Navigation menu with >7 top-level items (cognitive overload + mobile-menu overflow)"
+        - "Jargon-heavy labels — measured by failing the 5th-grade reading level test on primary nav + form labels"
+    - name: Performance
+      max: 25
+      hard_fail_below: 12
+      description: "Mobile responsiveness + interaction performance. Maps to Responsiveness (15). Mobile-first layouts, 44px+ touch targets, 16px+ body text (prevents iOS zoom), thumb-zone primary actions, offline-resilient confirmation."
+      automatic_hard_fail_rules:
+        - "Touch targets below 44x44px on mobile (interactive elements not tappable for users with motor impairment)"
+        - "Body text below 16px on mobile (triggers iOS auto-zoom + readability cliff)"
+        - "Layout untested at <576px breakpoint — content overflows, columns don't collapse, primary CTAs not reachable"
+        - "Loading states absent — form submission / data fetch >300ms with no spinner / skeleton (user assumes broken)"
+        - "Primary action positioned above the fold on mobile (out of thumb-zone) when bottom-anchored CTA is the convention"
+  test_rubric:
+    unit:
+      required: true
+      criteria: "Design tokens validated: CSS custom properties cover brand-primary / secondary / accent / text / background / surface / error / success / border-radius / spacing-unit. WCAG contrast checked on every text/background pairing. Form spec documents required fields with asterisk + legend pattern. Touch-target audit lists every interactive element at ≥44px."
+    integration:
+      required: true
+      criteria: "Built portal page passes axe-core / Lighthouse a11y audit at WCAG 2.1 AA. All journey happy paths complete in click-through testing. Multi-step forms persist drafts every 60s. Loading + error + success states render at correct moments. Mobile breakpoints tested at 320 / 576 / 768 / 1024px."
+    smoke:
+      required: true
+      criteria: "Constituent walk-through: representative user (donor / volunteer / grantee / client) completes the documented journey on mobile + desktop without help. Screen-reader spot check verifies labels announced correctly. Color-blind simulation passes status-conveyance check. Reading-level audit on primary nav + form labels passes 5th-grade target."
 ---
 
 # sf-nonprofit-experience-cloud-ux: Nonprofit Portal UX/UI Designer
 
 Expert UX/UI designer specializing in nonprofit Experience Cloud portals: user journey design, information architecture, branding, accessibility, responsive layouts, content strategy, and constituent-centered design patterns.
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). 100-pt rubric across 5 portal-UX categories, newly authored 2026-05-22 to fill the harness coverage gap on nonprofit constituent-portal design. Robustness floor at 14 — WCAG 2.1 AA is the floor, not aspiration; nonprofit audiences include assistive-tech users + low-bandwidth + varying digital literacy and skipping a11y is a constituent-exclusion problem. Hard-fail rules block contrast violations, color-only status, keyboard-inaccessible UI, Salesforce API names in labels, hardcoded colors, sub-44px touch targets, and missing journey confirmations. Disable with `eval_harness.enabled: false`.
+
+---
 
 ## Core Responsibilities
 

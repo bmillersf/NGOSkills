@@ -12,6 +12,61 @@ metadata:
   version: "2.1.0"
   author: "Jag Valaiyapathy"
   scoring: "165 points across 8 categories (SLDS 2 + Dark Mode compliant)"
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "165-pt rubric in references/scoring-and-testing.md (8 categories: SLDS Class Usage, Accessibility, Dark Mode Readiness, SLDS Migration, Styling Hooks, Component Structure, Performance, PICKLES Compliance), mapped onto the 4-dimension default rubric from skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  lwc_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 15
+      description: "Component renders correctly and works as specified. Maps to Component Structure (15) + actual functional behavior. The component must render without console errors, fire its declared events, and respond to its declared @api properties."
+      automatic_hard_fail_rules:
+        - "Any @track on a primitive value (deprecated since LWC API 35; use plain field reactivity instead)"
+        - "Any direct DOM manipulation that bypasses the LWC reactivity model (e.g., document.querySelector for component-internal state)"
+        - "Any infinite re-render loop (e.g., setting @track inside a getter, mutating a prop directly)"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 12
+      description: "Component is accessible and survives bad input. Maps to Accessibility (25). Keyboard navigation works, ARIA labels present, screen reader announces correctly, alt-text on images. Real users include disabled users."
+      automatic_hard_fail_rules:
+        - "Any interactive element (button, link, input) without a visible label, aria-label, or aria-labelledby"
+        - "Any image element without alt text (alt='' explicitly is OK for decorative; missing alt is hard-fail)"
+        - "Any custom interactive widget (clickable div) without role + tabindex + keyboard handler"
+        - "Any color-only conveying information without redundant text/icon (color-blind users excluded)"
+    - name: Fit
+      max: 25
+      hard_fail_below: 10
+      description: "Component matches SLDS 2 + Dark Mode + PICKLES conventions. Maps to SLDS Class Usage (25) + SLDS Migration (20) + Styling Hooks (20) + Dark Mode Readiness (25) + PICKLES Compliance (25). The largest mapped category — Fit captures the soul of LWC quality."
+      automatic_hard_fail_rules:
+        - "Any hardcoded color value (#hex, rgb(), named colors) in component CSS instead of --slds-g-color-* tokens"
+        - "Any deprecated SLDS 1 utility class or token (slds-text-color_default, --lwc-color-text-default, etc.)"
+        - "Any @import of a stylesheet outside the component bundle (LWC bundles are self-contained)"
+        - "Any base component reimplemented from scratch (lightning-button, lightning-card, lightning-record-form etc. exist for a reason)"
+    - name: Performance
+      max: 25
+      hard_fail_below: 12
+      description: "Component renders efficiently and respects platform limits. Maps to Performance (10) + responsive rendering. No unnecessary re-renders, lazy load with lwc:if where appropriate, debounce rapid user input, cache expensive computed values."
+      automatic_hard_fail_rules:
+        - "Any !important rule in component CSS (signals SLDS hook bypass, breaks dark mode and theming)"
+        - "Any synchronous network call inside a getter or render path (blocks UI; use @wire or onConnect)"
+        - "Any debounce-missing rapid-input handler (search-as-you-type without debounce; fires N requests for N keystrokes)"
+  test_rubric:
+    unit:
+      required: true
+      criteria: "Jest test bundle exists. Covers @api property setters, public methods, dispatched events, and primary user interactions. ≥80% coverage of the component's public surface."
+    integration:
+      required: true
+      criteria: "Component deploys to a connected org and appears in Lightning App Builder without errors. Required attributes resolve. Renders to a real page without console errors."
+    smoke:
+      required: true
+      criteria: "Primary user interaction completes end-to-end (e.g., for a 'donor signup' component: filling all fields and clicking Submit dispatches the expected event with the correct payload)."
 release_pinned: "Spring '26"
 docs_last_verified: 2026-05-01
 upstream_refs:
@@ -64,6 +119,50 @@ Expert frontend engineer specializing in Lightning Web Components for Salesforce
 | **Template anti-patterns** | [references/template-anti-patterns.md](references/template-anti-patterns.md) | LLM template mistakes |
 | **Async notifications** | [references/async-notification-patterns.md](references/async-notification-patterns.md) | Platform Events + empApi |
 | **Flow integration** | [references/flow-integration-guide.md](references/flow-integration-guide.md) | Flow-LWC communication |
+
+---
+
+## Eval Harness Wrap (Stage B)
+
+When `eval_harness.enabled: true` (set in frontmatter above), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md) — a separate skill that owns the orchestration of planner / implementer / evaluator subagents and grades the generated LWC bundle in fresh context.
+
+**This is Stage B of the harness rollout** (per `content/specs/skill-eval-harness-SPEC.md` §14). Stage A wrapped the demo orchestrator's artifact-producing phases. Stage B extends to the implementation skills those phases delegate to. When sf-demo-validate's Phase 5 (or another wrapped skill) invokes this skill to generate an LWC, the inner harness fires *inside* the outer harness — nested adversarial evaluation.
+
+### Why this matters for LWC specifically
+
+The most common LWC failure modes in production aren't compile errors — they're:
+- A11y regressions (interactive widget without keyboard support, image without alt-text)
+- Hardcoded colors that break Dark Mode after the org enables it
+- Deprecated SLDS 1 tokens that look fine today and silently break in a future release
+- Reimplementing a base component poorly instead of using `lightning-*`
+
+These slip past self-evaluation because the component "works" in basic visual testing. They get caught by adversarial evaluation that runs the SLDS migration probe, the a11y probe, and the hardcoded-color probe deterministically.
+
+### How the harness composes with this skill
+
+| What | Owned by |
+|---|---|
+| 165-pt scoring rubric (8 categories) | This skill (`references/scoring-and-testing.md`) |
+| 4-dimension SPEC default rubric mapping (Correctness / Robustness / Fit / Performance) | This skill's frontmatter `lwc_dimensions` block |
+| PICKLES architecture methodology, SLDS 2 patterns, Dark Mode compliance | This skill (existing references) |
+| Three-agent loop control (SHIP / ITERATE / SPEC-DEFECT verdicts, hard-fail floors, replan budget) | sf-skill-eval-harness |
+| Subagent prompts (planner / implementer / evaluator) | sf-skill-eval-harness/prompts/ |
+| Append-only TRACE.md primary debugging loop | sf-skill-eval-harness |
+
+### Critical evaluator checks for LWC artifacts
+
+The evaluator runs four deterministic verifications:
+
+1. **A11y probe** — grep template files for interactive elements without aria-label / aria-labelledby; grep for `<img>` without `alt`; grep for `<div onclick=>` without `role` + `tabindex`. Each pattern = Robustness -1; persistent absence = Robustness hard-fail.
+2. **SLDS hardcoded-color probe** — grep CSS for `#[0-9a-fA-F]{3,6}`, `rgb(`, named CSS colors. Any hit = Fit automatic hard-fail (Dark Mode breaker).
+3. **SLDS deprecation probe** — grep for SLDS 1 utility class names (`slds-text-color_default`, etc.) and deprecated CSS variables (`--lwc-*` instead of `--slds-g-*`). Any hit = Fit automatic hard-fail.
+4. **Reactivity model probe** — grep JS for `@track` on primitives (deprecated), direct `document.querySelector` on component-internal DOM (bypasses reactivity), `!important` in CSS (signals SLDS hook bypass). Each pattern = Correctness or Performance hard-fail per the specific rule.
+
+### Disabling the harness
+
+Set `eval_harness.enabled: false` in this skill's frontmatter (or remove the `eval_harness:` block entirely). The PICKLES methodology runs as before with no harness wrap.
+
+See [the harness skill's SKILL.md](../../skills-cursor/sf-skill-eval-harness/SKILL.md) for the full orchestration playbook.
 
 ---
 

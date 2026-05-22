@@ -15,6 +15,57 @@ metadata:
   version: "1.0.0"
   author: "Gnanasekaran Thoppae"
   phase: "Segment"
+  scoring: "100 points across 4 categories — newly authored 2026-05-22 (Segment Definition + SQL 30 / Calculated Insight Reuse 25 / Publish + Refresh Cadence 25 / Verification 20)"
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "100-pt rubric (4 categories) newly authored 2026-05-22 — mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  dc_segment_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 14
+      description: "Segment definition + SQL correctness. Right DMO root, filter logic resolves business intent, no CRM-SOQL syntax in Data-Cloud-SQL contexts, calculated insight references resolve."
+      automatic_hard_fail_rules:
+        - "Segment built on a DLO instead of a DMO (segments operate on harmonized data)"
+        - "CRM SOQL syntax used in segment SQL (Data Cloud SQL is different — silent SQL parse error or wrong semantics)"
+        - "Filter logic AND/OR placement doesn't reflect business intent (membership semantics off)"
+        - "Calculated Insight referenced that doesn't exist or isn't published (segment SQL fails at compile)"
+        - "Segment built on Customer DMO when audience requires Account / Subscription DMO root (wrong unit of audience)"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 14
+      description: "Consent + suppression + privacy. Segment honors consent, opt-out / unsubscribe records suppressed, PII filters scoped, regulated-data audience use justified."
+      automatic_hard_fail_rules:
+        - "Marketing segment without consent / opt-out filter (downstream activation can email unsubscribers — compliance incident)"
+        - "Data Cloud Contact Point Consent not consulted in the segment definition"
+        - "PII / PHI filter not scoped per industry rule (HIPAA / GDPR / state-PII boundary)"
+        - "Suppression list (legal hold / DSAR / right-to-be-forgotten) not respected by segment"
+        - "Audience that includes minors / sensitive populations without policy reference"
+    - name: Fit
+      max: 25
+      hard_fail_below: 12
+      description: "Calculated Insight reuse + downstream handoff. Reuse existing CIs over duplicate inline calculations; hand off to sf-datacloud-act for activation work."
+      automatic_hard_fail_rules:
+        - "Inline calculation duplicating an existing Calculated Insight (drift + maintenance debt)"
+        - "Activation authored here instead of routed to sf-datacloud-act"
+        - "Retrieval / search work authored here instead of routed to sf-datacloud-retrieve"
+        - "Segment SQL hand-rolled when Calculated Insight + simple segment filter is the documented pattern"
+        - "Org-specific segment JSON written when generic template would serve"
+    - name: Performance
+      max: 25
+      hard_fail_below: 12
+      description: "Publish + refresh cadence + verification. Refresh cadence aligns with downstream activation cadence; member-count verified before publish; SQL execution time bounded."
+      automatic_hard_fail_rules:
+        - "Refresh cadence faster than downstream consumer needs (over-cost) OR slower than they need (stale activation)"
+        - "Segment published without member-count sanity check"
+        - "Member-count drastically different from prior version (>20%) without investigation (silent IR / mapping change broke definition)"
+        - "Segment SQL execution time exceeds documented Data Cloud query budget without query-plan tuning"
 release_pinned: "Spring '26"
 docs_last_verified: 2026-05-01
 upstream_refs:
@@ -38,6 +89,10 @@ upstream_release_notes:
 # sf-datacloud-segment: Data Cloud Segment Phase
 
 Use this skill when the user needs **audience and insight work**: segments, calculated insights, publish workflows, member counts, or troubleshooting Data Cloud segment SQL.
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). 100-pt rubric across 4 Segment-phase categories, newly authored 2026-05-22. Hard-fail rules block segments built on DLO instead of DMO, CRM-SOQL syntax in Data-Cloud-SQL contexts, missing consent/opt-out filters on marketing segments, missing suppression-list (legal hold / DSAR), inline duplication of existing Calculated Insights, member-count drift >20% without investigation, and downstream Activation work hijacked here. Disable with `eval_harness.enabled: false`.
 
 ## When This Skill Owns the Task
 

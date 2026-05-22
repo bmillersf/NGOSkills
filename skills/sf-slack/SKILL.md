@@ -47,11 +47,64 @@ upstream_refs:
 upstream_release_notes:
   - release: "Spring '26"
     url: https://help.salesforce.com/s/articleView?id=release-notes.rn_slack.htm
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "140-pt rubric inline (7 categories: Channel Topology + Naming 15, Governance + Compliance 25, SF→Slack 20, Slack→SF 20, Canvases + AI 20, Bolt App Quality 20, Rollout + Adoption 20), mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  slack_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 14
+      description: "Channel topology + bot-app build is correct. Maps to Channel Topology + Naming (15) + Bolt App Quality (20)."
+      automatic_hard_fail_rules:
+        - "Any Bolt app without manifest version-controlled (production drift inevitable)"
+        - "Any channel topology with ad-hoc channel creation (audit + governance breaks)"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 18
+      description: "Governance + compliance solid. Maps to Governance + Compliance (25) — most often-failed category in regulated industries. Heaviest robustness hard-fail."
+      automatic_hard_fail_rules:
+        - "Any Slack Connect + Slack AI in regulated industry without Phase 0 industry-rule check"
+        - "Any DLP / eDiscovery / retention policy missing on a Grid that handles PHI/PII"
+        - "Any Slack OAuth Connected App requesting more scopes than action needs"
+    - name: Fit
+      max: 25
+      hard_fail_below: 14
+      description: "SF↔Slack actions wired correctly. Maps to SF→Slack (20) + Slack→SF (20) + Canvases + AI (20)."
+      automatic_hard_fail_rules:
+        - "Any Slack AI enabled on a channel where data classification doesn't allow (unmasked PII surfaced)"
+    - name: Performance
+      max: 25
+      hard_fail_below: 14
+      description: "Rollout + adoption tracked. Maps to Rollout + Adoption (20)."
+      automatic_hard_fail_rules:
+        - "Any rollout without pilot metrics captured (no signal on success)"
+        - "Any rollout without quarterly audit scheduled (governance decay)"
+  test_rubric:
+    unit:
+      required: true
+      criteria: "Slack manifest validates against Slack API schema. Bolt app passes its own unit tests."
+    integration:
+      required: true
+      criteria: "Bolt app installs against a sandbox Slack workspace. Connected App OAuth flow completes."
+    smoke:
+      required: true
+      criteria: "End-to-end SF→Slack message + Slack→SF action completes without error. Slack AI summary on a real conversation produces sensible output."
 ---
 
 # sf-slack: Slack-First Workflows, Canvases, Slack AI, Slack Actions
 
 Owns Slack + Salesforce integration surface: Slack app manifests, Workflow Builder workflows, Bolt SDK apps (TypeScript / Python), Slack Canvases, Slack AI recaps/summaries, slash commands, message shortcuts, Slack actions from Salesforce Flow + Agentforce, Slack Connect rooms, Enterprise Grid governance, Slack Sales Elevate, and Slack for Service.
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). Three subagents grade against the 140-pt rubric in fresh context. Robustness floor at 18 — Governance + Compliance is the most-failed category in regulated industries. Disable with `eval_harness.enabled: false`.
 
 ---
 

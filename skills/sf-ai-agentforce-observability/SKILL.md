@@ -34,6 +34,57 @@ upstream_refs:
 upstream_release_notes:
   - release: "Spring '26"
     url: https://help.salesforce.com/s/articleView?id=release-notes.rn_datacloud.htm
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "100-pt rubric (4 categories: STDM Query Correctness 30 / Auth + Storage Hygiene 25 / Analysis + Debug Quality 25 / Cost + Volume Discipline 20) — newly authored 2026-05-22 to fill the harness coverage gap. Mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  observability_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 16
+      description: "STDM query correctness. Maps to STDM Query Correctness (30). The Session Tracing Data Model is the foundation; wrong DMO / wrong join / CRM-SOQL syntax in a Data Cloud SQL context produces empty or misleading results."
+      automatic_hard_fail_rules:
+        - "CRM SOQL syntax used in a Data Cloud SQL context (different planes; SOQL doesn't run against STDM DMOs)"
+        - "STDM DMO referenced that doesn't exist in the version installed on the org (e.g., older SSDM version missing newer-Spring DMOs)"
+        - "Salesforce Standard Data Model below v1.124 used (session tracing DMOs require ≥v1.124 — silent empty result)"
+        - "DMO suffix wrong (__dlm vs __dll vs no suffix — wrong table referenced)"
+        - "Session timeline reconstruction missing required event ordering (event_timestamp + sequence_number — events render out of order)"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 16
+      description: "Auth + storage hygiene. Maps to Auth + Storage Hygiene (25). Heavy floor — observability data includes prompt content + tool inputs + customer queries; weak auth or unencrypted-at-rest Parquet leaks regulated data."
+      automatic_hard_fail_rules:
+        - "JWT bearer credentials (private key, consumer key) inlined in extraction script or env var instead of using sf-connected-apps Named Credential pattern"
+        - "Extracted Parquet written to a location not gitignored (telemetry leak via repo)"
+        - "PII / customer query content written to Parquet without classification / retention policy"
+        - "Connected App used for STDM extraction without least-privilege OAuth scope (Full instead of Api+RefreshToken)"
+        - "JWT certificate expiration not tracked (extraction silently breaks at cert rotation)"
+    - name: Fit
+      max: 25
+      hard_fail_below: 12
+      description: "Analysis + debug quality. Maps to Analysis + Debug Quality (25). Polars over Pandas (memory-efficient lazy eval); session timeline + execution-lifecycle phases mapped correctly; debug output cites specific event IDs."
+      automatic_hard_fail_rules:
+        - "Pandas used for >100k-row analysis when Polars lazy-eval is the documented pattern (memory blowout)"
+        - "Session timeline rendered without mapping to the 6-phase agent execution lifecycle (raw event dump — caller can't see which phase failed)"
+        - "Debug claim made without citing the specific event_id / session_id / trace_id (unverifiable conclusion)"
+        - "Tool-call analysis missing tool input + output content (caller can't see what the agent actually saw / decided on)"
+        - "Polars eager .collect() on a multi-million-row LazyFrame (defeats lazy-eval — same memory blowout as Pandas)"
+    - name: Performance
+      max: 25
+      hard_fail_below: 12
+      description: "Cost + volume discipline. Maps to Cost + Volume Discipline (20). High-volume extractions (1-10M records/day) must be chunked + cost-aware; Data Cloud Query credits consumed per call."
+      automatic_hard_fail_rules:
+        - "Multi-million-row extraction in a single sync query without async query workflow"
+        - "Date filter / partition pruning absent on a large STDM extraction (cost amplifier)"
+        - "Re-extracting the same window repeatedly without caching the Parquet (credit waste)"
+        - "Extraction cadence (e.g., every 5 min) not aligned with billing-cycle / credit-pool (over-burn)"
+        - "Large query result paginated client-side instead of using the Data Cloud paginated query API"
 ---
 
 <!-- TIER: 1 | ENTRY POINT -->
@@ -43,6 +94,10 @@ upstream_release_notes:
 # sf-ai-agentforce-observability: Agentforce Session Tracing Extraction & Analysis
 
 Expert in extracting and analyzing Agentforce session tracing data from Salesforce Data 360. Supports high-volume data extraction (1-10M records/day), Parquet storage, and Polars-based analysis for debugging agent behavior.
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). 100-pt rubric across 4 STDM-extraction + analysis categories, newly authored 2026-05-22 to fill the harness coverage gap. Two heavy floors: Correctness 16 (wrong DMO / wrong join / SSDM-version-too-old produces empty or misleading results) and Robustness 16 (telemetry data includes prompt content + tool inputs + customer queries; weak auth or unencrypted Parquet leaks regulated data). Hard-fail rules block CRM SOQL in Data Cloud SQL context, SSDM <v1.124, JWT credentials inlined, Parquet not gitignored, Pandas on >100k rows when Polars is the pattern, debug claims without event_id citation, multi-million-row sync queries (must be async), and missing date-filter / partition pruning. Disable with `eval_harness.enabled: false`.
 
 ## Core Responsibilities
 

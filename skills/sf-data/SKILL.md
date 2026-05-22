@@ -32,11 +32,68 @@ upstream_refs:
 upstream_release_notes:
   - release: "Spring '26"
     url: https://help.salesforce.com/s/articleView?id=release-notes.rn_api.htm
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "130-pt rubric inline (7 categories: Query Efficiency 25, Bulk Safety 25, Data Integrity 20, Security & FLS 20, Test Patterns 15, Cleanup & Isolation 15, Documentation 10), mapped onto the 4-dimension default rubric from skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  data_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 15
+      description: "Data operations are bulk-safe and respect governor limits. Maps to Bulk Safety (25). No SOQL/DML in loops, batch sizing for Bulk API 2.0, 200+ record bulk path tested."
+      automatic_hard_fail_rules:
+        - "Any SOQL or DML statement inside a for/while loop in any data factory or migration script"
+        - "Any Bulk API 2.0 job not using batchSize parameter (default may be wrong for the workload)"
+        - "Any IMPL-NOTES claim of bulk-safety contradicting the actual script's loop structure"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 12
+      description: "Data ops survive bad data + transient errors + partial-batch failures. Maps to Data Integrity (20) + Cleanup & Isolation (15). Required fields populated, valid lookups, partial-batch rollback, cleanup script provided."
+      automatic_hard_fail_rules:
+        - "Any data load referencing a lookup field with an Id that may not exist (FK orphan risk)"
+        - "Any test data factory without a teardown / cleanup method (bleed across tests)"
+        - "Any Bulk API 2.0 job without errorBehavior set (default ABORT_ON_FAILURE may not be intended)"
+    - name: Fit
+      max: 25
+      hard_fail_below: 10
+      description: "Data ops follow Salesforce conventions + security patterns. Maps to Security & FLS (20) + Documentation (10). WITH USER_MODE on queries, no hardcoded credentials, scripts documented for purpose."
+      automatic_hard_fail_rules:
+        - "Any SOQL touching user-input data without WITH USER_MODE"
+        - "Any data load with PII pattern (SSN, credit card, email patterns) that doesn't go through Salesforce Data Mask"
+    - name: Performance
+      max: 25
+      hard_fail_below: 12
+      description: "Queries are selective + tested at scale. Maps to Query Efficiency (25) + Test Patterns (15). Selective filters with indexed fields, LIMIT clauses where appropriate, 200+ record tests pass governor limits."
+      automatic_hard_fail_rules:
+        - "Any SOQL without selective WHERE clause on an unindexed field returning >2000 rows (selectivity threshold violation)"
+        - "Any data factory without a 200+ record test method"
+  test_rubric:
+    unit:
+      required: true
+      criteria: "Test data factory class deploys + has @testSetup or static factory methods covering each persona/scenario."
+    integration:
+      required: true
+      criteria: "Bulk load via sf data import or Anonymous Apex completes with 0 errors. Counts match expected (rows-in == rows-loaded)."
+    smoke:
+      required: true
+      criteria: "200+ record path runs within governor limits. Rollback / cleanup script returns the org to its baseline state."
 ---
 
 # Salesforce Data Operations Expert (sf-data)
 
 You are an expert Salesforce data operations specialist with deep knowledge of SOQL, DML operations, Bulk API 2.0, test data generation patterns, and governor limits. You help developers query, insert, update, and delete records efficiently while following Salesforce best practices.
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). Three subagents (planner / implementer / evaluator) loop against the 130-pt rubric in fresh context. Hard-fail rules encode the FK-orphan and bulk-API-misconfiguration failure modes. Disable with `eval_harness.enabled: false`.
+
+---
 
 ## Executive Overview
 

@@ -29,6 +29,62 @@ compatibility: "Requires Field Service managed package + Field Service user lice
 metadata:
   version: "1.0.0"
   author: "NGOSkills"
+  scoring: "140 points across 7 categories — Data model 25 / Scheduling policy 25 / Dispatcher UX 20 / Mobile offline 25 / Asset+Maintenance 15 / External integration 15 / Testing 15 (105 is passing)"
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "140-pt rubric (7 categories) extracted from existing 'Scoring Rubric — 140 Points' section in this SKILL.md (line 200). Mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  field_service_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 18
+      description: "Field Service data model + Asset/Maintenance integration. Maps to Data model (25) + Asset+Maintenance (15). Heaviest correctness floor — Case-as-Work-Order is the dominant defect, and it's permanent (breaks scheduling forever)."
+      automatic_hard_fail_rules:
+        - "Field work modeled on Case instead of Work Order (the moment work has duration / resource / location / asset, it's a Work Order — Case fields can't duplicate the FS data model without breaking scheduling)"
+        - "Work Order without WOLI breakdown when the work has multiple line items (atomic work isn't dispatchable)"
+        - "ServiceAppointment without Service Resource link or with wrong territory (dispatcher can't see / route)"
+        - "Asset not linked to Work Order when service history matters (service history doesn't roll up; Maintenance Plans can't generate)"
+        - "Maintenance Plan + Maintenance Work Rules generating Work Orders against wrong work-type template (maintenance vs corrective intent mismatch)"
+        - "Skills + Skill Levels not modeled when scheduling depends on certifications"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 14
+      description: "Mobile offline correctness + integration robustness. Maps to Mobile offline (25) + External integration (15). The mobile app has a different runtime + priming model; offline failure mode is the dominant production incident."
+      automatic_hard_fail_rules:
+        - "Briefcase priming not defined per persona (technicians prime everything or nothing — too much data or empty offline)"
+        - "Custom LWC / Quick Action used in mobile context without offline-safe verification"
+        - "Service report layout undefined for the work-type templates (technician can't close out work)"
+        - "Mobile testing skipped — desktop-only verification on a feature that runs on mobile"
+        - "Mobile offline window not tested for the longest realistic interval (e.g., 8h shift in dead-zone — fails at 4h)"
+        - "Synchronous callout in a Work Order / ServiceAppointment trigger (governor-limit exposure on bulk dispatch)"
+        - "External Services / Named Credentials not used for third-party scheduling / inventory / billing (auth-in-code or stale OAuth tokens)"
+    - name: Fit
+      max: 25
+      hard_fail_below: 14
+      description: "Scheduling policy fit + Dispatcher UX. Maps to Scheduling policy (25) + Dispatcher UX (20). Work Rules + Service Objectives over custom Apex; Gantt views scoped by territory + role; ESO configured if licensed."
+      automatic_hard_fail_rules:
+        - "Custom dispatcher Apex when Work Rules + Service Objectives express the constraint (custom Apex bypasses the optimizer, can't participate in ESO, impossible to tune)"
+        - "Multiple Scheduling Policies for the same scenario (one policy per scenario — overlap = unpredictable assignment)"
+        - "ESO licensed but not configured (paying for the optimizer + leaving it off)"
+        - "Gantt views unscoped by territory + role (dispatchers see out-of-scope appointments — operational chaos)"
+        - "Custom Gantt actions used when standard configuration covers the need (technical debt + future-release breakage)"
+        - "Map layers not configured for territory / region / customer-density (dispatcher can't make geographic routing decisions)"
+    - name: Performance
+      max: 25
+      hard_fail_below: 12
+      description: "Testing coverage. Maps to Testing (15). Apex unit tests for custom logic, scheduling-policy tests with expected outcomes, mobile offline tested on device, end-to-end scenarios + regression."
+      automatic_hard_fail_rules:
+        - "Apex unit tests missing on custom dispatch / WO automation"
+        - "Scheduling-policy tests missing with no documented expected outcomes (next dispatcher-experienced edge case fails silently)"
+        - "Mobile testing skipped on real device with airplane mode"
+        - "End-to-end scenario tests absent (Work Order created → scheduled → dispatched → completed → service-report path untested)"
+        - "Regression path undefined for production releases"
 release_pinned: "Spring '26"
 docs_last_verified: 2026-05-01
 upstream_refs:
@@ -50,6 +106,10 @@ upstream_release_notes:
 ---
 
 # sf-field-service: Salesforce Field Service Orchestrator
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). 140-pt rubric across 7 Field Service categories, extracted from this skill's existing Scoring Rubric section (line 200) and mapped onto the 4-dim shape. Correctness floor at 18 — Case-as-Work-Order is the dominant defect, and it's permanent (breaks scheduling forever). Hard-fail rules block Case-as-Work-Order, missing Briefcase priming per persona, custom dispatcher Apex when Work Rules + Service Objectives express the constraint, multiple Scheduling Policies per scenario, ESO licensed but not configured, Gantt views unscoped by territory/role, and synchronous callouts in WO/SA triggers. Disable with `eval_harness.enabled: false`.
 
 Use this skill when the user is designing, configuring, or troubleshooting a Salesforce Field Service deployment — work orders, service appointments, dispatcher console, scheduling policies, mobile technician flows, preventive maintenance, and asset servicing. Field Service is an **industry-like product layer** on top of Service Cloud; this skill is the authoritative entry point whenever a Work Order, Service Appointment, or Service Resource is in scope.
 

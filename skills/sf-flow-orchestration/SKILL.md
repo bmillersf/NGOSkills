@@ -21,6 +21,60 @@ compatibility: "Requires Flow Orchestration enabled on the org (Unlimited / Ente
 metadata:
   version: "1.0.0"
   author: "NGOSkills"
+  scoring: "130 points across 7 categories — Pattern+Stage/Step structure 25 / Assignee model 20 / Decision+branching 20 / Async Path 15 / Approval migration 20 / Work surface UX 10 / Testing+audit 20 (98 is passing)"
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "130-pt rubric (7 categories) extracted from existing 'Scoring Rubric — 130 Points' section in this SKILL.md (line 196). Mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  flow_orch_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 16
+      description: "Pattern choice + Stage/Step structure + Decision branching. Maps to Pattern choice (25) + Decision+branching (20). Wrong runtime (Orchestration vs single Flow) or unclosed branches make every downstream check fail."
+      automatic_hard_fail_rules:
+        - "Flow Orchestration used when a single record-triggered / screen / scheduled / autolaunched Flow would suffice (orchestration overhead with no multi-user value)"
+        - "Stages don't match business phases (one mega-Stage with 8+ Steps — orchestration becomes a checklist)"
+        - "Parallel vs sequential Step ordering not explicit (silent default-to-sequential when parallel was intended; or the reverse)"
+        - "Decision Step without default path (orphan branch)"
+        - "Parallel lanes that don't reconverge safely (orphan Steps)"
+        - "Orchestration without process-type Orchestrator on the Flow file (.flow-meta.xml processType wrong)"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 14
+      description: "Assignee model + Async Path + callout safety. Maps to Assignee model (20) + Async Path (15). Hardcoded User IDs are the dominant defect — sandbox-refresh-unsafe; blocking callouts inside Interactive Steps freeze users."
+      automatic_hard_fail_rules:
+        - "Hardcoded User ID as Step Assignee (sandbox refresh / org clone breaks orchestration immediately)"
+        - "Assignee not formula-driven / Queue-driven / Group-driven (single point of failure per Step)"
+        - "No escalation / reassignment path defined when timeout matters"
+        - "Callout / long Apex / Platform Event wait inside an Interactive Step instead of Async Path (user blocks waiting on external system)"
+        - "Platform Events with no Orchestration Event subscriber when resumption depends on the event (orchestration freezes)"
+        - "Async Path used for sub-second logic (overhead with no benefit)"
+    - name: Fit
+      max: 25
+      hard_fail_below: 12
+      description: "Approval migration + Work surface UX. Maps to Approval migration (20) + Work surface (10). Right pattern (Approvals-in-Flow vs Orchestration), legacy Approval Processes retired post-migration, Work Queue + Work Guide visible to assignees."
+      automatic_hard_fail_rules:
+        - "Legacy Approval Process left running alongside the migrated Approvals-in-Flow / Orchestration (duplicate approvals on the same record)"
+        - "Approvals-in-Flow chosen for a multi-user multi-stage process when Orchestration is the documented pattern (or vice versa)"
+        - "Work Queue not added to Home (assignee can't see pending work without extra navigation)"
+        - "Work Guide not added to the record page where the work happens (assignee navigates away to find it)"
+        - "Visibility filters not set on Work Queue (assignees see other people's work)"
+    - name: Performance
+      max: 25
+      hard_fail_below: 12
+      description: "Testing + audit + retention. Maps to Testing+audit (20). Unit tests on step screen flows, end-to-end per branch, failure path tested, Orchestration Runs+Logs retention configured, regulatory posture documented."
+      automatic_hard_fail_rules:
+        - "Unit tests missing on step screen flows"
+        - "End-to-end orchestration run not exercised per branch (silent dead branch in production)"
+        - "Failure path not tested (timeout / decline / error → unknown state)"
+        - "Orchestration Runs / Logs not reviewed; retention policy unconfirmed"
+        - "SOX / CFR / FedRAMP / industry-regulated posture not documented when the orchestration handles regulated data"
 release_pinned: "Spring '26"
 docs_last_verified: 2026-05-01
 upstream_refs:
@@ -42,6 +96,10 @@ upstream_release_notes:
 ---
 
 # sf-flow-orchestration: Flow Orchestration + Approvals + Work Queue
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). 130-pt rubric across 7 orchestration categories, extracted from this skill's existing Scoring Rubric section (line 196) and mapped onto the 4-dim shape. Robustness floor at 14 — hardcoded User IDs are the dominant defect (sandbox-refresh-unsafe); blocking callouts inside Interactive Steps freeze users. Hard-fail rules block Orchestration overkill when single Flow suffices, mega-Stage with 8+ Steps, hardcoded assignee User IDs, missing Async Path on long callouts, legacy Approval Process left running alongside migration, missing default branch on Decision, and missing Work Queue on Home / Work Guide on record page. Disable with `eval_harness.enabled: false`.
 
 Use this skill when the user is building or debugging a **multi-user, multi-step orchestrated workflow** on Salesforce — the work that historically lived in Approval Processes, hand-rolled Chatter post chains, or a tangled graph of subflows — using the modern **Flow Orchestration** runtime (Stages → Steps → Decisions), the **Work Queue** / **Work Guide** UI that surfaces assigned steps to users, and **Approvals in Flow** (the Spring '24+ pattern that replaces legacy Approval Processes). This skill is a platform-level primitive: it applies across any cloud, any industry, any vertical — which is why it does not run an industry pre-check. When an industry skill owns the business semantics, it calls into this skill for the orchestration mechanics.
 

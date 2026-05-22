@@ -20,6 +20,60 @@ compatibility: "Requires Sales Cloud edition; industry-first routing applies"
 metadata:
   version: "1.0.0"
   author: "NGOSkills"
+  scoring: "120 points across 10 categories — Phase 0 20 / Stage model 20 / Record types 10 / OLI+Quote 10 / OCR automation 10 / Teams 10 / Splits 10 / Pipeline Inspection 10 / Territory 10 / Anti-patterns 10 (96 is passing)"
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "120-pt rubric (10 categories) extracted from existing 'Scoring rubric (120 pts)' section in this SKILL.md (line 178). Mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  sales_opportunity_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 16
+      description: "Industry pre-check + Stage model + Record types. Maps to Phase 0 (20) + Stage model (20) + Record types (10). The stage model is the heart of the deal lifecycle and the link between pipeline + forecasting; missing the industry pre-check or stage→forecast-category mapping breaks both."
+      automatic_hard_fail_rules:
+        - "Phase 0 industry pre-check skipped on an FSC / Nonprofit / Manufacturing / Revenue Cloud org"
+        - "Industry-owned Opportunity-equivalent (Manufacturing Sales Agreement / NPC Gift Transaction / NPSP donation / FSC mortgage) silently overridden"
+        - "Stage count >8 (stage explosion — stages are a funnel, not a project plan)"
+        - "Forecast Category silence — any OpportunityStage without a Forecast Category mapping (Pipeline / Best Case / Commit / Closed / Omitted)"
+        - "'Pipeline' catch-all forecast category used on closed stages (forecast math broken)"
+        - "Single record type covering New + Renewal + Upsell when motions diverge (different stage gates / probability / sales motion)"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 14
+      description: "Splits + Teams + OCR automation. Maps to Splits (10) + Teams (10) + OCR automation (10). Revenue + Overlay split correctness, OWD-aware Team access, Primary OCR enforcement — three places where silent breakage causes compensation + reporting drift."
+      automatic_hard_fail_rules:
+        - "Opportunity Revenue Splits not summing to 100% (or summing >100% silently)"
+        - "Overlay Splits not independent of Revenue Splits (allocation collision)"
+        - "Opportunity Team access matrix doesn't match OWD (Read/Write granted while Account Team access blocks the team member)"
+        - "Primary Opportunity Contact Role not enforced (compensation + reporting joins on Primary OCR; null OCR breaks both)"
+        - "Lead conversion not auto-populating OCR (manual OCR creation post-conversion is a known forgotten step)"
+        - "Opportunity Team templates undefined for the documented motion (every deal hand-rolled)"
+    - name: Fit
+      max: 25
+      hard_fail_below: 14
+      description: "Pipeline Inspection + Deal Insights + Territory + OLI/Quote hand-off. Maps to Pipeline Inspection (10) + Territory (10) + Line item+quote hand-off (10). Right tooling for the use case; deal hand-offs to sf-revenue-cloud / sf-sales-forecasting / sf-sales-engagement clean."
+      automatic_hard_fail_rules:
+        - "Pipeline Inspection treated as a tabular report / dashboard (it's an inline-editing + metric-change surface)"
+        - "Pipeline Inspection filters not aligned with Forecast hierarchy (managers can't reconcile views)"
+        - "Territory Management chosen but not enabled on Opportunity (assignment doesn't propagate)"
+        - "Enterprise Territory Management vs legacy Territory Management not declared (different behavior)"
+        - "RunAssignmentRules invocation missing on Opportunity create when ETM is in scope"
+        - "Line items + Quote hand-off ambiguous — CPQ / RCA path not routed to sf-revenue-cloud, standard Quote path not declared"
+    - name: Performance
+      max: 25
+      hard_fail_below: 12
+      description: "Anti-patterns avoided + Deal Insights data maturity. Maps to Anti-patterns (10) + Deal Insights subset of (10). Einstein activated only with sufficient data maturity; anti-patterns audit explicit; revise pass on score below 96."
+      automatic_hard_fail_rules:
+        - "Einstein Opportunity Scoring activated without ≥12 months closed-won + closed-lost history"
+        - "Einstein Forecasting activated without segment-volume confirmation (model has no signal per segment)"
+        - "Anti-patterns audit not done explicitly (stage explosion, forecast silence, industry override) — review summary skips the explicit avoidance call-out"
+        - "Score below 96 / 120 returned to user without revise pass"
 release_pinned: "Spring '26"
 docs_last_verified: 2026-05-01
 upstream_refs:
@@ -41,6 +95,10 @@ upstream_release_notes:
 ---
 
 # sf-sales-opportunity: Opportunity, Pipeline, Deal Insights
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). 120-pt rubric across 10 Opportunity categories, extracted from this skill's existing Scoring rubric section (line 178) and mapped onto the 4-dim shape. Correctness floor at 16 — the stage model is the heart of the deal lifecycle and the link between pipeline + forecasting; missing the industry pre-check or stage→forecast-category mapping breaks both. Hard-fail rules block stage explosion (>8 stages), forecast-category silence, single record type covering distinct motions, Revenue Splits not summing to 100%, missing Primary OCR enforcement, Pipeline Inspection treated as tabular report, and Einstein activated without data maturity. Disable with `eval_harness.enabled: false`.
 
 Owns everything centered on the standard `Opportunity` object and its closest neighbors: Opportunity Line Item, Opportunity Contact Role, Opportunity Team, Opportunity Split, Opportunity Stage History, Pipeline Inspection, Deal Insights, Opportunity-based Quote hand-off, and territory assignment for opportunities. Forecasts, cadences, and Revenue Cloud are explicitly out of scope — this skill hands off cleanly to `sf-sales-forecasting`, `sf-sales-engagement`, and `sf-revenue-cloud`.
 

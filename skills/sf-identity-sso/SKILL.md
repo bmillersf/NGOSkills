@@ -49,11 +49,64 @@ upstream_refs:
 upstream_release_notes:
   - release: "Spring '26"
     url: https://help.salesforce.com/s/articleView?id=release-notes.rn_security_identity.htm
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "130-pt rubric inline (7 categories: Foundation + scope clarity 15, Federation protocol + IdP design 25, Provisioning model 20, MFA strategy 25, Session + password + IP hardening 20, ICP + Login Flow 15, Operational runbook 10), mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  identity_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 14
+      description: "Federation + IdP designed correctly. Maps to Federation protocol + IdP design (25)."
+      automatic_hard_fail_rules:
+        - "Any SAML / OIDC config missing signature validation (token forgery risk)"
+        - "Any IdP-initiated SSO without RelayState validation"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 18
+      description: "MFA + session hardening. Maps to MFA strategy (25). Heaviest robustness — auth weakness compounds across all data."
+      automatic_hard_fail_rules:
+        - "Any production user without MFA enforcement (compliance + breach risk)"
+        - "Any service account without IP-allowlist or certificate-bound auth"
+        - "Any session policy >12 hours without business justification"
+    - name: Fit
+      max: 25
+      hard_fail_below: 10
+      description: "Provisioning + ICP. Maps to Provisioning model (20) + ICP + Login Flow (15)."
+      automatic_hard_fail_rules:
+        - "Any JIT provisioning without role mapping (default Standard User profile assigned to elevated roles)"
+        - "Any external user portal without ICP (Identity Connect Portal) or appropriate Login Flow"
+    - name: Performance
+      max: 25
+      hard_fail_below: 10
+      description: "Operational runbook. Maps to Operational runbook (10) + Foundation + scope (15)."
+      automatic_hard_fail_rules:
+        - "Any identity deploy without runbook for cert rotation, IdP failover, password reset"
+  test_rubric:
+    unit:
+      required: true
+      criteria: "SAML / OIDC config validates against IdP. JIT provisioning rules unit-tested."
+    integration:
+      required: true
+      criteria: "End-to-end login flow tested for each user type (internal, external, service account)."
+    smoke:
+      required: true
+      criteria: "Cert rotation rehearsed without downtime. IdP failover tested. MFA enforcement verified across all surfaces (web, mobile, API)."
 ---
 
 # sf-identity-sso
 
 Salesforce Identity is a broad platform: **authentication** (who is the user?), **federation** (which external IdP does Salesforce trust?), **provisioning** (how do user records get created?), and **factors** (how strong is the auth?). This skill owns the end-to-end identity design: My Domain, SAML, OIDC, Social Sign-On, JIT, Salesforce-as-IdP, ICP, MFA, Login Flows, Session and Password policies.
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). Three subagents grade against the 130-pt rubric in fresh context. Robustness floor at 18 — auth weakness compounds across all data; production users without MFA = breach waiting to happen. Disable with `eval_harness.enabled: false`.
 
 ---
 

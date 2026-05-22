@@ -44,11 +44,65 @@ upstream_refs:
 upstream_release_notes:
   - release: "Spring '26"
     url: https://help.salesforce.com/s/articleView?id=release-notes.rn_sales_revenue_cloud.htm
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "140-pt rubric inline (7 categories: Product Catalog Design 20, Pricing Architecture 25, Quote Lifecycle Integrity 20, Order to Asset/Subscription 20, Billing + Revenue 25, Migration + Coexistence 15, Test + Audit 15), mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  revenue_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 14
+      description: "Catalog + pricing math correct. Maps to Product Catalog Design (20) + Pricing Architecture (25)."
+      automatic_hard_fail_rules:
+        - "Any pricing rule with duplicated math across procedures (single source of truth violated)"
+        - "Any bundle without ProductRelatedComponent for child products"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 18
+      description: "Billing + revenue is load-bearing. Maps to Billing + Revenue (25). Heaviest robustness — broken billing breaks the business. ASC 606 Revenue Schedule, idempotent invoicing."
+      automatic_hard_fail_rules:
+        - "Any Invoice generation pattern that isn't idempotent (duplicate billing on retry)"
+        - "Any Billing Schedule cadence not aligned to the Order's contract term"
+        - "Any ASC 606 Revenue Schedule mismatched with Performance Obligation"
+    - name: Fit
+      max: 25
+      hard_fail_below: 10
+      description: "RCA vs CPQ chosen correctly. Maps to Migration + Coexistence (15) + Quote Lifecycle Integrity (20)."
+      automatic_hard_fail_rules:
+        - "Any silent dual-stack (RCA + CPQ on same product) — pick one with documented justification"
+        - "Any quote → order flow without Opportunity sync verified"
+    - name: Performance
+      max: 25
+      hard_fail_below: 10
+      description: "Order-to-asset/subscription correct + tested. Maps to Order to Asset/Subscription (20) + Test + Audit (15)."
+      automatic_hard_fail_rules:
+        - "Any amendment / renewal flow that doesn't preserve Asset / Subscription lineage (audit broken)"
+        - "Any deploy without end-to-end test scenario (catalog → quote → order → invoice → revenue)"
+  test_rubric:
+    unit:
+      required: true
+      criteria: "Pricing procedure rules unit-tested. Bundle structure validation passes."
+    integration:
+      required: true
+      criteria: "End-to-end quote → order → asset → subscription → invoice → revenue test scenario completes against connected org."
+    smoke:
+      required: true
+      criteria: "Amendment + renewal preserve Asset/Subscription lineage. Rollups verified post-amendment."
 ---
 
 # sf-revenue-cloud: Revenue Cloud Advanced (RCA) + Legacy CPQ
 
 Quote-to-cash architecture expert for Salesforce Revenue Cloud Advanced (RCA — the 2024+ Core Platform product) with explicit coverage of legacy **Salesforce CPQ** (`SBQQ__` managed package) for orgs not yet migrated. Owns Product Catalog, Pricing, Quote, Order, Contract, Subscription, Billing, Invoice, and Payment surfaces.
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). Three subagents grade against the 140-pt rubric in fresh context. Robustness floor at 18 — broken billing breaks the business; non-idempotent invoicing on retry is catastrophic. Disable with `eval_harness.enabled: false`.
 
 ---
 

@@ -44,11 +44,66 @@ upstream_refs:
 upstream_release_notes:
   - release: "Spring '26"
     url: https://help.salesforce.com/s/articleView?id=release-notes.rn_analytics.htm
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "140-pt rubric inline in Scoring Rubric section (7 categories: Surface Selection 15, Data Source + Governance 25, Semantic Modeling 20, Visualization Quality 25, AI + Insights Layer 20, Embed + Distribution 20, Migration + Lifecycle 15), mapped onto the 4-dimension default rubric from skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  tableau_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 14
+      description: "Right product picked + governance applied. Maps to Surface Selection (15) + Migration + Lifecycle (15). Tableau / Tableau Next / CRM Analytics / Native Reports chosen with documented justification. CRMA→Tableau Next migration plan if applicable."
+      automatic_hard_fail_rules:
+        - "Any greenfielding CRM Analytics in 2026 (Tableau Next is the successor; greenfield CRMA = migration debt)"
+        - "Any dual-stack CRMA + Tableau Next on the same metric (two sources of truth)"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 18
+      description: "Data source + governance is solid. Maps to Data Source + Governance (25). Heaviest robustness in this rubric — analytics on bad data is worse than no analytics. Certified sources, RLS applied, refresh cadence correct."
+      automatic_hard_fail_rules:
+        - "Any Tableau Cloud site with external users without row-level security (Security Predicate / RLS)"
+        - "Any Einstein Discovery / Ask Data / Pulse on unmasked PHI/PII"
+        - "Any uncertified 'playground' Tableau data source promoted as authoritative"
+    - name: Fit
+      max: 25
+      hard_fail_below: 14
+      description: "Semantic + viz quality + embed pattern correct. Maps to Semantic Modeling (20) + Visualization Quality (25) + Embed + Distribution (20). Reusable metrics, no chart-junk, color-blind palette, correct embed surface."
+      automatic_hard_fail_rules:
+        - "Any dashboard with >30 widgets in one view (cognitive overload)"
+        - "Any embedded dashboard in Experience Cloud not validated as guest user (PII leak risk)"
+        - "Any Tableau workbook replacing what native Salesforce Reports would do (lose Lightning context)"
+    - name: Performance
+      max: 25
+      hard_fail_below: 14
+      description: "AI/insights applied where useful + dashboard renders fast. Maps to AI + Insights Layer (20). Pulse / Einstein Discovery / Ask Data applied appropriately. Live connections only when extracts won't work."
+      automatic_hard_fail_rules:
+        - "Any Tableau workbook fast in Desktop, slow in Cloud due to no published extract"
+        - "Any extract refresh schedule slower than the metric's freshness SLA"
+  test_rubric:
+    unit:
+      required: true
+      criteria: "Workbook / dataflow / recipe parses + connects to source. Calculated fields compute without errors."
+    integration:
+      required: true
+      criteria: "Published artifact appears in Tableau Cloud / CRM Analytics. Refresh runs successfully. Embed loads in Lightning / Experience Cloud."
+    smoke:
+      required: true
+      criteria: "Dashboard renders within 3s on the target deployment surface. Guest user / external user RLS verified by impersonation."
 ---
 
 # sf-tableau: Tableau + Tableau Next + CRM Analytics
 
 Owns the Salesforce analytics stack outside of native Reports & Dashboards: **Tableau** (Desktop / Server / Cloud / Public), **Tableau Next** (GA 2026 — the Data Cloud-native successor to CRM Analytics), and **CRM Analytics** (formerly Einstein Analytics / Wave). Includes Tableau Pulse (AI-surfaced insights), Tableau Semantic Layer, Einstein Discovery, and the Tableau ↔ Data Cloud connector.
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). Three subagents (planner / implementer / evaluator) loop against the 140-pt rubric in fresh context. Robustness floor at 18 — the #1 way PII leaks from Salesforce is an analytics embed without RLS. Hard-fail rules encode RLS-on-external-users + AI-on-unmasked-PII as automatic blockers. Disable with `eval_harness.enabled: false`.
 
 ---
 

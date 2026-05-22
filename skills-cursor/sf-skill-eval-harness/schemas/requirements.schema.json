@@ -1,0 +1,53 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "requirements.schema.json",
+  "title": "Phase 2 → 4 requirements contract",
+  "description": "Phase 2 (notes intake) emits this. Phase 4 (demoscript) reads it to ensure no requirement is silently dropped.",
+  "type": "object",
+  "required": ["version", "source_notes", "requirements"],
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": ["1.0"]
+    },
+    "source_notes": {
+      "type": "string",
+      "description": "Path to the notes file requirements were extracted from"
+    },
+    "requirements": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "summary", "source_quote", "source_line", "must_demo", "category"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^REQ-[0-9]{3,}$"
+          },
+          "summary": {
+            "type": "string",
+            "minLength": 10
+          },
+          "source_quote": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source_line": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "must_demo": {
+            "type": "boolean"
+          },
+          "category": {
+            "type": "string",
+            "enum": ["feature", "data", "permission", "integration", "ux", "agentforce", "other"]
+          }
+        }
+      }
+    }
+  }
+}

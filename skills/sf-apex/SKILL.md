@@ -32,6 +32,56 @@ upstream_refs:
 upstream_release_notes:
   - release: "Spring '26"
     url: https://help.salesforce.com/s/articleView?id=release-notes.rn_apex.htm
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "150-pt rubric in this SKILL.md (Best Practices section), mapped onto the 4-dimension default rubric from skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  apex_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 15
+      description: "Code does what it claims AND does it bulk-safely. Maps to the 150-pt rubric's Bulkification category (25 pts). A class that works at N=1 but is N+1 at N=200 is functionally broken — it shipped 70% of the spec and breaks at the first governor-limit boundary."
+      automatic_hard_fail_rules:
+        - "Any SOQL query inside a for/while loop"
+        - "Any DML statement (insert/update/upsert/delete) inside a for/while loop"
+        - "Any callout (HTTP, Database, etc) inside a for/while loop"
+        - "Any IMPL-NOTES claim of 'bulk-safe' or 'no DML in loops' that contradicts the actual bytecode (this is the N+1 bulkification failure mode)"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 12
+      description: "Code survives bad input and security boundaries. Maps to Security (25) + Error Handling (15) categories. WITH USER_MODE, bind variables, with sharing, Security.stripInaccessible(), specific exception types, no empty catch blocks, custom business exceptions where appropriate."
+      automatic_hard_fail_rules:
+        - "Any SOQL query without WITH USER_MODE or WITH SECURITY_ENFORCED on classes that handle user input"
+        - "Any DML on user-input data without Security.stripInaccessible()"
+        - "Any catch block with no body or only a comment (silent swallow)"
+        - "Any class declared without 'with sharing' that operates on user-input records"
+    - name: Fit
+      max: 25
+      hard_fail_below: 10
+      description: "Code matches existing patterns + skill conventions. Maps to Architecture (20) + Clean Code (20) + Documentation (10). TAF triggers, Service/Domain/Selector layers, SOLID, dependency injection, meaningful names, ApexDoc on public surface."
+    - name: Performance
+      max: 25
+      hard_fail_below: 15
+      description: "Code respects governor limits AND has measured bulk evidence. Maps to Performance (10) + bulkification stress signal. Limits monitoring, async for heavy work, scope variables, cache expensive ops. The hard-fail floor at 15 is intentional: shipping Apex without measured bulk evidence (Limits.getQueries() / getDmlStatements() deltas at N=200) is the path that ships demos with Children-Inc-style N+1 bugs."
+      automatic_hard_fail_rules:
+        - "No bulk test (251+ records) for any class with @InvocableMethod, @future, or trigger handler logic"
+        - "Any IMPL-NOTES performance claim without measured Limits delta evidence (e.g., 'bulk-safe at N=5' without showing deltaSOQL/deltaDML)"
+  test_rubric:
+    unit:
+      required: true
+      criteria: "90%+ code coverage. Test class with positive, negative, AND bulk test methods. Test Data Factory used (no inline record creation). Assert class (Spring '21+) preferred over System.assertEquals."
+    integration:
+      required: true
+      criteria: "Apex test class deploys to a connected org and passes (sf apex test run --tests <ClassName> --result-format human returns Outcome=Pass)."
+    smoke:
+      required: true
+      criteria: "Bulk invocation test at N=251+ records does not exceed governor limits. Limits.getQueries() and Limits.getDmlStatements() deltas measured and recorded in IMPL-NOTES.md. The N+1 bulkification failure mode is exactly what this smoke test exists to catch."
 ---
 
 # sf-apex: Salesforce Apex Code Generation and Review
@@ -44,6 +94,57 @@ Expert Apex developer specializing in clean code, SOLID principles, and 2025 bes
 2. **Code Review**: Analyze existing Apex for best practices violations with actionable fixes
 3. **Validation & Scoring**: Score code against 8 categories (0-150 points)
 4. **Deployment Integration**: Validate and deploy via sf-deploy skill
+
+---
+
+## Eval Harness Wrap (Stage B)
+
+When `eval_harness.enabled: true` (set in frontmatter above), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md) — a separate skill that owns the orchestration of planner / implementer / evaluator subagents and grades the generated Apex code in fresh context.
+
+**This is Stage B of the harness rollout.** Stage A wrapped the demo orchestrator's artifact-producing phases. Stage B extends to the implementation skills those phases delegate to. When Phase 5 (data seeding) or Phase 6 (validate + repair) invokes this skill to generate Apex, the inner harness fires *inside* the outer harness — nested adversarial evaluation that catches code-level defects before the outer evaluator sees them.
+
+### Why this matters (the canonical N+1 failure mode)
+
+A real pilot run had the implementer subagent invoke this skill to generate a sponsor-creation Apex action. The implementer self-reported "bulk-safe, no DML in loops". The class actually ran 4 SOQL + 8 DML for a 2-request invocation — perfect N+1. The outer harness evaluator caught it on iter-1 ITERATE.
+
+**With Stage B wrapping in place**, this skill's own evaluator subagent would have caught the N+1 *before* the outer Phase 6 harness saw the code. The outer harness gets cleaner artifacts; iteration count drops; presenter-prep becomes faster. That's the nested-adversarial-eval payoff.
+
+### How the harness composes with this skill
+
+| What | Owned by |
+|---|---|
+| 150-pt scoring rubric (8 categories) | This skill ("Best Practices" section below) |
+| 4-dimension SPEC default rubric mapping (Correctness / Robustness / Fit / Performance) | This skill's frontmatter `apex_dimensions` block |
+| 5-phase implementer workflow (Requirements → Design → Generation → Tests → Deploy) | This skill ("Workflow" section below) |
+| TAF, SOLID, 2025 best practices, async patterns, Trust Layer integration | This skill (existing references) |
+| Three-agent loop control (SHIP / ITERATE / SPEC-DEFECT verdicts, hard-fail floors, replan budget) | sf-skill-eval-harness |
+| Subagent prompts (planner / implementer / evaluator) | sf-skill-eval-harness/prompts/ |
+| Append-only TRACE.md primary debugging loop | sf-skill-eval-harness |
+
+### Critical evaluator checks for Apex artifacts
+
+The evaluator runs four deterministic verifications:
+
+1. **Bulkification probe** — grep the generated class for SOQL/DML/callout statements inside `for` or `while` loops. Any hit = Correctness automatic hard-fail. This is the canonical N+1 detector.
+2. **Security boundary probe** — grep for SOQL without `WITH USER_MODE` / `WITH SECURITY_ENFORCED`, DML without `Security.stripInaccessible()`, classes without `with sharing`. Each pattern = Robustness -1; persistent absence on user-input handlers = Robustness hard-fail.
+3. **Bulk smoke test probe** — execute a 251+ record invocation against the deployed test class. Capture `Limits.getQueries()` and `Limits.getDmlStatements()` deltas. If deltas scale linearly with N (vs constant), that's a Performance hard-fail regardless of whether the run succeeded — the class will trip governor limits at the next scale boundary.
+4. **Test rubric live verification** — execute `sf apex test run --tests <ClassName>` and confirm Outcome=Pass with ≥90% coverage. Test rubric is binary: pass or fail.
+
+### IMPL-NOTES claim verification (the N+1 lesson encoded)
+
+Per the Performance dimension's `automatic_hard_fail_rules`, any IMPL-NOTES.md claim about bulk-safety, performance characteristics, or test coverage must be backed by measured evidence. Evaluator verifies claims by:
+
+- Re-running the bulk invocation in `Test.startTest() / Test.stopTest()` boundaries and comparing measured Limits deltas to the implementer's claim
+- Running `sf apex test run` and confirming the test class actually exists and passes
+- Checking the deployed class via Tooling API to confirm what's actually in the org matches what IMPL-NOTES describes
+
+Mismatch between claim and bytecode = automatic Performance OR Correctness hard-fail (depending on the claim).
+
+### Disabling the harness
+
+Set `eval_harness.enabled: false` in this skill's frontmatter (or remove the `eval_harness:` block entirely). The 5-phase workflow runs as before with no harness wrap.
+
+See [the harness skill's SKILL.md](../../skills-cursor/sf-skill-eval-harness/SKILL.md) for the full orchestration playbook.
 
 ---
 

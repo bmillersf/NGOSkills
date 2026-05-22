@@ -34,11 +34,76 @@ upstream_refs:
 upstream_release_notes:
   - release: "Spring '26"
     url: https://help.salesforce.com/s/articleView?id=release-notes.rn_omnistudio.htm
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "110-pt rubric (6 categories: Design & Structure 20 / Data Operations 25 / Error Handling 20 / Performance 20 / Security 15 / Documentation 10) — mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  ip_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 15
+      description: "Data operations correctness. Maps to Data Operations (25). DataRaptor/Apex/IP references resolve to active components, response mapping wires correctly between elements, transforms produce the expected output shape."
+      automatic_hard_fail_rules:
+        - "Action element references a DataRaptor / Apex class / nested IP that doesn't exist or is inactive in the target org"
+        - "Two active versions for the same Type/SubType (only one IsActive allowed)"
+        - "Response mapping uses %elementName:keyPath% syntax that doesn't resolve in the upstream element's output"
+        - "DataRaptor Load Action with input data missing fields the bundle declares as required"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 14
+      description: "Error handling + rollback. Maps to Error Handling (20). DML wrapped in error handling, HTTP actions check status codes, multi-step DML has compensating actions, response validation before passing to next step."
+      automatic_hard_fail_rules:
+        - "DataRaptor Load Action without try/catch or conditional error check (silent data corruption mode)"
+        - "HTTP Action without explicit status-code branch handling 4xx/5xx"
+        - "Remote Action without exception surfacing (Apex exception swallowed and IP continues)"
+        - "Multi-step DML across DataRaptor Load + Remote Action without compensating-action design (partial-write on mid-chain failure)"
+        - "Circular IP call (A calls B calls A) — infinite loop / stack overflow"
+    - name: Fit
+      max: 25
+      hard_fail_below: 12
+      description: "Pattern adherence + documentation. Maps to Design & Structure (20) + Documentation (10). PascalCase Type/SubType, action-oriented element names, linear data flow with explicit mappings, descriptions on procedure + each element."
+      automatic_hard_fail_rules:
+        - "IP built when a single DataRaptor / Flow / Apex service is the appropriate choice (no orchestration value)"
+        - "Element names that are positional (Step1, Step2, Action) rather than action-oriented (GetAccountDetails, ValidateInput)"
+        - "Procedure with no description field populated — non-discoverable in OmniStudio explorer"
+        - "Type/SubType naming using kebab-case, snake_case, or non-PascalCase tokens"
+    - name: Performance
+      max: 25
+      hard_fail_below: 12
+      description: "Performance + security. Maps to Performance (20) + Security (15). Bounded extracts, caching on read-only IPs, no redundant calls, no hardcoded IDs/credentials, input validation before queries/DML."
+      automatic_hard_fail_rules:
+        - "DataRaptor Extract Action with no LIMIT (unbounded fetch — governor-limit risk)"
+        - "Hardcoded Salesforce ID anywhere in PropertySetConfig — breaks deploy across orgs"
+        - "Hardcoded API key, token, or credential in HTTP Action instead of Named Credential / Custom Setting"
+        - "Read-only multi-call IP with no platform cache configured (cacheType + cacheTTL absent)"
+        - "Loop Block iterating an unbounded collection with no batch size (CPU timeout risk in production volume)"
+  test_rubric:
+    unit:
+      required: true
+      criteria: "IP definition validates: Type/SubType unique + active, all referenced DataRaptors/Apex classes/nested IPs exist, PropertySetConfig JSON parses, no circular calls."
+    integration:
+      required: true
+      criteria: "Deploys to a connected org. Each Action element invokes its dependency successfully against representative input. Error paths (missing record, API failure, invalid input) surface configured error messages instead of silent failure."
+    smoke:
+      required: true
+      criteria: "End-to-end invocation from a real consumer (OmniScript / FlexCard / external caller via REST) round-trips with the expected output JSON shape. Bulk invocation with collection input completes within governor / CPU budgets."
 ---
 
 # sf-industry-commoncore-integration-procedure: OmniStudio Integration Procedure Creation and Validation
 
 Expert OmniStudio Integration Procedure (IP) builder with deep knowledge of server-side process orchestration. Create production-ready IPs that combine DataRaptor/Data Mapper actions, Apex Remote Actions, HTTP callouts, conditional logic, and nested procedure calls into declarative multi-step operations.
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). 110-pt rubric across 6 IP categories, mapped onto the 4-dim shape. Correctness floor at 15 — broken element references take the IP out of production; Robustness at 14 because IPs are server-side data-modifying orchestrations where silent DML failure is the dominant fault mode. Hard-fail rules block circular calls, unwrapped DML, hardcoded IDs/credentials, and unbounded extracts. Disable with `eval_harness.enabled: false`.
+
+---
 
 ## Quick Reference
 

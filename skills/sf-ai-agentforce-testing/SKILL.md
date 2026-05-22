@@ -32,6 +32,54 @@ upstream_refs:
 upstream_release_notes:
   - release: "Spring '26"
     url: https://help.salesforce.com/s/articleView?id=release-notes.rn_agentforce.htm
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "100-pt rubric in references/scoring-rubric.md (7 categories: Topic Selection Coverage 15, Action Invocation 15, Multi-Turn Topic Re-matching 15, Context Preservation 15, Edge Case & Guardrail Coverage 15, Test Spec / Scenario Quality 10, Agentic Fix Success 15), mapped onto the 4-dimension default rubric from skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  agent_testing_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 15
+      description: "Tests cover topic routing AND action invocation. Maps to Topic Selection Coverage (15) + Action Invocation (15). Every topic in the agent has a test case; every action is exercised with valid inputs/outputs."
+      automatic_hard_fail_rules:
+        - "Any agent under test where ≥1 topic has no test case (test coverage gap)"
+        - "Any action without at least one positive test (action coverage gap)"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 12
+      description: "Tests cover edge cases + guardrails + multi-turn complexity. Maps to Edge Case & Guardrail Coverage (15) + Multi-Turn Topic Re-matching (15). Negative tests exist, guardrails verified, topic switching across turns tested."
+      automatic_hard_fail_rules:
+        - "Any test spec with no negative tests (only happy-path means brittle agent in production)"
+        - "Any multi-turn agent without at least one cross-topic switching test"
+    - name: Fit
+      max: 25
+      hard_fail_below: 10
+      description: "Test specs follow YAML conventions + are clear. Maps to Test Spec / Scenario Quality (10) + Context Preservation (15). YAML schema valid, descriptions explain the scenario, context preservation between turns tested."
+      automatic_hard_fail_rules:
+        - "Any test spec with YAML syntax errors (sf agent test will refuse to run)"
+        - "Any test method without description (future maintainer can't tell what scenario is exercised)"
+    - name: Performance
+      max: 25
+      hard_fail_below: 12
+      description: "Test-fix loops converge. Maps to Agentic Fix Success (15). When a test fails, the agentic fix loop resolves the failure within 3 attempts."
+      automatic_hard_fail_rules:
+        - "Any agentic fix loop that doesn't terminate within max_iterations cap (infinite loop or stuck)"
+  test_rubric:
+    unit:
+      required: true
+      criteria: "Test spec YAML validates against agent test schema. All declared test methods have at least one assertion."
+    integration:
+      required: true
+      criteria: "sf agent test run completes without spec-parse errors. All declared topics + actions reachable."
+    smoke:
+      required: true
+      criteria: "Multi-turn scenario test passes against a real agent endpoint. Topic re-matching + context preservation verified end-to-end."
 ---
 
 <!-- TIER: 1 | ENTRY POINT -->
@@ -43,6 +91,12 @@ upstream_release_notes:
 # sf-ai-agentforce-testing: Agentforce Test Execution & Coverage Analysis
 
 Expert testing engineer specializing in Agentforce agent testing via **dual-track workflow**: multi-turn Agent Runtime API testing (primary) and CLI Testing Center (secondary). Execute multi-turn conversations, analyze topic/action/context coverage, and automatically fix issues via sf-ai-agentscript.
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). Three subagents (planner / implementer / evaluator) loop against the 100-pt rubric in fresh context. Hard-fail rules encode topic-coverage gaps and missing negative tests — both produce brittle production agents that pass tests in dev. Disable with `eval_harness.enabled: false`.
+
+---
 
 ## Core Responsibilities
 

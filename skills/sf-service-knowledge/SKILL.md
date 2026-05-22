@@ -36,6 +36,59 @@ compatibility: "Requires Lightning Knowledge (Classic Knowledge is end-of-life);
 metadata:
   version: "1.0.0"
   author: "NGOSkills"
+  scoring: "120 points across 10 categories — Industry pre-check 15 / Audience+article-type 15 / Category hierarchy 15 / Publication workflow 15 / Multi-language 10 / Einstein 10 / Article-to-Case 10 / Experience Cloud 10 / Lifecycle governance 10 / Delegation 10 (95 is passing)"
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "120-pt rubric (10 categories) extracted from existing 'Scoring Rubric' section in this SKILL.md (line 237). Mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  service_knowledge_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 16
+      description: "Industry pre-check + Article Type + Category hierarchy. Maps to Industry pre-check (15) + Audience+article-type (15) + Category hierarchy (15). The article model must reflect content patterns and audience visibility — not just be a content dump."
+      automatic_hard_fail_rules:
+        - "Phase 0 industry pre-check skipped — automatic fail per the rubric"
+        - "Industry-owned knowledge model silently overridden — automatic fail"
+        - "Classic Knowledge chosen instead of Lightning Knowledge (Classic is end-of-life)"
+        - "Article Type count outside the 3-7 range with no rationale (sprawl or single mega-type)"
+        - "Data Category groups >5 OR depth >3 in most groups (hierarchy unmaintainable + visibility gating breaks)"
+        - "Article Types missing consistent core fields (title / summary / body / search keywords) — search relevance collapses"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 14
+      description: "Publication workflow + lifecycle governance. Maps to Publication workflow (15) + Lifecycle governance (10). Knowledge orgs without retirement workflows accumulate stale drafts and broken case-to-article links faster than they accumulate value."
+      automatic_hard_fail_rules:
+        - "Approval Process vs Flow-based publication choice not justified (workflow ambiguity → drift)"
+        - "Approvers undefined / approver group has 1 person (single point of failure for publication)"
+        - "Archive policy not defined — articles never retire"
+        - "Stale-article report not configured (no signal on which articles need refresh)"
+        - "Feedback loop missing (no agent / customer mechanism to flag wrong / outdated articles)"
+        - "Multi-language strategy missing master language + supported languages + sync (translations diverge silently)"
+    - name: Fit
+      max: 25
+      hard_fail_below: 14
+      description: "Article-to-Case + Experience Cloud + Einstein. Maps to Article-to-Case (10) + Experience Cloud (10) + Einstein Search Answers/Recommendations (10). Right surfaces wired; Einstein activated only when article volume + signal is sufficient."
+      automatic_hard_fail_rules:
+        - "Article-to-Case wired but Knowledge component missing from Case layout (agents can't see suggested articles)"
+        - "Email-insert / PDF-attach not enabled when documented self-service workflow expects it"
+        - "Experience Cloud surface in scope but Topics mapping / guest access / SEO fields missing"
+        - "Einstein Search Answers / Reply Recommendations recommended without article-volume threshold check (model degrades; agents distrust)"
+        - "Einstein Search Answers without confirming the article corpus has summaries / FAQs the model can extract from"
+    - name: Performance
+      max: 25
+      hard_fail_below: 12
+      description: "Delegation hygiene + structured output. Maps to Delegation+output (10). Hand-offs to sf-experience-cloud / sf-lwc / sf-flow / sf-ai-agentforce when boundaries are crossed; structured summary emitted."
+      automatic_hard_fail_rules:
+        - "Hand-off to sf-experience-cloud / sf-lwc / sf-flow / sf-ai-agentforce without context"
+        - "Output not in the documented structured format"
+        - "No retirement workflow + retirement frequency target (knowledge debt accumulates indefinitely)"
+        - "Reports on Knowledge surface with no filter scoped to article-type / data-category audience (full-org scan when each cohort sees a subset)"
 release_pinned: "Spring '26"
 docs_last_verified: 2026-05-01
 upstream_refs:
@@ -61,6 +114,10 @@ upstream_release_notes:
 ---
 
 # sf-service-knowledge: Lightning Knowledge
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). 120-pt rubric across 10 Knowledge categories, extracted from this skill's existing Scoring Rubric section (line 237) and mapped onto the 4-dim shape. Robustness floor at 14 — Knowledge orgs without retirement workflows accumulate stale drafts + broken case-to-article links faster than they accumulate value. Hard-fail rules block Phase 0 skip, Classic Knowledge instead of Lightning Knowledge, Article Type sprawl (3-7 range violated), Data Category groups >5 or depth >3, missing archive policy, single-approver publication workflow, and Einstein activated without article-volume threshold check. Disable with `eval_harness.enabled: false`.
 
 Owns the knowledge base: article types, category hierarchy, publication workflow, versions, languages, search surfaces, feedback, and article-to-case linking. Classic Knowledge is end-of-life; this skill is Lightning Knowledge only.
 
