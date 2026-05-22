@@ -1,0 +1,62 @@
+flowchart TB
+
+    USER([User asks for an artifact:<br/>Apex, LWC, demoscript,<br/>FlexCard, IP, etc.])
+
+    SKILL["<b>Wrapped skill fires</b><br/>via TRIGGER clause<br/>e.g. sf-apex / sf-lwc /<br/>sf-demo-author"]
+
+    HARNESS{"<b>eval_harness.enabled<br/>in frontmatter?</b>"}
+
+    PLANNER["<b>Planner subagent</b><br/>fresh context<br/>writes SPEC.md<br/>+ falsifiable ACs<br/>+ test plan"]
+
+    IMPL["<b>Implementer subagent</b><br/>fresh context<br/>builds artifact + tests<br/>writes IMPL-NOTES.md<br/><i>does NOT see rubric weights</i>"]
+
+    EVAL["<b>Evaluator subagent</b><br/><b>fresh context per iteration</b><br/>scores against rubric<br/>independent reconstruction<br/>writes EVAL-REPORT.md"]
+
+    VERDICT{"<b>Verdict</b>"}
+
+    SHIP([SHIP<br/>quality ≥ 80%<br/>all hard-fail floors met<br/>unit + integration + smoke pass])
+
+    ITER{"ITERATE<br/>under iteration cap?"}
+
+    REPLAN{"SPEC-DEFECT<br/>replan budget left?"}
+
+    HARDFAIL["<b>Hard-fail breach</b><br/>any dimension below floor<br/>e.g. Robustness 18 broken<br/>on a security-flavored skill"]
+
+    USER_ESC([Escalate to user<br/>EVAL-REPORT + TRACE.md<br/>never silent retry on hard-fail])
+
+    NORMAL["<b>Normal skill output</b><br/>no harness wrap<br/>used for retrieval, policy,<br/>orchestrator-internal,<br/>read-only analysis"]
+
+    USER --> SKILL --> HARNESS
+    HARNESS -->|YES| PLANNER
+    HARNESS -->|NO| NORMAL
+    PLANNER -->|SPEC.md| IMPL
+    IMPL -->|artifact + tests| EVAL
+    EVAL --> VERDICT
+    VERDICT -->|SHIP| SHIP
+    VERDICT -->|ITERATE| ITER
+    VERDICT -->|SPEC-DEFECT| REPLAN
+    VERDICT -->|hard-fail breach| HARDFAIL
+    ITER -->|yes, with feedback| IMPL
+    ITER -->|cap reached| USER_ESC
+    REPLAN -->|yes, 1 per loop| PLANNER
+    REPLAN -->|exhausted| USER_ESC
+    HARDFAIL --> USER_ESC
+
+    classDef user fill:#F9FAFB,stroke:#374151,stroke-width:2px,color:#111827
+    classDef skill fill:#DDD6FE,stroke:#5B21B6,stroke-width:2px,color:#111827
+    classDef gate fill:#FEF3C7,stroke:#B45309,stroke-width:3px,color:#111827
+    classDef planner fill:#BFDBFE,stroke:#1D4ED8,stroke-width:2px,color:#111827
+    classDef impl fill:#FED7AA,stroke:#9A3412,stroke-width:2px,color:#111827
+    classDef eval fill:#A7F3D0,stroke:#065F46,stroke-width:2px,color:#111827
+    classDef ship fill:#86EFAC,stroke:#166534,stroke-width:3px,color:#111827
+    classDef hardfail fill:#FECACA,stroke:#991B1B,stroke-width:3px,color:#111827
+    classDef normal fill:#E5E7EB,stroke:#4B5563,stroke-width:2px,color:#111827
+
+    class USER,USER_ESC user
+    class SKILL,NORMAL skill
+    class HARNESS,VERDICT,ITER,REPLAN gate
+    class PLANNER planner
+    class IMPL impl
+    class EVAL eval
+    class SHIP ship
+    class HARDFAIL hardfail
