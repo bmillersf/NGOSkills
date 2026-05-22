@@ -14,6 +14,56 @@ metadata:
   version: "1.0.0"
   author: "Gnanasekaran Thoppae"
   phase: "Retrieve"
+  scoring: "100 points across 4 categories — newly authored 2026-05-22 (Query Plane Choice 25 / SQL Correctness + DC vs CRM 25 / Vector / Hybrid Search 25 / Performance 25)"
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "100-pt rubric (4 categories) newly authored 2026-05-22 — mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  dc_retrieve_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 14
+      description: "Query plane choice + Data Cloud SQL correctness. Right plane (sync SQL / paginated / async) for the workload; Data Cloud SQL syntax (not CRM SOQL); table reference correct (DLO vs DMO suffix conventions)."
+      automatic_hard_fail_rules:
+        - "CRM SOQL syntax used in Data Cloud SQL context (different planes — silent parse error or wrong semantics)"
+        - "DLO suffix __dll referenced when DMO suffix __dlm was needed (or vice versa)"
+        - "Sync SQL used for a query that needs >1 minute to run (timeout — should use async query workflow)"
+        - "describe used on a table that doesn't exist without first checking via list (silent error)"
+        - "Multi-data-space org queried without targeting a specific data space"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 12
+      description: "Query result handling + auth + governance. Result-set size bounded; auth refreshed on long async runs; governance (audit / row-level security) honored."
+      automatic_hard_fail_rules:
+        - "Async query started without polling / status-check loop (results never collected)"
+        - "Result-set size unbounded — large query streams full result without pagination"
+        - "Long-running async query without auth-refresh strategy (token expires mid-run)"
+        - "Row-level security / sharing enforcement not honored when running on behalf of a restricted user"
+    - name: Fit
+      max: 25
+      hard_fail_below: 12
+      description: "Vector / hybrid search + downstream handoff. Right search type for the use case; search index up-to-date; segment work to sf-datacloud-segment."
+      automatic_hard_fail_rules:
+        - "Vector search used when keyword + structured filter is the right pattern (no semantic value)"
+        - "Hybrid search misconfigured (vector weight + keyword weight imbalanced)"
+        - "Search index not refreshed before query (stale results)"
+        - "Segment authored here instead of routed to sf-datacloud-segment"
+        - "STDM / session-trace queries authored here instead of routed to sf-ai-agentforce-observability"
+    - name: Performance
+      max: 25
+      hard_fail_below: 12
+      description: "Query performance + pagination + caching. Query plan reasonable for table volumes; pagination on large result sets; caching where idempotent."
+      automatic_hard_fail_rules:
+        - "Query without LIMIT on large DLO/DMO (governor / cost surprise)"
+        - "Repeat-query pattern without caching strategy (cost amplifier)"
+        - "Pagination not applied to results >10k rows"
+        - "Query plan not measured at production volume — first scale check is the production cutover"
 release_pinned: "Spring '26"
 docs_last_verified: 2026-05-01
 upstream_refs:
@@ -37,6 +87,10 @@ upstream_release_notes:
 # sf-datacloud-retrieve: Data Cloud Retrieve Phase
 
 Use this skill when the user needs **query, search, and metadata introspection** for Data Cloud: sync SQL, paginated SQL, async query workflows, table describe, vector search, hybrid search, or search index operations.
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). 100-pt rubric across 4 Retrieve-phase categories, newly authored 2026-05-22. Hard-fail rules block CRM SOQL syntax in Data Cloud SQL contexts, DLO/DMO suffix mistakes (__dll vs __dlm), sync SQL for >1min queries (should be async), async query without polling loop, vector search misuse, search index not refreshed before query, queries without LIMIT on large tables, and segment / STDM work hijacked here. Disable with `eval_harness.enabled: false`.
 
 ## When This Skill Owns the Task
 

@@ -16,6 +16,56 @@ metadata:
   version: "1.0.0"
   author: "Gnanasekaran Thoppae"
   runtime: "External sf data360 community CLI plugin"
+  scoring: "120 points across 6 categories — newly authored 2026-05-22 to fill the harness coverage gap on Data Cloud orchestrator (Pipeline Phase Routing 25 / Readiness Classification 20 / Data Space Hygiene 20 / Cross-Phase Verification 20 / Plugin/Runtime Sanity 15 / Delegation 20)"
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "120-pt rubric (6 categories) newly authored 2026-05-22 — mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  datacloud_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 14
+      description: "Pipeline phase routing + readiness classification. The first job of the orchestrator is to localize the phase and confirm the org is ready to mutate; misrouting wastes phase-skill time and mutating a non-ready org corrupts state."
+      automatic_hard_fail_rules:
+        - "Single-phase work (just connect / just segment / just activate) handled in this orchestrator instead of routed to the focused phase skill"
+        - "Mutation-heavy work attempted without running scripts/diagnose-org.mjs readiness classification first"
+        - "sf data360 doctor used as the sole readiness gate (it only checks search-index surface — not full-product)"
+        - "Data Cloud SQL conflated with CRM SOQL (different planes, different syntax)"
+        - "query describe used on a non-existent DMO/DLO table without confirming the table exists first"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 12
+      description: "Data Space hygiene + cross-phase verification. Multi-data-space orgs corrupt silently if the wrong data space is targeted; cross-phase verification is what catches mid-pipeline drift."
+      automatic_hard_fail_rules:
+        - "Default data space assumed when org has multiple data spaces (mutation lands in wrong space)"
+        - "Data Kit / Data Space changes deployed without verifying impact on dependent segments + activations"
+        - "Per-phase verification skipped (stream → DLO → DMO → IR → segment → activation chain not re-checked end-to-end after change)"
+        - "Identity Resolution rerun without verifying unified record counts before/after"
+    - name: Fit
+      max: 25
+      hard_fail_below: 12
+      description: "Phase-skill delegation + JSON definition discipline. The orchestrator stays thin; phase work routes; deterministic JSON definition files over one-off manual steps."
+      automatic_hard_fail_rules:
+        - "Phase-skill work (connect / prepare / harmonize / segment / act / retrieve) authored here instead of delegated"
+        - "STDM / Session Tracing / parquet telemetry handled here instead of routed to sf-ai-agentforce-observability"
+        - "Org-specific JSON payloads written when generic templates in assets/definitions/ would serve"
+        - "CRM source loading (sf data import) done here instead of routed to sf-data"
+        - "CRM SOQL used here instead of routed to sf-soql"
+    - name: Performance
+      max: 25
+      hard_fail_below: 12
+      description: "Plugin / runtime / API-version sanity. The sf data360 plugin is community-maintained — version + linkage assumptions break silently."
+      automatic_hard_fail_rules:
+        - "sf data360 plugin assumed installed without verify-plugin.sh check"
+        - "Data Cloud-specific API-version workaround removed without confirming the upstream issue is fixed"
+        - "Plugin warnings + stderr noise piped into automation outputs (poisons downstream parsing) — should suppress with 2>/dev/null where stderr isn't needed"
+        - "dmo list --all used in a hot path when first-page dmo list is sufficient (slow + over-fetch)"
 release_pinned: "Spring '26"
 docs_last_verified: 2026-05-04
 upstream_refs:
@@ -39,6 +89,10 @@ upstream_release_notes:
 # sf-datacloud: Salesforce Data Cloud Orchestrator
 
 Use this skill when the user needs **product-level Data Cloud workflow guidance** rather than a single isolated command family: pipeline setup, cross-phase troubleshooting, data spaces, data kits, or deciding whether a task belongs in Connect, Prepare, Harmonize, Segment, Act, or Retrieve.
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). 120-pt rubric across 6 orchestrator categories, newly authored 2026-05-22 to fill the harness coverage gap. Correctness floor at 14 — orchestrator's primary job is phase localization + readiness classification; misrouting wastes phase-skill time and mutating a non-ready org corrupts state. Hard-fail rules block single-phase work hijacked by orchestrator, mutation without readiness classification, doctor-as-sole-readiness-gate, Data Cloud SQL / CRM SOQL conflation, default data space assumed in multi-space orgs, phase-skill work authored here instead of delegated, and STDM telemetry handled here instead of routed to sf-ai-agentforce-observability. Disable with `eval_harness.enabled: false`.
 
 This skill intentionally follows sf-skills house style while using the external `sf data360` command surface as the runtime. The plugin is **not vendored into this repo**.
 

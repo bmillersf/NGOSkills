@@ -14,6 +14,56 @@ metadata:
   version: "1.0.0"
   author: "Gnanasekaran Thoppae"
   phase: "Harmonize"
+  scoring: "120 points across 4 categories — newly authored 2026-05-22 (DMO + Mapping Design 35 / Identity Resolution Rules 40 / Data Graph + Relationships 25 / Verification 20)"
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "120-pt rubric (4 categories) newly authored 2026-05-22 — mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  dc_harmonize_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 16
+      description: "DMO + mapping design. Right standard DMO chosen (Customer / Individual / Account / etc.); custom DMO only when standard doesn't fit; field mappings preserve types + semantics."
+      automatic_hard_fail_rules:
+        - "Custom DMO created when a standard DMO fits (Customer / Individual / Account / Contact / Order / Subscription / etc.)"
+        - "DLO field mapped to wrong DMO field (semantic mismatch — Email mapped to Phone, etc.)"
+        - "Multiple DLOs mapping to the same DMO field without conflict resolution rule (last-write-wins surprise)"
+        - "Mapping skipped on a field downstream segments / activations need (silent null at retrieval)"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 18
+      description: "Identity Resolution rule integrity. Heaviest robustness floor — IR is what creates unified profiles; weak match rules either over-merge (privacy disaster) or under-merge (fragmented profiles)."
+      automatic_hard_fail_rules:
+        - "Match rule too loose (e.g., name + city only — over-merges distinct individuals)"
+        - "Match rule too strict (e.g., requires exact email AND phone AND address — most records under-merge)"
+        - "Reconciliation rule undefined (when fields conflict across sources, which wins?) — silent precedence default"
+        - "Confidence threshold not declared — default merges/separates without explicit policy"
+        - "IR run cadence not measured against downstream segment / activation freshness needs"
+    - name: Fit
+      max: 25
+      hard_fail_below: 12
+      description: "Data Graph + relationships + downstream handoff. Relationships modeled correctly; data graph definition reflects unified-profile shape; hand off to sf-datacloud-segment for audience work."
+      automatic_hard_fail_rules:
+        - "Relationship modeled at DLO level when DMO-level relationship is the documented pattern"
+        - "Data Graph defined without explicit root entity (Customer-360 / Account-360 / Order-360 — purpose unclear)"
+        - "Segment / Calculated Insight authored here instead of routed to sf-datacloud-segment"
+        - "Activation work authored here instead of routed to sf-datacloud-act"
+        - "Stream / DLO work authored here instead of routed to sf-datacloud-prepare"
+    - name: Performance
+      max: 25
+      hard_fail_below: 12
+      description: "Verification + IR run health. Unified record counts measured before/after IR change; match-rate + merge-rate metrics tracked."
+      automatic_hard_fail_rules:
+        - "IR rule change deployed without before/after unified record count"
+        - "Match-rate / merge-rate metrics not captured (no signal on whether the rule shift over- or under-merged)"
+        - "IR run failures (rejected records / null-key records / over-threshold rejection) not surfaced + investigated"
+        - "Data graph refresh cadence not aligned with downstream consumer needs"
 release_pinned: "Spring '26"
 docs_last_verified: 2026-05-04
 upstream_refs:
@@ -39,6 +89,10 @@ upstream_release_notes:
 # sf-datacloud-harmonize: Data Cloud Harmonize Phase
 
 Use this skill when the user needs **schema harmonization and unification work**: DMOs, field mappings, relationships, identity resolution, unified profiles, data graphs, or universal ID lookup.
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). 120-pt rubric across 4 Harmonize-phase categories, newly authored 2026-05-22. Robustness floor at 18 — Identity Resolution is what creates unified profiles; weak match rules either over-merge (privacy disaster) or under-merge (fragmented profiles). Hard-fail rules block custom DMO when standard fits, semantic mapping mismatches, missing reconciliation rules, match rules too loose / too strict, missing confidence threshold, IR run without before/after unified-record-count measurement, and downstream Segment / Act work hijacked here. Disable with `eval_harness.enabled: false`.
 
 ## When This Skill Owns the Task
 
