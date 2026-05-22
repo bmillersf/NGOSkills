@@ -27,6 +27,58 @@ compatibility: "Requires Playwright (npm install playwright), sf CLI authenticat
 metadata:
   version: "1.0.0"
   author: "NGOSkills"
+  scoring: "120 points across 7 categories — Auth hygiene 15 / CLI-exhaustion check 20 / Selector resilience 25 / Self-heal logic 20 / Screenshot coverage 15 / Library organization 15 / Safety rails 10 (96 is passing)"
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "120-pt rubric (7 categories) extracted from existing 'Scoring rubric (120 points)' section in this SKILL.md (line 273). Mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  ui_fallback_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 16
+      description: "CLI-exhaustion check + selector resilience. Maps to CLI-exhaustion check (20) + Selector resilience (25). The skill is supposed to fire only when CLI / Metadata / Tooling API have been tried first; selectors must be from the ladder's top tiers, not raw xpath."
+      automatic_hard_fail_rules:
+        - "Phase 1 CLI-exhaustion check not documented in the script header comment (skill ran reactive when sf-deploy / sf-metadata / sf-apex / sf-data was the right path)"
+        - "Selector ladder violation — <80% of selectors from tiers 1-3 (getByRole / getByText / data-aura-class)"
+        - "Raw xpath used outside last-resort fallback path (e.g., xpath=/html/body/div[3]/... — breaks on every Salesforce release)"
+        - "Skill invoked when sf-demo-playwright (proactive suite authoring) is the right path"
+        - "Skill invoked when sf-demo-orchestrate (full pipeline) or sf-demo-validate (E2E validation) is the right path"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 18
+      description: "Auth hygiene + Safety rails. Maps to Auth hygiene (15) + Safety rails (10). Heaviest robustness floor — playwright fallbacks run authenticated UI automation; auth leaks + unconfirmed prod writes are the dominant catastrophic failure modes."
+      automatic_hard_fail_rules:
+        - "Raw password / username stored in playwright.config.ts or env vars (must use SFDX session token via 'sf org display --json' — breaks MFA on CI)"
+        - "storageState file committed to git (auth token leak)"
+        - "storageState path not gitignored in the project's .gitignore"
+        - "Prod write attempted without --write flag + typed confirmation gate"
+        - "Read-only default not enforced — script defaults to write mode"
+        - "Destructive operation (delete records, deactivate user, drop config) without typed confirmation regardless of org type"
+    - name: Fit
+      max: 25
+      hard_fail_below: 14
+      description: "Self-heal logic + library organization. Maps to Self-heal logic (20) + Library organization (15). Script regenerates broken steps and saves to the canonical library path; USAGE.md kept in sync."
+      automatic_hard_fail_rules:
+        - "locator.waitFor timeout silently passes — no self-heal regeneration, no log entry (masks Salesforce UI changes; drift accumulates)"
+        - "Self-heal attempts >2 without escalation to user (infinite-loop risk)"
+        - "Script saved outside .claude/playwright-fallbacks/<task-name>.spec.ts (library divergence)"
+        - "USAGE.md not updated when a new fallback is saved (next caller can't discover it)"
+        - "Inline screenshots / Playwright traces written to project root instead of the documented output dir (clutters repo)"
+    - name: Performance
+      max: 25
+      hard_fail_below: 10
+      description: "Screenshot coverage + report on fail. Maps to Screenshot coverage (15). Screenshot after every state change; HTML report opens on failure for debugging."
+      automatic_hard_fail_rules:
+        - "Screenshot missing after a state change (Setup toggle flipped, modal opened, button clicked) — failure-mode debugging blocked"
+        - "HTML report not auto-opened on test failure"
+        - "Trace recording disabled (no time-travel debugging on a flake)"
+        - "Test runtime exceeds documented budget for the action without retry/timeout discipline (single fallback step >60s without justification)"
 release_pinned: "Spring '26"
 docs_last_verified: 2026-05-04
 upstream_refs:
@@ -48,6 +100,10 @@ upstream_release_notes: []
 # sf-ui-fallback-playwright
 
 Reactive Playwright fallback. Invoked only when an agent has exhausted the CLI / Metadata API / Tooling API and is blocked by a UI-only Salesforce action. Generates a Playwright script on the fly, executes it, captures screenshots at every step, saves the script to a reusable library, and self-heals selectors when Salesforce changes the DOM.
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). 120-pt rubric across 7 reactive-fallback categories, extracted from this skill's existing scoring section (line 273) and mapped onto the 4-dim shape. Robustness floor at 18 — Playwright fallbacks run authenticated UI automation; auth leaks and unconfirmed prod writes are the dominant catastrophic failure modes. Hard-fail rules block CLI-exhaustion check undocumented, selector-ladder violations (>20% raw xpath), passwords in config, storageState committed to git, prod writes without --write flag + typed confirmation, silent timeout passes (no self-heal), library path divergence, and missing screenshots after state changes. Disable with `eval_harness.enabled: false`.
 
 This skill is the **escape hatch**, not the preferred path. Every time it runs, the Usage Log grows, and recurring UI-only gaps become CLI feature requests filed back to the Salesforce CLI team.
 
