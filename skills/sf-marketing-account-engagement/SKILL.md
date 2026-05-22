@@ -21,6 +21,64 @@ compatibility: "Requires Pardot / Marketing Cloud Account Engagement license (Gr
 metadata:
   version: "1.0.0"
   author: "NGOSkills"
+  scoring: "130 points across 6 categories — Connector+data model 25 / Scoring+grading 25 / Engagement Studio 20 / Forms+landing pages 20 / Compliance+deliverability 20 / Reporting+ops 20 (98 is passing)"
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "130-pt rubric (6 categories) extracted from existing 'Scoring Rubric — 130 Points' section in this SKILL.md (line 305). Mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  marketing_pardot_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 16
+      description: "Connector + data model alignment + Engagement Studio. Maps to Connector+data model (25) + Engagement Studio (20). The Salesforce-Pardot Connector is the foundation — without verified sync, every downstream operation drifts."
+      automatic_hard_fail_rules:
+        - "Pardot and legacy Marketing Cloud Engagement (ExactTarget / SFMC) treated as the same product (different namespaces, different primitives — not deployable)"
+        - "Pardot and Marketing Cloud Growth (Data Cloud-native) treated as the same product (route by detection signal — pi__ namespace vs Data Cloud + MCG feature)"
+        - "Salesforce-Pardot Connector unverified or stale — sync direction / freshness / errors not confirmed before design"
+        - "Marketing Data Sharing rules absent or unscoped (Prospects sync globally instead of by business unit / region)"
+        - "Prospect-to-Lead/Contact routing rule unspecified (Connector either creates Leads or upserts Contacts — needs explicit choice)"
+        - "Bi-directional overwrites running stale (Pardot field overwrites Salesforce field that's the source of truth — silent data corruption)"
+        - "Engagement Studio program with multiple goals (one-program-one-goal pattern violated)"
+        - "Engagement Studio program without explicit exit criteria (Prospects loop indefinitely)"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 14
+      description: "Compliance + deliverability + scoring/grading. Maps to Compliance+deliverability (20) + Scoring+grading (25). Tracker-domain SSL, SPF/DKIM/DMARC, suppression on every send, Email Preference Center live, MQL threshold + score decay defined."
+      automatic_hard_fail_rules:
+        - "Tracker domain without valid SSL"
+        - "SPF / DKIM / DMARC not all aligned on the sending domain"
+        - "Legal footer not implemented as a reusable snippet (drift across templates)"
+        - "Public send without suppression list applied (unsubscribers re-mailed)"
+        - "Email Preference Center not live"
+        - "Scoring rules defined without grading rules (or vice versa) — MQL threshold can't be both fit + intent without both"
+        - "Score decay not configured (cold Prospects keep their score forever — model rots)"
+        - "Multiple product lines but Scoring Categories not used (all signals collapsed — wrong sales handoff)"
+    - name: Fit
+      max: 25
+      hard_fail_below: 14
+      description: "Forms + landing pages + Static vs Dynamic List discipline. Maps to Forms+landing pages+conversion UX (20). Progressive profiling, minimum-question forms, completion actions chained correctly, Static List + Automation Rule anti-pattern avoided."
+      automatic_hard_fail_rules:
+        - "Static List maintained by Automation Rule when a Dynamic List is the correct pattern (self-healing dynamic lists are free of Automation Rule cap; static + automation rule = stale + cap-burning)"
+        - "Form without progressive profiling on returning Prospects (asks the same question twice — UX cliff)"
+        - "Form-handler without reCAPTCHA / honey-pot (bot submissions)"
+        - "Completion actions chained in wrong order (e.g., Add to Engagement Program before Assign Lead — Lead exits program before assignment fires)"
+        - "Mobile rendering not verified on landing page / form (mobile is the dominant traffic source for B2B in 2024+)"
+    - name: Performance
+      max: 25
+      hard_fail_below: 12
+      description: "Reporting + Einstein + operational hygiene. Maps to Reporting+B2BMA+Einstein+ops (20). B2BMA dashboards live, Einstein features not conflicting with rules-based scoring, automation rules described, list naming convention enforced."
+      automatic_hard_fail_rules:
+        - "B2BMA licensed but dashboards not in use"
+        - "Einstein features (Behavior Score / Lead Score / Campaign Insights) configured AND rules-based scoring active without reconciling — two scoring models pulling MQL thresholds in different directions"
+        - "Automation rules without descriptions (operational debt — nobody can audit which rule does what)"
+        - "List naming convention not followed (lists become non-discoverable; duplicates spawn)"
+        - "Engagement Studio program branches not tested in Test Mode (silent dead branches in production)"
 release_pinned: "Spring '26"
 docs_last_verified: 2026-05-01
 upstream_refs:
@@ -42,6 +100,10 @@ upstream_release_notes:
 ---
 
 # sf-marketing-account-engagement: Marketing Cloud Account Engagement (formerly Pardot)
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). 130-pt rubric across 6 MCAE/Pardot categories, extracted from this skill's existing Scoring Rubric section (line 305) and mapped onto the 4-dim shape. Correctness floor at 16 — the Salesforce-Pardot Connector is the foundation; without verified sync, every downstream operation drifts. Hard-fail rules block MCAE/MCE/MCG product confusion, Connector-stale designs, missing Marketing Data Sharing rules, ambiguous Prospect-to-Lead/Contact routing, scoring-without-grading, missing Email Preference Center, Static List + Automation Rule anti-pattern, and Einstein scoring conflicting with rules-based scoring. Disable with `eval_harness.enabled: false`.
 
 Use this skill when the user is designing, building, or troubleshooting B2B marketing automation on **Marketing Cloud Account Engagement** (MCAE) — the product formerly known as Pardot. MCAE is a B2B-centric, account-oriented marketing automation platform with its **own data warehouse** (not backed by Data Cloud), synced to Salesforce CRM via the Salesforce-Pardot Connector, and running under the `pi__` managed-package namespace. It is a fundamentally different product from Marketing Cloud Growth (Data Cloud-native) and from legacy Marketing Cloud Engagement (ExactTarget / SFMC).
 
