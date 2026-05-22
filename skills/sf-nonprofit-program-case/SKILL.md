@@ -33,11 +33,78 @@ upstream_refs:
 upstream_release_notes:
   - release: "Spring '26"
     url: https://help.salesforce.com/s/articleView?id=release-notes.rn_industries_nonprofit.htm
+eval_harness:
+  enabled: true
+  pilot: true
+  harness_skill: sf-skill-eval-harness
+  rubric_ref: "120-pt rubric (6 categories: Program Design 25 / Enrollment Lifecycle 20 / Benefit Delivery 20 / Case Management 20 / Outcome Tracking 20 / Best Practices 15) — extracted from existing workflow narrative 2026-05-22; mapped onto 4-dim default rubric per skill-eval-harness-SPEC.md §5.1"
+  hard_fail_dimensions: [Correctness, Robustness, Fit, Performance]
+  max_iterations: 3
+  per_loop_replan_budget: 1
+  improvement_threshold_points: 5
+  apply_when: artifact_produced
+  program_case_dimensions:
+    - name: Correctness
+      max: 25
+      hard_fail_below: 16
+      description: "Program + enrollment data-model correctness. Maps to Program Design (25) + Enrollment Lifecycle (20). Native NPC objects used for program / enrollment / benefit / case / outcome; lifecycle status transitions documented and honored; Person Account model for individuals."
+      automatic_hard_fail_rules:
+        - "Custom enrollment object built (Program_Enrollment__c) when Program Enrollment exists in NPC — shadow data model"
+        - "Custom service tracking object built when Benefit / Benefit Disbursement objects exist in NPC"
+        - "Opportunity used for program intake tracking (wrong cloud — fundraising belongs to sf-nonprofit-fundraising)"
+        - "Program Enrollment with no status lifecycle (single State) — can't track Applied → Waitlisted → Enrolled → Active → Completed/Withdrawn"
+        - "Individuals modeled as Contact + Household Account when org is NPC (NPC uses Person Account; NPSP would use sf-nonprofit-npsp instead)"
+        - "Care Plan / Goal Definition / Referral custom-built when those native objects exist in NPC"
+    - name: Robustness
+      max: 25
+      hard_fail_below: 16
+      description: "Client-data safeguards + case integrity. Maps to Best Practices (15) + Case Management (20) and the consent/data-sharing concerns called out in NPC. Heavy floor — program data is sensitive (vulnerable populations, regulated services); consent + sharing must be explicit."
+      automatic_hard_fail_rules:
+        - "Client sensitive data captured (intake assessments, case notes, identity documents) without consent-tracking field or object"
+        - "Case record with no ownership / assignment rule (orphaned cases)"
+        - "Cross-program data sharing (referrals) without sharing rule scoped to receiving program staff (over-exposure of client info)"
+        - "File uploads attached to records without explicit AccessLevel / Sharing setting (default-shared sensitive documents)"
+        - "Case Team / multi-disciplinary coordination missing on wraparound services (every case soloed by one owner)"
+    - name: Fit
+      max: 25
+      hard_fail_below: 12
+      description: "Pattern adherence + NPC vs NPSP routing. Maps to portions of Program Design + Best Practices. Skill applied only on NPC orgs; PMM/custom-build path taken on NPSP; Case vs Benefit Disbursement choice matches the work pattern; Indicator framework wired to outcomes."
+      automatic_hard_fail_rules:
+        - "Skill applied to an NPSP org without PMM (program objects don't exist — should route to sf-nonprofit-npsp + custom-build path)"
+        - "Routine scheduled service (tutoring, meal distribution) modeled as Case instead of Benefit Disbursement (Case is for complex interventions)"
+        - "Complex intervention with follow-up modeled as Benefit Disbursement instead of Case (no resolution / case-team support)"
+        - "Outcome tracking without Indicator Definition / Indicator Result — claims to measure impact but has no measurement objects wired"
+        - "Mixing program data with fundraising data in shared custom objects (constituent privacy + reporting blast)"
+    - name: Performance
+      max: 25
+      hard_fail_below: 12
+      description: "Outcome tracking + scale. Maps to Outcome Tracking (20). Indicator Performance Periods bounded, indicator results aggregated efficiently, attendance via Benefit Schedule (not bulk-DML loops), reports scoped per program for caseload sizes."
+      automatic_hard_fail_rules:
+        - "Indicator Result records written one-per-disbursement when periodic / aggregated measurement is the documented pattern (write amplification on bulk)"
+        - "Attendance tracking implemented via per-session Apex DML loops instead of Benefit Schedule + Benefit Disbursement records"
+        - "Reports / list views on Case or Program Enrollment with no filter scoped to caseload (full-org scan when each user only owns ~50 records)"
+        - "Outcome Activity junction missing — Outcomes claim coverage but never link to Program/Benefit/Goal Definition (uncomputed impact)"
+  test_rubric:
+    unit:
+      required: true
+      criteria: "Metadata validates: Program / Program Enrollment / Benefit / Case / Outcome / Indicator Definition use native NPC objects (no custom-shadow). Status picklists enumerate documented lifecycle values. Person Account record types correct."
+    integration:
+      required: true
+      criteria: "End-to-end intake-to-outcome flow runs in an NPC sandbox: Referral → Intake → Eligibility → Program Enrollment (with status lifecycle) → Benefit Disbursement → Indicator Result → Outcome Activity computed. Sharing rules enforce caseload boundaries for restricted-profile users."
+    smoke:
+      required: true
+      criteria: "Caseworker user opens their caseload, sees only their assigned enrollments + cases, can record a benefit disbursement and indicator result that flow into outcome reporting. Cross-program referral lands in receiving program with referral source visible to receiving staff but not to unrelated users."
 ---
 
 # sf-nonprofit-program-case: Nonprofit Cloud Program & Case Management Architect
 
 Expert Salesforce architect specializing in **Nonprofit Cloud (NPC)** program management, case management, intake workflows, benefit delivery tracking, outcome measurement, and referral coordination.
+
+## Eval Harness Wrap
+
+When `eval_harness.enabled: true` (frontmatter), this skill is wrapped by [sf-skill-eval-harness](../../skills-cursor/sf-skill-eval-harness/SKILL.md). 120-pt rubric across 6 NPC program/case categories, extracted from this skill's existing workflow narrative and mapped onto the 4-dim shape. Robustness floor at 16 — program data covers vulnerable populations and regulated services; consent + sharing-rule scoping must be explicit. Hard-fail rules block shadow data models (custom Program_Enrollment__c when NPC native exists), missing consent tracking, NPSP orgs routed here without PMM, Case-vs-Benefit-Disbursement misuse, and outcome claims without Indicator wiring. Disable with `eval_harness.enabled: false`.
+
+---
 
 > **Platform note**: Program, Program Enrollment, Benefit, Benefit Disbursement, Outcome, and Indicator objects are **NPC-native** — they do not exist in NPSP. NPSP orgs needing program management must custom-build or use the PMM (Program Management Module) package. Standard Case object is available on both platforms. For NPSP constituent model, see **sf-nonprofit-npsp**.
 
